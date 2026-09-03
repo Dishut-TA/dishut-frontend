@@ -15,7 +15,7 @@ const DataInvestasiKABIDBUPM: React.FC = () => {
       try {
         const result = await getProgramBUPMAPI();
         // Kabid hanya fokus melihat yang butuh validasi (WAITING_HEAD) atau yang sudah ACTIVE/selesai
-        const filteredResult = result.filter(item => 
+        const filteredResult = result.filter((item: ProgramInvestasi) => 
           item.status !== 'WAITING_STAFF_VERIFICATION' && item.status !== 'REVISION'
         );
         setData(filteredResult);
