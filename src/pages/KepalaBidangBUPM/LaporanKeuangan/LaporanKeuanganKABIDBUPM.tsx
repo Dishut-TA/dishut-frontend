@@ -4,7 +4,7 @@ import { HiOutlineFunnel, HiOutlineEye } from 'react-icons/hi2';
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { getLaporanKeuanganBUPMAPI, getKthProgramsAPI } from '@/services/investasi.service';
+import { getLaporanKeuanganBUPMAPI, getProgramBUPMAPI } from '@/services/investasi.service';
 
 const LaporanKeuanganKABIDBUPM: React.FC = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const LaporanKeuanganKABIDBUPM: React.FC = () => {
         setIsLoading(true);
         const [resLaporan, resPrograms] = await Promise.all([
           getLaporanKeuanganBUPMAPI(),
-          getKthProgramsAPI()
+          getProgramBUPMAPI()
         ]);
         setData(resLaporan);
         setPrograms(resPrograms);

@@ -1,31 +1,51 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineFunnel, HiOutlineEye } from 'react-icons/hi2';
+import { getPersetujuanInvestorAPI } from '@/services/investasi.service';
+import toast from 'react-hot-toast';
 
 interface PersetujuanData {
   id: string;
-  no: number;
-  tanggal: string;
-  investasi: string;
-  status: 'Menunggu Persetujuan (Revisi)' | 'Menunggu Persetujuan' | 'Diterima' | 'Ditolak';
+  tanggal_bayar?: string;
+  created_at?: string;
+  program?: {
+    nama_program: string;
+  };
+  status_persetujuan: string;
 }
-
-const mockData: PersetujuanData[] = [
-  { id: 'PRS-001', no: 1, tanggal: '24/08/2025', investasi: 'Investasi Ekowisata Kebun Stroberi', status: 'Menunggu Persetujuan (Revisi)' },
-  { id: 'PRS-002', no: 2, tanggal: '24/08/2025', investasi: 'Investasi Ekowisata Kebun Stroberi', status: 'Menunggu Persetujuan' },
-  { id: 'PRS-003', no: 3, tanggal: '24/08/2025', investasi: 'Investasi Ekowisata Kebun Stroberi', status: 'Diterima' },
-  { id: 'PRS-004', no: 4, tanggal: '24/08/2025', investasi: 'Investasi Ekowisata Kebun Stroberi', status: 'Ditolak' },
-];
 
 const PersetujuanInvestasi: React.FC = () => {
   const navigate = useNavigate();
+  const [data, setData] = useState<PersetujuanData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await getPersetujuanInvestorAPI();
+      setData(response);
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal mengambil data persetujuan.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderStatusBadge = (status: string) => {
     switch (status) {
-      case 'Diterima':
+      case 'DITERIMA':
         return <span className="px-4 py-1 bg-[#185325] text-white rounded-full text-[11px] font-bold shadow-sm">Diterima</span>;
-      case 'Ditolak':
+      case 'DITOLAK':
         return <span className="px-4 py-1 bg-[#FF0000] text-white rounded-full text-[11px] font-bold shadow-sm">Ditolak</span>;
+      case 'MENUNGGU':
+        return <span className="px-4 py-1 bg-yellow-500 text-white rounded-full text-[11px] font-bold shadow-sm">Menunggu</span>;
+      case 'MENUNGGU_REVISI':
+        return <span className="px-4 py-1 bg-orange-500 text-white rounded-full text-[11px] font-bold shadow-sm">Menunggu Revisi</span>;
       default:
         return <span className="px-4 py-1 bg-gray-200 text-gray-500 rounded-full text-[11px] font-bold shadow-sm">{status}</span>;
     }
@@ -56,31 +76,41 @@ const PersetujuanInvestasi: React.FC = () => {
             </thead>
             
             <tbody className="divide-y divide-gray-100">
-              {mockData.map((item, index) => (
-                <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-700 text-center">
-                    {index + 1}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-800 whitespace-nowrap">
-                    {item.tanggal}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-800 whitespace-nowrap">
-                    {item.investasi}
-                  </td>
-                  <td className="px-6 py-4 text-center whitespace-nowrap">
-                    {renderStatusBadge(item.status)}
-                  </td>
-                  <td className="px-6 py-4 flex justify-center whitespace-nowrap">
-                    <button 
-                      title="Lihat Detail"
-                      onClick={() => navigate(`/admin/kth/investasi/persetujuan/detail/${item.id}`)}
-                      className="p-1.5 text-gray-500 hover:text-[#185325] hover:bg-[#DCECE0] rounded-full transition-colors"
-                    >
-                      <HiOutlineEye className="w-5 h-5" />
-                    </button>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-gray-500">Memuat data...</td>
                 </tr>
-              ))}
+              ) : data.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-gray-500">Belum ada pengajuan investasi.</td>
+                </tr>
+              ) : (
+                data.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-700 text-center">
+                      {index + 1}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-800 whitespace-nowrap">
+                      {item.tanggal_bayar ? new Date(item.tanggal_bayar).toLocaleDateString('id-ID') : (item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '-')}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-gray-800 whitespace-nowrap">
+                      {item.program?.nama_program || 'Program Tidak Ditemukan'}
+                    </td>
+                    <td className="px-6 py-4 text-center whitespace-nowrap">
+                      {renderStatusBadge(item.status_persetujuan)}
+                    </td>
+                    <td className="px-6 py-4 flex justify-center whitespace-nowrap">
+                      <button 
+                        title="Lihat Detail"
+                        onClick={() => navigate(`/admin/kth/investasi/persetujuan/detail/${item.id}`)}
+                        className="p-1.5 text-gray-500 hover:text-[#185325] hover:bg-[#DCECE0] rounded-full transition-colors"
+                      >
+                        <HiOutlineEye className="w-5 h-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

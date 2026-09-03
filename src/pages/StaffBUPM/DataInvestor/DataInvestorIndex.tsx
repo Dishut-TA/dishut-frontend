@@ -1,34 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineFunnel, HiOutlineEye } from 'react-icons/hi2';
-
-interface DataInvestor {
-  id: string;
-  no: number;
-  investasi: string;
-  namaInvestor: string;
-  jumlahInvestasi: number;
-}
-
-const mockData: DataInvestor[] = [
-  {
-    id: 'USR-001',
-    no: 1,
-    investasi: 'Investasi Wisata Dieng',
-    namaInvestor: 'Rakha Nabila',
-    jumlahInvestasi: 250000000
-  },
-  {
-    id: 'USR-002',
-    no: 2,
-    investasi: 'Investasi Wisata Museum Penyu',
-    namaInvestor: 'Marisa',
-    jumlahInvestasi: 250000000
-  }
-];
+import toast from 'react-hot-toast';
+import { getDataInvestorBUPMAPI } from '@/services/investasi.service';
 
 const DataInvestorIndex: React.FC = () => {
   const navigate = useNavigate();
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const response = await getDataInvestorBUPMAPI();
+      setData(response);
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal memuat data investor.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatRupiah = (angka: number) => {
     return new Intl.NumberFormat('id-ID', { 
@@ -63,31 +57,41 @@ const DataInvestorIndex: React.FC = () => {
             </thead>
             
             <tbody className="divide-y divide-gray-100">
-              {mockData.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-700 text-center">
-                    {item.no}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-800 whitespace-nowrap">
-                    {item.investasi}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
-                    {item.namaInvestor}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-[#185325] whitespace-nowrap">
-                    {formatRupiah(item.jumlahInvestasi)}
-                  </td>
-                  <td className="px-6 py-4 flex justify-center whitespace-nowrap">
-                    <button 
-                      title="Lihat Detail"
-                      onClick={() => navigate(`/admin/staff/bupm/data-investor/detail/${item.id}`)}
-                      className="p-1.5 text-gray-500 hover:text-[#185325] hover:bg-[#DCECE0] rounded-full transition-colors"
-                    >
-                      <HiOutlineEye className="w-5 h-5" />
-                    </button>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-gray-500">Memuat data...</td>
                 </tr>
-              ))}
+              ) : data.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-gray-500">Belum ada data investor.</td>
+                </tr>
+              ) : (
+                data.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-700 text-center">
+                      {index + 1}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-gray-800 whitespace-nowrap">
+                      {item.program?.nama_program_investasi || item.program?.nama_program || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
+                      {item.nama || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-[#185325] whitespace-nowrap">
+                      {formatRupiah(item.nominal_pendanaan || 0)}
+                    </td>
+                    <td className="px-6 py-4 flex justify-center whitespace-nowrap">
+                      <button 
+                        title="Lihat Detail"
+                        onClick={() => navigate(`/admin/staff/bupm/data-investor/detail/${item.id}`)}
+                        className="p-1.5 text-gray-500 hover:text-[#185325] hover:bg-[#DCECE0] rounded-full transition-colors"
+                      >
+                        <HiOutlineEye className="w-5 h-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

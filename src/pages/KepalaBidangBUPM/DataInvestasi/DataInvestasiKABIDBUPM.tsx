@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineFunnel, HiOutlineEye, HiOutlineCheckBadge } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
-import { getKthProgramsAPI } from '@/services/investasi.service'; 
+import { getProgramBUPMAPI } from '@/services/investasi.service'; 
 import type { ProgramInvestasi } from '@/utils/interface'; // Sesuaikan
 
 const DataInvestasiKABIDBUPM: React.FC = () => {
@@ -13,7 +13,7 @@ const DataInvestasiKABIDBUPM: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const result = await getKthProgramsAPI();
+        const result = await getProgramBUPMAPI();
         // Kabid hanya fokus melihat yang butuh validasi (WAITING_HEAD) atau yang sudah ACTIVE/selesai
         const filteredResult = result.filter(item => 
           item.status !== 'WAITING_STAFF_VERIFICATION' && item.status !== 'REVISION'

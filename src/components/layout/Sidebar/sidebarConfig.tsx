@@ -204,7 +204,7 @@ export const getSidebarMenus = (basePath: string, userRole: string, user: any) =
                 // { name: 'Biaya Pemasukan', path: `${basePath}/laporan-investasi/pemasukan` },
             ],
         },
-        { name: 'Saldo Keuntungan', path: `${basePath}/saldo/keuntungan`, icon: <HiOutlineWallet className='w-5 h-5'/> }
+        { name: 'Saldo Pendanaan', path: `${basePath}/saldo/keuntungan`, icon: <HiOutlineWallet className='w-5 h-5'/> }
     ];
 
     // KTH Pelaksanaan

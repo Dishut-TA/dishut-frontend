@@ -1,7 +1,7 @@
 import type { PegawaiProfile, PegawaiResponse, UpdatePegawaiJsonPayload } from './pegawai.type';
 
-// const API_URL = import.meta.env.VITE_API_BASE_URL;
-const API_URL = import.meta.env.VITE_API_EXAMPLE;
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+// const API_URL = import.meta.env.VITE_API_EXAMPLE;
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');

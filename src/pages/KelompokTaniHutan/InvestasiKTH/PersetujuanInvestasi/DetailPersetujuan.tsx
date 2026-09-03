@@ -1,39 +1,79 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { HiOutlineChevronLeft } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
+import { getDetailPersetujuanInvestorAPI, updateStatusPersetujuanInvestorAPI } from '@/services/investasi.service';
 
 const DetailPersetujuan: React.FC = () => {
   const navigate = useNavigate();
-  // const { id } = useParams();
+  const { id } = useParams();
   
   const [isAgreed, setIsAgreed] = useState(false);
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (id) {
+      fetchDetail();
+    }
+  }, [id]);
+
+  const fetchDetail = async () => {
+    try {
+      const response = await getDetailPersetujuanInvestorAPI(id!);
+      setData(response);
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal memuat detail persetujuan.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTolak = async () => {
+    if (!id) return;
+    try {
+      await updateStatusPersetujuanInvestorAPI(id, 'DITOLAK');
+      toast.error('Pengajuan Investasi Ditolak');
+      navigate(-1);
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal menolak pengajuan.');
+    }
+  };
+
+  const handleTerima = async () => {
+    if (!id) return;
+    try {
+      await updateStatusPersetujuanInvestorAPI(id, 'DITERIMA');
+      toast.success('Pengajuan Investasi Diterima!');
+      navigate(-1);
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal menerima pengajuan.');
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-12">Memuat...</div>;
+  }
+
+  if (!data) {
+    return <div className="text-center py-12">Data tidak ditemukan.</div>;
+  }
 
   const projectData = {
-    title: 'Proyek Pembangunan Ekowisata Kebun Stroberi',
-    kth: 'Rimba Nusantara',
-    targetFunding: 'Rp. 100.000.000',
-    persentase: '40%',
-    tenggatWaktu: '20 Agustus 2024',
-    image: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop',
-    deskripsi: 'Lorem ipsum dolor sit amet consectetur. Faucibus faucibus urna nulla amet at nascetur. Enim aliquam sed nibh bibendum. Pulvinar nec risus et vulputate consequat tortor. Quisque tristique in dapibus laoreet eu augue. Maecenas quam eget habitant non. Lobortis lobortis dui phasellus sodales consectetur faucibus mauris eros odio. Diam tortor massa et venenatis ornare tristique nulla.',
+    title: data.program?.nama_program || 'Proyek Tidak Ditemukan',
+    kth: data.program?.nama_kth || '-',
+    targetFunding: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(data.program?.target_dana || 0),
+    persentase: `${data.persentase_kepemilikan || 0}%`,
+    tenggatWaktu: data.program?.batas_waktu_pengumpulan ? new Date(data.program.batas_waktu_pengumpulan).toLocaleDateString('id-ID') : '-',
+    image: data.program?.image_url || 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop',
+    deskripsi: data.program?.deskripsi || '-',
   };
 
   const investorData = {
-    nama: 'Rakha Nabila',
-    email: 'rakha@example.com',
-    noTelepon: '081231231331223',
-    dokumen: 'DokumenPerjanjian-Rakha.pdf'
-  };
-
-  const handleTolak = () => {
-    toast.error('Pengajuan Investasi Ditolak');
-    navigate(-1);
-  };
-
-  const handleTerima = () => {
-    toast.success('Pengajuan Investasi Diterima!');
-    navigate(-1);
+    nama: data.nama || '-',
+    email: data.email || '-',
+    noTelepon: data.no_telp || '-',
+    dokumen: data.dokumen_url ? 'Lihat Dokumen' : 'Tidak Ada Dokumen'
   };
 
   return (
@@ -101,7 +141,7 @@ const DetailPersetujuan: React.FC = () => {
             <div className="flex"><span className="w-56 shrink-0 text-gray-500">Nama</span> <span className="w-4 shrink-0">:</span> <span className="text-gray-800 font-medium">{investorData.nama}</span></div>
             <div className="flex"><span className="w-56 shrink-0 text-gray-500">Email</span> <span className="w-4 shrink-0">:</span> <span className="text-gray-800 font-medium">{investorData.email}</span></div>
             <div className="flex"><span className="w-56 shrink-0 text-gray-500">No Telepon</span> <span className="w-4 shrink-0">:</span> <span className="text-gray-800 font-medium">{investorData.noTelepon}</span></div>
-            <div className="flex"><span className="w-56 shrink-0 text-[#FF4949] font-bold">Dokumen Proposal Investasi</span> <span className="w-4 shrink-0">:</span> <span className="font-bold underline text-gray-800 hover:text-[#185325] cursor-pointer">{investorData.dokumen}</span></div>
+            <div className="flex"><span className="w-56 shrink-0 text-[#FF4949] font-bold">Dokumen Proposal Investasi</span> <span className="w-4 shrink-0">:</span> {data.dokumen_url ? <a href={data.dokumen_url} target="_blank" rel="noreferrer" className="font-bold underline text-gray-800 hover:text-[#185325] cursor-pointer">{investorData.dokumen}</a> : <span className="font-bold text-gray-800">{investorData.dokumen}</span>}</div>
           </div>
         </div>
 
@@ -126,15 +166,15 @@ const DetailPersetujuan: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <button 
               onClick={handleTolak}
-              disabled={!isAgreed}
-              className={`flex-1 py-3.5 text-white text-sm font-bold rounded-full transition-all duration-300 shadow-sm ${isAgreed ? 'bg-[#FF0000] hover:bg-red-700' : 'bg-gray-300 cursor-not-allowed opacity-70'}`}
+              disabled={!isAgreed || data.status_persetujuan !== 'MENUNGGU' && data.status_persetujuan !== 'MENUNGGU_REVISI'}
+              className={`flex-1 py-3.5 text-white text-sm font-bold rounded-full transition-all duration-300 shadow-sm ${isAgreed && (data.status_persetujuan === 'MENUNGGU' || data.status_persetujuan === 'MENUNGGU_REVISI') ? 'bg-[#FF0000] hover:bg-red-700' : 'bg-gray-300 cursor-not-allowed opacity-70'}`}
             >
               Tolak Pengajuan Investasi
             </button>
             <button 
               onClick={handleTerima}
-              disabled={!isAgreed}
-              className={`flex-1 py-3.5 text-white text-sm font-bold rounded-full transition-all duration-300 shadow-sm ${isAgreed ? 'bg-[#185325] hover:bg-[#123d1c]' : 'bg-gray-300 cursor-not-allowed opacity-70'}`}
+              disabled={!isAgreed || data.status_persetujuan !== 'MENUNGGU' && data.status_persetujuan !== 'MENUNGGU_REVISI'}
+              className={`flex-1 py-3.5 text-white text-sm font-bold rounded-full transition-all duration-300 shadow-sm ${isAgreed && (data.status_persetujuan === 'MENUNGGU' || data.status_persetujuan === 'MENUNGGU_REVISI') ? 'bg-[#185325] hover:bg-[#123d1c]' : 'bg-gray-300 cursor-not-allowed opacity-70'}`}
             >
               Terima Pengajuan Investasi
             </button>

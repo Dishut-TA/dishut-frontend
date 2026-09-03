@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { HiOutlineChevronLeft, HiXMark } from 'react-icons/hi2';
+import toast from 'react-hot-toast';
+import { getLaporanProyekBUPMByIdAPI, verifyLaporanProyekBUPMAPI } from '@/services/investasi.service';
 
 type StatusLaporan = 'Menunggu Verifikasi' | 'Revisi' | 'Diverifikasi';
 
@@ -36,19 +38,48 @@ const DetailLaporanProyekStaffBUPM: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams(); 
   const [isModalRevisiOpen, setIsModalRevisiOpen] = useState(false);
+  const [catatanRevisi, setCatatanRevisi] = useState('');
+  
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  let statusLaporan: StatusLaporan = 'Menunggu Verifikasi';
-  if (id === 'LPR-002') statusLaporan = 'Revisi';
-  else if (id === 'LPR-003') statusLaporan = 'Diverifikasi';
+  useEffect(() => {
+    if (id) fetchDetail();
+  }, [id]);
 
-  const getStatusDisplay = () => {
-    if (statusLaporan === 'Menunggu Verifikasi') return { text: 'Menunggu Verifikasi', color: 'text-orange-500' };
-    if (statusLaporan === 'Revisi') return { text: 'Revisi', color: 'text-red-500' };
-    if (statusLaporan === 'Diverifikasi') return { text: 'Diverifikasi', color: 'text-emerald-600' };
-    return { text: '', color: '' };
+  const fetchDetail = async () => {
+    try {
+      const response = await getLaporanProyekBUPMByIdAPI(id!);
+      setData(response);
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal memuat detail laporan proyek');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const statusDisplay = getStatusDisplay();
+  const handleVerify = async (status: string, catatan?: string) => {
+    try {
+      await verifyLaporanProyekBUPMAPI(id!, { status_verifikasi: status, catatan_verifikasi: catatan });
+      toast.success('Berhasil memverifikasi laporan proyek');
+      setIsModalRevisiOpen(false);
+      fetchDetail();
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal memverifikasi laporan proyek');
+    }
+  };
+
+  if (loading) return <div className="text-center py-12">Memuat...</div>;
+  if (!data) return <div className="text-center py-12">Data tidak ditemukan.</div>;
+
+  const getStatusDisplay = (status: string) => {
+    if (status === 'PENDING') return { text: 'Menunggu Verifikasi', color: 'text-orange-500' };
+    if (status === 'REVISION') return { text: 'Revisi', color: 'text-red-500' };
+    if (status === 'APPROVED' || status === 'VERIFIED') return { text: 'Diverifikasi', color: 'text-emerald-600' };
+    return { text: status, color: 'text-gray-700' };
+  };
+
+  const statusDisplay = getStatusDisplay(data.status_verifikasi);
 
   return (
     <div className="flex flex-col w-full max-w-4xl mx-auto pb-20 animate-in fade-in duration-300">
@@ -62,17 +93,17 @@ const DetailLaporanProyekStaffBUPM: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-800 mt-8 md:mt-0">Detail Laporan Proyek</h1>
       </div>
 
-      <div className="px-4 sm:px-0">
+        <div className="px-4 sm:px-0">
         <h2 className="text-base font-bold text-gray-800 mb-4">Informasi Laporan</h2>
         <div className="flex flex-col gap-3">
-          <InfoRow label="Nama Investasi" value="Ekowisata Kebun Stroberi" />
-          <InfoRow label="Periode Laporan" value="24 Agustus 2025" />
+          <InfoRow label="Nama Investasi" value={data.program?.nama_program || '-'} />
+          <InfoRow label="Periode Laporan" value={data.tanggal_laporan ? new Date(data.tanggal_laporan).toLocaleDateString('id-ID') : '-'} />
           <InfoRow label="Status" value={statusDisplay.text} valueColor={statusDisplay.color} />
           
-          {statusLaporan === 'Revisi' && (
+          {data.status_verifikasi === 'REVISION' && data.catatan_verifikasi && (
             <InfoRow 
               label="Catatan" 
-              value="Dokumentasi milestone belum lengkap, mohon tambahkan foto terbaru." 
+              value={data.catatan_verifikasi} 
               isItalic={true} 
             />
           )}
@@ -80,38 +111,41 @@ const DetailLaporanProyekStaffBUPM: React.FC = () => {
 
         <SectionTitle title="Informasi Milestone" />
         <div className="flex flex-col gap-3">
-          <InfoRow label="Nama Milestone" value="Milestone 1" />
-          <InfoRow label="Batas Milestone" value="22/04/2024" />
+          <InfoRow label="Nama Milestone" value={data.milestone?.judul_milestone || '-'} />
+          <InfoRow label="Batas Milestone" value={data.milestone?.target_tanggal ? new Date(data.milestone.target_tanggal).toLocaleDateString('id-ID') : '-'} />
           <InfoRow 
             label="Status" 
             value={
-              <span className="flex items-center gap-1 text-emerald-600">
-                Tercapai <span className="font-bold">✓</span>
+              <span className={`flex items-center gap-1 ${data.milestone?.status === 'TERCAPAI' ? 'text-emerald-600' : 'text-orange-500'}`}>
+                {data.milestone?.status} {data.milestone?.status === 'TERCAPAI' && <span className="font-bold">✓</span>}
               </span>
             } 
           />
-          <InfoRow label="Dokumen Milestone" value="RencanaProyekPembangunanEkowisata.pdf" isLink={true} valueColor="text-gray-800" />
           <InfoRow 
             label="Deskripsi" 
-            value="Lorem ipsum dolor sit amet consectetur. Faucibus faucibus urna nulla amet at nascetur. Enim aliquam sed nibh bibendum. Pulvinar nec risus et vulputate consequat tortor. Quisque tristique in dapibus laoreet eu augue. Maecenas quam eget habitant non. Lobortis lobortis dui phasellus sodales consectetur faucibus mauris eros odio. Diam tortor massa et venenatis ornare tristique nulla." 
+            value={data.milestone?.deskripsi || '-'} 
             valueColor="text-gray-500 font-normal leading-relaxed text-justify"
           />
         </div>
 
         <SectionTitle title="Penggunaan Dana" />
         <div className="flex flex-col gap-3">
-          <InfoRow label="Dana Terpakai" value="Rp 27.000.000" />
-          <InfoRow label="Sisa Dana" value="Rp 3.000.000" />
+          <InfoRow label="Dana Terpakai" value={`Rp ${Number(data.dana_terpakai || 0).toLocaleString('id-ID')}`} />
+          <InfoRow label="Sisa Dana" value={`Rp ${Number((data.program?.target_dana || 0) - (data.dana_terpakai || 0)).toLocaleString('id-ID')}`} />
         </div>
 
         <SectionTitle title="Dokumen Perkembangan" />
         <div className="flex flex-col gap-3">
-          <span className="text-sm text-gray-800 font-medium underline cursor-pointer hover:text-gray-600 w-fit">
-            dokumen_pendukung.pdf
-          </span>
+          {data.dokumen_url ? (
+            <a href={data.dokumen_url} target="_blank" rel="noreferrer" className="text-sm text-gray-800 font-medium underline cursor-pointer hover:text-gray-600 w-fit">
+              Lihat Dokumen Perkembangan
+            </a>
+          ) : (
+            <span className="text-sm text-gray-500">Tidak ada dokumen</span>
+          )}
         </div>
 
-        {statusLaporan === 'Menunggu Verifikasi' && (
+        {data.status_verifikasi === 'PENDING' && (
           <div className="flex flex-col sm:flex-row gap-4 mt-14">
             <button 
               onClick={() => setIsModalRevisiOpen(true)}
@@ -120,6 +154,7 @@ const DetailLaporanProyekStaffBUPM: React.FC = () => {
               Revisi
             </button>
             <button 
+              onClick={() => handleVerify('VERIFIED')}
               className="flex-1 py-3.5 bg-[#185325] text-white text-sm font-bold rounded-full hover:bg-[#123d1c] transition-colors shadow-sm active:scale-95"
             >
               Setujui
@@ -149,14 +184,13 @@ const DetailLaporanProyekStaffBUPM: React.FC = () => {
                 <textarea 
                   rows={4} 
                   placeholder="Tulis keterangan perubahan" 
+                  value={catatanRevisi}
+                  onChange={(e) => setCatatanRevisi(e.target.value)}
                   className="w-full text-sm p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#185325] resize-none"
                 ></textarea>
               </div>
               <button 
-                onClick={() => {
-                  setIsModalRevisiOpen(false);
-                  // Disini nanti tambahin toast success / navigasi
-                }}
+                onClick={() => handleVerify('REVISION', catatanRevisi)}
                 className="w-full py-3 mt-2 bg-[#185325] text-white text-sm font-bold rounded-full hover:bg-[#123d1c] transition-colors shadow-sm active:scale-95"
               >
                 Kirim

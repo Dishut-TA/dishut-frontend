@@ -1,37 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineFunnel, HiOutlineEye } from 'react-icons/hi2';
-
-interface DataInvestor {
-  id: string;
-  no: number;
-  namaInvestor: string;
-  nilaiInvestasi: string;
-  tanggalBergabung: string;
-  status: string;
-}
-
-const mockData: DataInvestor[] = [
-  {
-    id: 'INV-001',
-    no: 1,
-    namaInvestor: 'Raisha Nabila',
-    nilaiInvestasi: 'Rp 50.000.000',
-    tanggalBergabung: '24 Agustus 2025',
-    status: 'Aktif'
-  },
-  {
-    id: 'INV-002',
-    no: 2,
-    namaInvestor: 'Marva',
-    nilaiInvestasi: 'Rp 50.000.000',
-    tanggalBergabung: '24 Agustus 2025',
-    status: 'Selesai'
-  }
-];
+import toast from 'react-hot-toast';
+import { getPersetujuanInvestorAPI } from '@/services/investasi.service';
 
 const DataInvestorIndexKTH: React.FC = () => {
   const navigate = useNavigate();
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      // You can pass status_persetujuan filter if you only want active ones, 
+      // but assuming we show all for Data Investor.
+      const response = await getPersetujuanInvestorAPI();
+      setData(response);
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal memuat data investor.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatRupiah = (angka: number) => {
+    return new Intl.NumberFormat('id-ID', { 
+      style: 'currency', 
+      currency: 'IDR', 
+      maximumFractionDigits: 0 
+    }).format(angka);
+  };
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -67,34 +68,44 @@ const DataInvestorIndexKTH: React.FC = () => {
             </thead>
             
             <tbody className="divide-y divide-gray-100">
-              {mockData.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-700 text-center">
-                    {item.no}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-800 whitespace-nowrap">
-                    {item.namaInvestor}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-800 whitespace-nowrap">
-                    {item.nilaiInvestasi}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-800 whitespace-nowrap">
-                    {item.tanggalBergabung}
-                  </td>
-                  <td className={`px-6 py-4 text-sm whitespace-nowrap ${getStatusStyle(item.status)}`}>
-                    {item.status}
-                  </td>
-                  <td className="px-6 py-4 flex justify-center whitespace-nowrap">
-                    <button 
-                      title="Lihat Detail"
-                      onClick={() => navigate(`/admin/kth/investasi/investor/detail/${item.id}`)}
-                      className="p-1.5 text-gray-500 hover:text-[#185325] hover:bg-[#DCECE0] rounded-lg transition-colors border border-transparent hover:border-[#185325]/20"
-                    >
-                      <HiOutlineEye className="w-5 h-5" />
-                    </button>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-gray-500">Memuat data...</td>
                 </tr>
-              ))}
+              ) : data.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-gray-500">Belum ada data investor.</td>
+                </tr>
+              ) : (
+                data.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-700 text-center">
+                      {index + 1}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-gray-800 whitespace-nowrap">
+                      {item.nama || item.investor?.name || item.investor?.nama || '- (Tidak Ada Data)'}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-800 whitespace-nowrap">
+                      {formatRupiah(item.nominal_pendanaan || 0)}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-800 whitespace-nowrap">
+                      {item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '-'}
+                    </td>
+                    <td className={`px-6 py-4 text-sm whitespace-nowrap ${getStatusStyle(item.status_pembayaran || item.status_persetujuan || '')}`}>
+                      {item.status_pembayaran || item.status_persetujuan || '-'}
+                    </td>
+                    <td className="px-6 py-4 flex justify-center whitespace-nowrap">
+                      <button 
+                        title="Lihat Detail"
+                        onClick={() => navigate(`/admin/kth/investasi/investor/detail/${item.id}`)}
+                        className="p-1.5 text-gray-500 hover:text-[#185325] hover:bg-[#DCECE0] rounded-lg transition-colors border border-transparent hover:border-[#185325]/20"
+                      >
+                        <HiOutlineEye className="w-5 h-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
