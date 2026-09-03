@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { HiOutlineChevronLeft } from 'react-icons/hi2';
+import toast from 'react-hot-toast';
+import { getDetailDataInvestorBUPMAPI, verifyDataInvestorBUPMAPI } from '@/services/investasi.service';
 
 const InfoRow = ({ 
   label, 
@@ -21,26 +23,47 @@ const InfoRow = ({
 const DetailInvestor: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams(); 
-  // USR-001 = Aktif | USR-002 = Selesai
-  const isSelesai = id === 'USR-002';
+  
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // --- MOCK DATA ---
-  const detailData = {
-    nama: 'Raisha Nabila',
-    email: 'raisha@gmail.com',
-    noTelepon: '081234567894',
-    namaProyek: 'Ekowisata Kebun Stroberi',
-    nilaiInvestasi: 'Rp 50.000.000',
-    tanggalBergabung: '24 Agustus 2025',
-    tanggalBerakhir: '24 Agustus 2028',
-    status: isSelesai ? 'Selesai' : 'Aktif'
+  useEffect(() => {
+    if (id) fetchDetail();
+  }, [id]);
+
+  const fetchDetail = async () => {
+    try {
+      const response = await getDetailDataInvestorBUPMAPI(id!);
+      setData(response);
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal memuat detail data investor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const riwayatKeuntungan = [
-    { id: 1, periode: 'Jan - Juni 2025', nominal: 'Rp 8.500.000', status: 'Dibayar ✓' },
-    { id: 2, periode: 'Juli - Des 2025', nominal: 'Rp 9.200.000', status: 'Dibayar ✓' },
-    { id: 3, periode: 'Jan - Jun 2026', nominal: 'Rp 8.000.000', status: isSelesai ? 'Dibayar ✓' : 'Menunggu' },
-  ];
+  const handleVerify = async (status: string) => {
+    try {
+      await verifyDataInvestorBUPMAPI(id!, { status_pembayaran: status, catatan_verifikasi: 'Verifikasi dari Staff BUPM' });
+      toast.success('Berhasil memverifikasi data investor.');
+      fetchDetail();
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal memverifikasi data investor.');
+    }
+  };
+
+  if (loading) return <div className="text-center py-12">Memuat...</div>;
+  if (!data) return <div className="text-center py-12">Data tidak ditemukan.</div>;
+
+  const isSelesai = data.status_pendanaan === 'COMPLETED';
+
+  const formatRupiah = (angka: number) => {
+    return new Intl.NumberFormat('id-ID', { 
+      style: 'currency', 
+      currency: 'IDR', 
+      maximumFractionDigits: 0 
+    }).format(angka);
+  };
 
   return (
     <div className="flex flex-col w-full mx-auto pb-12 animate-in fade-in duration-300">
@@ -59,26 +82,50 @@ const DetailInvestor: React.FC = () => {
         <div className="flex flex-col gap-4">
           <h2 className="text-base font-bold text-gray-800">Informasi Investor</h2>
           <div className="flex flex-col gap-3">
-            <InfoRow label="Nama Investor" value={detailData.nama} />
-            <InfoRow label="Email" value={detailData.email} />
-            <InfoRow label="No Telepon" value={detailData.noTelepon} />
+            <InfoRow label="Nama Investor" value={data.nama || '-'} />
+            <InfoRow label="Email" value={data.email || '-'} />
+            <InfoRow label="No Telepon" value={data.no_telp || '-'} />
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
           <h2 className="text-base font-bold text-gray-800">Informasi Investasi</h2>
           <div className="flex flex-col gap-3">
-            <InfoRow label="Nama Proyek" value={detailData.namaProyek} />
-            <InfoRow label="Nilai Investasi" value={detailData.nilaiInvestasi} />
-            <InfoRow label="Tanggal Bergabung" value={detailData.tanggalBergabung} />
+            <InfoRow label="Nama Proyek" value={data.program?.nama_program_investasi || data.program?.nama_program || '-'} />
+            <InfoRow label="Nilai Investasi" value={formatRupiah(data.nominal_pendanaan || 0)} />
+            <InfoRow label="Tanggal Bergabung" value={data.created_at ? new Date(data.created_at).toLocaleDateString('id-ID') : '-'} />
             
-            {isSelesai && (
-              <InfoRow label="Tanggal Berakhir" value={detailData.tanggalBerakhir} />
+            {data.tanggal_berakhir && (
+              <InfoRow label="Tanggal Berakhir" value={new Date(data.tanggal_berakhir).toLocaleDateString('id-ID')} />
             )}
 
-            <InfoRow label="Status" value={detailData.status} valueColor="text-emerald-600" />
+            <InfoRow label="Status" value={data.status_pembayaran || '-'} valueColor={data.status_pembayaran === 'PENDING' ? 'text-orange-500' : 'text-emerald-600'} />
+            
+            {data.dokumen_url && (
+              <InfoRow 
+                label="Bukti Transfer" 
+                value={<a href={data.dokumen_url} target="_blank" rel="noreferrer" className="underline text-emerald-600 hover:text-emerald-700">Lihat Bukti</a> as any}
+              />
+            )}
           </div>
         </div>
+
+        {data.status_pembayaran === 'PENDING' && (
+          <div className="flex gap-4 mt-4">
+            <button 
+              onClick={() => handleVerify('REJECTED')}
+              className="flex-1 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+            >
+              Tolak Pembayaran
+            </button>
+            <button 
+              onClick={() => handleVerify('VERIFIED')}
+              className="flex-1 py-3 bg-[#185325] text-white font-bold rounded-lg hover:bg-[#123d1c] transition-colors shadow-sm"
+            >
+              Setujui Pembayaran
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-col gap-4 mt-2">
           <h2 className="text-base font-bold text-gray-800">Riwayat Pembagian Keuntungan</h2>
@@ -93,15 +140,21 @@ const DetailInvestor: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {riwayatKeuntungan.map((item) => (
-                  <tr key={item.id} className="border-b border-[#185325]/30 hover:bg-gray-50/50 transition-colors">
-                    <td className="py-4 px-2 font-bold text-gray-700">{item.periode}</td>
-                    <td className="py-4 px-2 font-bold text-gray-800">{item.nominal}</td>
-                    <td className={`py-4 px-2 font-medium ${item.status.includes('Menunggu') ? 'text-gray-800' : 'text-gray-800'}`}>
-                      {item.status}
-                    </td>
+                {(data.riwayat_keuntungan && data.riwayat_keuntungan.length > 0) ? (
+                  data.riwayat_keuntungan.map((item: any) => (
+                    <tr key={item.id} className="border-b border-[#185325]/30 hover:bg-gray-50/50 transition-colors">
+                      <td className="py-4 px-2 font-bold text-gray-700">{item.periode}</td>
+                      <td className="py-4 px-2 font-bold text-gray-800">{formatRupiah(item.nominal)}</td>
+                      <td className={`py-4 px-2 font-medium ${item.status?.includes('Menunggu') ? 'text-orange-600' : 'text-emerald-600'}`}>
+                        {item.status}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="py-4 px-2 text-center text-gray-500 italic">Belum ada riwayat pembagian keuntungan.</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

@@ -23,7 +23,7 @@ const DetailInvestasi: React.FC = () => {
   const projectData = {
     id: programFromState?.id || '',
     title: programFromState?.nama_program || 'Proyek Pembangunan Ekowisata...',
-    kth: programFromState?.user_id ? `${programFromState.user_id}` : 'KTH Cikole Lestari',
+    kth: programFromState?.nama_kth ? `${programFromState.nama_kth}` : 'KTH Cikole Lestari',
     targetFunding: programFromState ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(programFromState.target_dana) : 'Rp. 0',
     persentase: programFromState ? `${programFromState.persentase_keuntungan}%` : '40%',
     tenggatWaktu: programFromState ? new Date(programFromState.batas_waktu_pengumpulan).toLocaleDateString('id-ID') : '-',

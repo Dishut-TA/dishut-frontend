@@ -48,7 +48,7 @@ const SaldoKeuntungan = () => {
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 animate-[fadeIn_0.3s_ease-out]">
       <div className="text-center mb-10">
-        <h2 className="text-primary font-bold text-lg md:text-xl mb-2">Saldo Keuntungan</h2>
+        <h2 className="text-primary font-bold text-lg md:text-xl mb-2">Saldo Pendanaan</h2>
         <div className="flex items-center justify-center gap-3">
           <h1 className="text-3xl font-bold text-[#9C6644] tracking-tight transition-all">
             {isLoading ? "Memuat..." : (isVisible ? "Rp. *******" : formatRupiah(totalBalance))}
@@ -63,7 +63,7 @@ const SaldoKeuntungan = () => {
       </div>
 
       <div className="flex justify-center gap-12 mb-12">
-        <button 
+        {/* <button 
           className="group flex flex-col items-center gap-2 text-primary hover:text-tertiary transition-colors cursor-pointer" 
           onClick={() => navigate('/admin/kth/saldo/isi')}
         >
@@ -71,7 +71,7 @@ const SaldoKeuntungan = () => {
             <HiOutlinePlus size={22} />
           </div>
           <span className="text-xs font-semibold">Isi Saldo</span>
-        </button>
+        </button> */}
         
         <button 
           className="group flex flex-col items-center gap-2 text-primary hover:text-tertiary transition-colors cursor-pointer" 

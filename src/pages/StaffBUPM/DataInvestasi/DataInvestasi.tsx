@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineFunnel, HiOutlineEye, HiOutlineCheckBadge } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
-import { getKthProgramsAPI } from '@/services/investasi.service'; 
+import { getProgramBUPMAPI } from '@/services/investasi.service'; 
 import type { ProgramInvestasi } from '@/utils/interface'; // Sesuaikan lokasi import jika berbeda
 
 const DataInvestasi: React.FC = () => {
@@ -13,7 +13,7 @@ const DataInvestasi: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const result = await getKthProgramsAPI();
+        const result = await getProgramBUPMAPI();
         setData(result);
       } catch (error: any) {
         toast.error(error.message || "Gagal memuat data investasi.");

@@ -1,23 +1,8 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { HiOutlineChevronLeft } from 'react-icons/hi2';
-
-// --- MOCK DATA ---
-const detailData = {
-  nama: 'Raisha Nabila',
-  email: 'raisha@gmail.com',
-  noTelepon: '081234567894',
-  namaProyek: 'Ekowisata Kebun Stroberi',
-  nilaiInvestasi: 'Rp 50.000.000',
-  tanggalBergabung: '24 Agustus 2026',
-  status: 'Aktif'
-};
-
-const riwayatKeuntungan = [
-  { id: 1, periode: 'Jan - Juni 2025', nominal: 'Rp 8.500.000', status: 'Dibayar ✓' },
-  { id: 2, periode: 'Juli - Des 2025', nominal: 'Rp 9.200.000', status: 'Dibayar ✓' },
-  { id: 3, periode: 'Jan - Jun 2026', nominal: 'Rp 8.000.000', status: 'Menunggu' },
-];
+import toast from 'react-hot-toast';
+import { getDetailPersetujuanInvestorAPI } from '@/services/investasi.service';
 
 // --- HELPER COMPONENT ---
 // Membantu merapikan layout baris informasi dengan titik dua (:) sejajar
@@ -31,6 +16,36 @@ const InfoRow = ({ label, value, valueColor = "text-gray-800" }: { label: string
 
 const DetailInvestorKTH: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (id) fetchDetail();
+  }, [id]);
+
+  const fetchDetail = async () => {
+    try {
+      const response = await getDetailPersetujuanInvestorAPI(id!);
+      setData(response);
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal memuat detail data investor.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatRupiah = (angka: number) => {
+    return new Intl.NumberFormat('id-ID', { 
+      style: 'currency', 
+      currency: 'IDR', 
+      maximumFractionDigits: 0 
+    }).format(angka);
+  };
+
+  if (loading) return <div className="text-center py-12">Memuat...</div>;
+  if (!data) return <div className="text-center py-12">Data tidak ditemukan.</div>;
 
   return (
     <div className="flex flex-col w-full mx-auto pb-12 animate-in fade-in duration-300">
@@ -48,19 +63,26 @@ const DetailInvestorKTH: React.FC = () => {
         <div className="flex flex-col gap-4">
           <h2 className="text-base font-bold text-gray-800">Informasi Investor</h2>
           <div className="flex flex-col gap-3">
-            <InfoRow label="Nama Investor" value={detailData.nama} />
-            <InfoRow label="Email" value={detailData.email} />
-            <InfoRow label="No Telepon" value={detailData.noTelepon} />
+            <InfoRow label="Nama Investor" value={data.nama || '-'} />
+            <InfoRow label="Email" value={data.email || '-'} />
+            <InfoRow label="No Telepon" value={data.no_telp || '-'} />
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
           <h2 className="text-base font-bold text-gray-800">Informasi Investasi</h2>
           <div className="flex flex-col gap-3">
-            <InfoRow label="Nama Proyek" value={detailData.namaProyek} />
-            <InfoRow label="Nilai Investasi" value={detailData.nilaiInvestasi} />
-            <InfoRow label="Tanggal Bergabung" value={detailData.tanggalBergabung} />
-            <InfoRow label="Status" value={detailData.status} valueColor="text-emerald-600" />
+            <InfoRow label="Nama Proyek" value={data.program?.nama_program_investasi || data.program?.nama_program || '-'} />
+            <InfoRow label="Nilai Investasi" value={formatRupiah(data.nominal_pendanaan || 0)} />
+            <InfoRow label="Tanggal Bergabung" value={data.created_at ? new Date(data.created_at).toLocaleDateString('id-ID') : '-'} />
+            <InfoRow label="Status" value={data.status_pembayaran || data.status_persetujuan || '-'} valueColor="text-emerald-600" />
+            
+            {data.dokumen_url && (
+              <InfoRow 
+                label="Bukti Transfer" 
+                value={<a href={data.dokumen_url} target="_blank" rel="noreferrer" className="underline text-emerald-600 hover:text-emerald-700">Lihat Bukti</a> as any}
+              />
+            )}
           </div>
         </div>
 
@@ -77,15 +99,21 @@ const DetailInvestorKTH: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {riwayatKeuntungan.map((item) => (
-                  <tr key={item.id} className="border-b border-primary/40 hover:bg-gray-50/50">
-                    <td className="py-4 px-2 font-medium text-gray-800">{item.periode}</td>
-                    <td className="py-4 px-2 font-bold text-gray-800">{item.nominal}</td>
-                    <td className="py-4 px-2 font-medium text-gray-800">
-                      {item.status}
-                    </td>
+                {(data.riwayat_keuntungan && data.riwayat_keuntungan.length > 0) ? (
+                  data.riwayat_keuntungan.map((item: any) => (
+                    <tr key={item.id} className="border-b border-primary/40 hover:bg-gray-50/50">
+                      <td className="py-4 px-2 font-medium text-gray-800">{item.periode}</td>
+                      <td className="py-4 px-2 font-bold text-gray-800">{formatRupiah(item.nominal)}</td>
+                      <td className="py-4 px-2 font-medium text-gray-800">
+                        {item.status}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="py-4 px-2 text-center text-gray-500 italic">Belum ada riwayat pembagian keuntungan.</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
