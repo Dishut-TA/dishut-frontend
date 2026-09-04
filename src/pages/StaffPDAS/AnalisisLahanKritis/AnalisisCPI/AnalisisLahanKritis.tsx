@@ -8,7 +8,7 @@ import HistoryModal from './components/HistoryModal';
 import { HiOutlineClock } from 'react-icons/hi2';
 import * as turf from '@turf/turf';
 
-const API_URL = "http://127.0.0.1:8000/api"; 
+const API_URL = "https://api2.dveljeans.my.id/api"; 
 
 const AnalisisLahanKritis: React.FC = () => {
   const [isInputModalOpen, setIsInputModalOpen] = useState(false);

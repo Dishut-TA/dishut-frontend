@@ -204,7 +204,7 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
                     <div className="flex items-start"><span className="w-32 text-gray-500 shrink-0">Nama Program</span><span className="font-bold text-gray-900">: {data.program}</span></div>
                     <div className="flex items-start"><span className="w-32 text-gray-500 shrink-0">Lokasi Program</span><span className="font-bold text-gray-900">: {data.lokasi.replace('\n', ' ')}</span></div>
                     <div className="flex items-start"><span className="w-32 text-gray-500 shrink-0">Sumber Dana</span><span className="font-bold text-gray-900">: {data.source_type === 'App\\Models\\DonationProgram' ? 'Donasi' : data.source_type === 'App\\Models\\ProgramApbd' ? 'APBD' : 'CSR'}</span></div>
-                    <div className="flex items-start"><span className="w-32 text-gray-500 shrink-0">Target Kegiatan</span><span className="font-bold text-gray-900">: {data.detail?.total_seeds_collected || data.detail?.jumlah_bibit || '-'} Tanaman</span></div>
+                    <div className="flex items-start"><span className="w-32 text-gray-500 shrink-0">Target Kegiatan</span><span className="font-bold text-gray-900">: {data.source_type === 'App\\Models\\DonationProgram' ? data.detail?.total_seeds_bast : (data.detail?.total_seeds_collected || data.detail?.jumlah_bibit || '-')} Tanaman</span></div>
                   </>
                 )}
               </div>
@@ -235,7 +235,7 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
                     <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
                       <div>
                         <p className="text-sm font-bold text-gray-900">P0 - Rencana Penanaman Awal</p>
-                        <p className="text-[11px] text-gray-500 mt-1">Target: {data.detail?.total_seeds_collected || data.detail?.jumlah_bibit || '-'} tanaman | Periode Pelaksanaan: {data.detail?.start_date || data.detail?.tanggal_mulai || '-'} - {data.detail?.end_date || data.detail?.tanggal_selesai || '-'}</p>
+                        <p className="text-[11px] text-gray-500 mt-1">Target: {data.source_type === 'App\\Models\\DonationProgram' ? data.detail?.total_seeds_bast : (data.detail?.total_seeds_collected || data.detail?.jumlah_bibit || '-')} tanaman | Periode Pelaksanaan: {data.detail?.start_date || data.detail?.tanggal_mulai || '-'} - {data.detail?.end_date || data.detail?.tanggal_selesai || '-'}</p>
                       </div>
                       <button 
                         type="button" 
