@@ -29,8 +29,21 @@ export interface KegiatanData {
 }
 
 const formatKegiatanData = (item: any): KegiatanData => {
-  const firstSpec = item.seed?.specifications?.[0];
-  const hargaSatuan = firstSpec ? Number(firstSpec.price) : 15000;
+  let rincianBibit: DetailBibitDana[] = [];
+  let totalBibit = 0;
+
+  if (Array.isArray(item.seed_details)) {
+    rincianBibit = item.seed_details.map((bibit: any) => {
+      const jumlah = Number(bibit.quantity) || 0;
+      totalBibit += jumlah;
+      return {
+        nama: bibit.name || 'Bibit',
+        jumlah: jumlah,
+        hargaSatuan: Number(bibit.price) || 0 
+      };
+    });
+  }
+
   const seedStatus = item.seed_status; 
   const hasBast = Boolean(item.bast_url || item.bast_path);
   const hasProof = Boolean(item.proof_url || item.proof_path);
@@ -42,19 +55,19 @@ const formatKegiatanData = (item: any): KegiatanData => {
   
   return {
     id: item.id,
-    idTransaksi: `TRX-${item.id}`,
+    idTransaksi: `TRX-${item.transaction_id || item.donor_id}`,
     idDonasi: `DNS-${item.id}`,
     program: item.donation_program?.name || 'Program Penghijauan',
     namaDonatur: item.donor?.donor_name || 'Hamba Allah',
-    jumlahBibit: item.seed_quantity || 0,
+    jumlahBibit: totalBibit,
     status: status,
     // storage url sementara local dulu yaw
     bastUrl: item.bast_url || (item.bast_path ? `http://127.0.0.1:8000/storage/${item.bast_path}` : null),
     buktiTanamUrl: item.proof_url || (item.proof_path ? `http://127.0.0.1:8000/storage/${item.proof_path}` : null),
-    rincianBibit: [{
-      nama: item.seed?.nama || 'Bibit Tanaman',
-      jumlah: item.seed_quantity || 0,
-      hargaSatuan: hargaSatuan
+    rincianBibit: rincianBibit.length > 0 ? rincianBibit : [{
+      nama: 'Bibit Tanaman',
+      jumlah: 0,
+      hargaSatuan: 0
     }]
   };
 };

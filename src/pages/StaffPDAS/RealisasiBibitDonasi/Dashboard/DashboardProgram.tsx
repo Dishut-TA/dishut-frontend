@@ -62,18 +62,29 @@ const DashboardProgram: React.FC = () => {
   };
 
   const handleOpenVerifikasi = (item: any) => {
+    let rincianBibit: any[] = [];
+    if (Array.isArray(item.seed_details)) {
+      rincianBibit = item.seed_details.map((bibit: any) => ({
+        nama: bibit.name || "Bibit",
+        jumlah: Number(bibit.quantity) || 0,
+        hargaSatuan: bibit.price || 0
+      }));
+    } else {
+      rincianBibit = [{ nama: "Bibit", jumlah: item.seed_quantity || 0, hargaSatuan: 0 }];
+    }
+
     setModal({
       isOpen: true,
       data: {
         id: item.id,
-        idTransaksi: `TRX-${item.id}`,
+        idTransaksi: `TRX-${item.transaction_id || item.donor_id}`,
         idDonasi: `DNS-${item.id}`,
         namaDonatur: item.donor?.donor_name || "Hamba Allah",
         program: item.donation_program?.name || "Program Umum",
-        jumlahBibit: item.seed_quantity || 0,
+        jumlahBibit: item.seed_quantity || 0, // This uses the total we passed earlier
         status: "Menunggu Verifikasi",
-        rincianBibit: [{ nama: item.seed?.name || "Bibit", jumlah: item.seed_quantity || 0, hargaSatuan: 0 }],
-        proof_url: item.proof_url
+        rincianBibit: rincianBibit,
+        proof_url: item.proof_url || item.proof_path
       }
     });
   };
@@ -126,22 +137,34 @@ const DashboardProgram: React.FC = () => {
             <div className="p-6 flex-1 bg-slate-50/50 min-h-75">
               {donaturPending.length > 0 ? (
                 <div className="space-y-4">
-                  {donaturPending.map((item) => (
+                  {donaturPending.map((item) => {
+                    let totalBibit = 0;
+                    let bibitNames: string[] = [];
+                    if (Array.isArray(item.seed_details)) {
+                      item.seed_details.forEach((bibit: any) => {
+                        totalBibit += Number(bibit.quantity) || 0;
+                        if (bibit.name) bibitNames.push(bibit.name);
+                      });
+                    }
+                    const bibitDisplayStr = bibitNames.length > 0 ? `(${bibitNames.join(', ')})` : '';
+
+                    return (
                     <div key={item.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#185325]/50 transition-colors">
                       <div>
                         <h4 className="font-bold text-gray-800">{item.donor?.donor_name || "Donatur"}</h4>
                         <p className="text-sm text-gray-500 mt-1">
-                          {item.seed_quantity} Bibit {item.seed?.name ? `(${item.seed.name})` : ""} - {item.donation_program?.name || "Program"}
+                          {totalBibit} Bibit {bibitDisplayStr} - {item.donation_program?.name || "Program"}
                         </p>
                       </div>
                       <button 
-                        onClick={() => handleOpenVerifikasi(item)}
+                        onClick={() => handleOpenVerifikasi({ ...item, seed_quantity: totalBibit })} // Pass total to modal
                         className="px-5 py-2 bg-[#185325] hover:bg-[#123d1c] text-white text-xs font-bold rounded-full transition-colors active:scale-95 shadow-sm whitespace-nowrap cursor-pointer"
                       >
                         Verifikasi Data
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="h-full flex items-center justify-center text-gray-400 text-sm font-medium py-12">Tidak ada data verifikasi baru.</div>
