@@ -20,7 +20,6 @@ const CPITable: React.FC<CPITableProps> = ({ data, onViewDetail }) => {
               <th className="px-4 py-4 font-bold">Status Kekritisan</th>
               <th className="px-4 py-4 font-bold">Skor CPI</th>
               <th className="px-4 py-4 font-bold">Rekomendasi Intervensi</th>
-              <th className="px-4 py-4 font-bold">Status Kelayakan</th>
               <th className="px-4 py-4 font-bold">Aksi</th>
             </tr>
           </thead>
@@ -44,7 +43,6 @@ const CPITable: React.FC<CPITableProps> = ({ data, onViewDetail }) => {
   <td className="px-4 py-4 text-[#185325] font-bold text-left max-w-xs truncate" title={row.rekomendasi}>
     {row.rekomendasi}
   </td>
-  <td className="px-4 py-4 text-gray-600 font-semibold">{row.statusKelayakan}</td>
   <td className="px-4 py-4 flex justify-center">
     <button 
       onClick={() => onViewDetail(row)}

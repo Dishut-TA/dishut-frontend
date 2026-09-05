@@ -26,8 +26,6 @@ const CreateProgram: React.FC = () => {
     namaProgram: '', 
     lokasiLahan: '', 
     kthPelaksana: '', 
-    tanggalMulai: '', 
-    tanggalSelesai: '', 
     deskripsi: ''
   });
   const [selectedProjectId, setSelectedProjectId] = useState('');
@@ -37,6 +35,7 @@ const CreateProgram: React.FC = () => {
   const [selectedSpecId, setSelectedSpecId] = useState('');
   const [isFetchingBibit, setIsFetchingBibit] = useState(true);
   const [isLoading, setIsLoading] = useState(false);  
+  const [timeLimitOption, setTimeLimitOption] = useState<'dengan_batas' | 'tanpa_batas'>('dengan_batas');
 
   const [projects, setProjects] = useState<any[]>([]);
 
@@ -127,7 +126,7 @@ const CreateProgram: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (daftarBibit.length === 0) return toast.error('Silakan pilih minimal satu jenis bibit.');
-    if (!form.tanggalMulai || !form.tanggalSelesai) return toast.error('Harap lengkapi periode tanggal program.');
+    
     if (!form.lokasiLahan) return toast.error('Silakan pilih project lahan kritis terlebih dahulu.');
 
     setIsLoading(true);
@@ -143,8 +142,6 @@ const CreateProgram: React.FC = () => {
       formData.append('total_seeds_collected', '0');
       formData.append('total_seeds_realized', '0');
       if (imageFile) formData.append('image', imageFile);
-      formData.append('start_date', form.tanggalMulai); 
-      formData.append('end_date', form.tanggalSelesai);
 
       daftarBibit.forEach(bibit => formData.append('jenis_bibit[]', bibit.seed_id.toString()));
 
@@ -206,16 +203,6 @@ const CreateProgram: React.FC = () => {
               <div>
                 <label className="block text-sm font-bold text-slate-800 mb-2">KTH Terkait (Otomatis)</label>
                 <input type="text" disabled value={form.kthPelaksana} placeholder="Akan terisi otomatis berdasarkan wilayah..." className="w-full bg-slate-50 border border-slate-200 rounded-full px-4 py-3.5 text-slate-500 cursor-not-allowed transition-all shadow-sm" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-800 mb-2">Tanggal Mulai <span className="text-red-500">*</span></label>
-                <input type="date" name="tanggalMulai" required value={form.tanggalMulai} onChange={handleInputChange} className="w-full bg-white border border-slate-200 rounded-full px-4 py-3.5 text-slate-800 focus:ring-2 focus:ring-[#009262]/20 focus:border-[#009262] transition-all shadow-sm" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-800 mb-2">Tanggal Selesai <span className="text-red-500">*</span></label>
-                <input type="date" name="tanggalSelesai" required value={form.tanggalSelesai} onChange={handleInputChange} className="w-full bg-white border border-slate-200 rounded-full px-4 py-3.5 text-slate-800 focus:ring-2 focus:ring-[#009262]/20 focus:border-[#009262] transition-all shadow-sm" />
               </div>
 
               <div className="md:col-span-2">

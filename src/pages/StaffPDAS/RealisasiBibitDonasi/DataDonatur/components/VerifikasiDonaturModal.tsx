@@ -70,13 +70,31 @@ const VerifikasiDonaturModal: React.FC<VerifikasiDonaturModalProps> = ({
 
           <div className="space-y-3">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Bukti Pembayaran</h3>
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-2 flex justify-center items-center">
+            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 flex flex-col justify-center items-center gap-4">
               {donatur.proof_url || donatur.receipt_path ? (
-                <img 
-                  src={donatur.proof_url || donatur.receipt_path || ''} 
-                  alt="Bukti Pembayaran" 
-                  className="max-w-full max-h-60 object-contain rounded-lg shadow-sm"
-                />
+                <>
+                  {(donatur.proof_url || donatur.receipt_path || '').toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/) ? (
+                    <img 
+                      src={donatur.proof_url || donatur.receipt_path || ''} 
+                      alt="Bukti Pembayaran" 
+                      className="max-w-full max-h-60 object-contain rounded-lg shadow-sm"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center text-gray-500 py-4">
+                      <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                      <span className="text-sm font-medium">Dokumen Bukti (Bukan Gambar)</span>
+                    </div>
+                  )}
+                  <a 
+                    href={donatur.proof_url || donatur.receipt_path || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                    Buka Bukti Pembayaran
+                  </a>
+                </>
               ) : (
                 <span className="text-sm text-gray-400 py-6">Bukti pembayaran tidak tersedia</span>
               )}

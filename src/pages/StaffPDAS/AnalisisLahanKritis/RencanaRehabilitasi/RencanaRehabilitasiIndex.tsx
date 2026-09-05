@@ -70,7 +70,7 @@ const RencanaRehabilitasiIndex: React.FC = () => {
         <p className="text-sm text-gray-500">Kelola rencana rehabilitasi berdasarkan hasil validasi lapangan.</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
           <div className="flex items-center gap-2 text-gray-500 mb-2">
             <HiOutlineMapPin className="w-5 h-5 text-indigo-500" />
@@ -89,17 +89,6 @@ const RencanaRehabilitasiIndex: React.FC = () => {
           <div className="flex items-end justify-between">
             <h2 className="text-3xl font-bold text-gray-800">{data.filter(d => d.status_kelayakan === 'Layak').length}</h2>
             <span className="text-xs text-emerald-600 font-bold mb-1 bg-emerald-50 px-2 py-0.5 rounded">Lokasi</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
-          <div className="flex items-center gap-2 text-gray-500 mb-2">
-            <HiOutlineXCircle className="w-5 h-5 text-red-500" />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Tidak Layak</span>
-          </div>
-          <div className="flex items-end justify-between">
-            <h2 className="text-3xl font-bold text-gray-800">{data.filter(d => d.status_kelayakan === 'Tidak Layak').length}</h2>
-            <span className="text-xs text-red-600 font-bold mb-1 bg-red-50 px-2 py-0.5 rounded">Lokasi</span>
           </div>
         </div>
 

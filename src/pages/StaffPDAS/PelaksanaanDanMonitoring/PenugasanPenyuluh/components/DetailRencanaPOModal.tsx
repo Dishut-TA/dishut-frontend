@@ -37,7 +37,9 @@ const UsersIcon = ({ className }: { className?: string }) => (
 const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onClose, data }) => {
   if (!isOpen) return null;
 
-  const targetKegiatan = data?.detail?.total_seeds_collected || data?.detail?.jumlah_bibit || data?.detail?.target_amount || 0;
+  const targetKegiatan = data?.source_type === 'App\\Models\\DonationProgram' 
+    ? (data?.detail?.total_seeds_bast || 0) 
+    : (data?.detail?.total_seeds_collected || data?.detail?.jumlah_bibit || data?.detail?.target_amount || 0);
   const tahunProgram = data?.detail?.start_date ? new Date(data.detail.start_date).getFullYear() 
                      : data?.detail?.tanggal_mulai ? new Date(data.detail.tanggal_mulai).getFullYear() 
                      : data?.detail?.created_at ? new Date(data.detail.created_at).getFullYear() : '-';
@@ -185,7 +187,7 @@ const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onC
               <div className="p-4 border border-gray-100 rounded-xl flex items-center gap-3 shadow-sm">
                 <LeafIcon className="w-8 h-8 text-emerald-600 opacity-80" />
                 <div>
-                  <p className="text-xl font-bold text-gray-900 leading-none">{data?.detail?.seeds?.length || '-'}</p>
+                  <p className="text-xl font-bold text-gray-900 leading-none">{data?.source_type === 'App\\Models\\DonationProgram' ? (data?.detail?.allocations_bast?.length || '-') : (data?.detail?.seeds?.length || '-')}</p>
                   <p className="text-[10px] text-gray-500 mt-1">Jenis Tanaman</p>
                 </div>
               </div>

@@ -9,23 +9,35 @@ import { getDonationsAPI, updateDonationStatusAPI, deleteDonationAPI } from '@/s
 import ConfirmAlert from '@/components/ConfirmAlert';
 
 const formatDonationData = (item: any): DonaturData => {
-  const spec = item.seed?.specifications?.[0];
-  const harga = spec ? Number(spec.price) : 0;
+  let rincianBibit: any[] = [];
+  let totalBibit = 0;
+
+  if (Array.isArray(item.seed_details)) {
+    rincianBibit = item.seed_details.map((bibit: any) => {
+      const jumlah = Number(bibit.quantity) || 0;
+      totalBibit += jumlah;
+      return {
+        nama: bibit.name || 'Bibit',
+        jumlah: jumlah,
+        hargaSatuan: bibit.price || 0 
+      };
+    });
+  }
 
   return {
     id: item.id,
-    idTransaksi: `TRX-${item.donor_id}`,
+    idTransaksi: `TRX-${item.transaction_id || item.donor_id}`,
     idDonasi: `DNS-${item.id}`,
     namaDonatur: item.donor?.donor_name || 'Hamba Allah',
     program: item.donation_program?.name || 'Program Umum',
-    jumlahBibit: item.seed_quantity || 0,
+    jumlahBibit: totalBibit,
     status: item.seed_status || 'Menunggu Verifikasi',
     tanggalDonasi: item.created_at,
-    proof_url: item.proof_url,
-    rincianBibit: [{
-      nama: item.seed?.nama || item.seed?.name || 'Bibit',
-      jumlah: item.seed_quantity || 0,
-      hargaSatuan: harga
+    proof_url: item.transaction?.proof_url || item.proof_url,
+    rincianBibit: rincianBibit.length > 0 ? rincianBibit : [{
+      nama: 'Bibit',
+      jumlah: 0,
+      hargaSatuan: 0
     }],
   };
 };

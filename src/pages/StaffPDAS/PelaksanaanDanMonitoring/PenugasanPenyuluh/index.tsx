@@ -70,7 +70,9 @@ const PenugasanPenyuluh: React.FC = () => {
         const res = await fetch(`${API_URL}/penugasan`, {
           headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
         });
+        
         const json = await res.json();
+        console.log('response api: ', json);
         setPenugasanData(json.data || []);
       } catch (e) {
         console.error(e);
