@@ -1,36 +1,43 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineMagnifyingGlass, HiOutlineEye } from 'react-icons/hi2';
+
+const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
 
 const PenugasanEvaluasiStaff: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Data yang ditarik khusus untuk Staff yang sedang login
-  const mockData = [
-    {
-      id: 'ST-001',
-      proyek: 'Rehabilitasi DAS A.N SKK Migas - PT Pertamina EP',
-      lokasi: 'Kec. Kasokandel, Kab. Majalengka',
-      periode: 'Penanaman Awal (P0)',
-      peran: 'Ketua Tim',
-      tanggalMulai: '26 Feb 2026',
-      status: 'MENUNGGU EVALUASI',
-    },
-    {
-      id: 'ST-002',
-      proyek: 'Rehabilitasi Lahan Kompensasi PT. Jawa Satu Power',
-      lokasi: 'Desa Sudalarang, Kab. Garut',
-      periode: 'Pemeliharaan II (P2)',
-      peran: 'Anggota Tim',
-      tanggalMulai: '11 Mar 2026',
-      status: 'EVALUASI SELESAI',
-    }
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/evaluasi`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const json = await res.json();
+        setData(json.data || []);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-  const filteredData = mockData.filter((item) =>
-    item.proyek.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.lokasi.toLowerCase().includes(searchTerm.toLowerCase())
+  const getProgramName = (item: any) => {
+    const p = item.penugasanable;
+    return p?.name || p?.nama_program || '-';
+  };
+  const getLokasi = (item: any) => {
+    const p = item.penugasanable;
+    return p?.location || p?.lokasi || (p?.kth ? `${p.kth.desa_kelurahan || p.kth.name || ''}` : '-');
+  };
+
+  const filteredData = data.filter((item) =>
+    getProgramName(item).toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getLokasi(item).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -67,27 +74,35 @@ const PenugasanEvaluasiStaff: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
+              {isLoading && (
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400">Memuat data...</td></tr>
+              )}
+              {!isLoading && filteredData.length === 0 && (
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400">Belum ada penugasan evaluasi</td></tr>
+              )}
               {filteredData.map((item) => {
-                const isPending = item.status === 'MENUNGGU EVALUASI';
-                
+                const isPending = item.status === 'Menunggu Evaluasi';
+                const isSelesai = item.status === 'Monitoring Selesai';
                 return (
                   <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-5">
-                      <div className="font-bold text-gray-800">{item.proyek}</div>
-                      <div className="text-xs text-gray-500 mt-1">{item.lokasi}</div>
+                      <div className="font-bold text-gray-800">{getProgramName(item)}</div>
+                      <div className="text-xs text-gray-500 mt-1">{getLokasi(item)}</div>
                     </td>
                     <td className="px-6 py-5">
                       <span className="text-xs font-bold text-[#185325] bg-[#EBF8F1] border border-[#C6EBD6] px-3 py-1 rounded-full whitespace-nowrap">
-                        {item.periode}
+                        {item.periode_monitoring || '-'}
                       </span>
-                      <div className="text-[10px] text-gray-400 font-medium mt-2">Mulai: {item.tanggalMulai}</div>
+                      <div className="text-[10px] text-gray-400 font-medium mt-2">Mulai: {item.tanggal_penugasan ? new Date(item.tanggal_penugasan).toLocaleDateString('id-ID') : '-'}</div>
                     </td>
                     <td className="px-6 py-5 text-sm font-semibold text-gray-700">
-                      {item.peran}
+                      {item.penyuluh?.name || '-'}
                     </td>
                     <td className="px-6 py-5 text-center">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        isPending ? 'bg-[#FEF3C7] text-yellow-800 border border-yellow-200' : 'bg-emerald-50 text-[#185325] border border-emerald-200'
+                        isPending ? 'bg-[#FEF3C7] text-yellow-800 border border-yellow-200' :
+                        isSelesai ? 'bg-emerald-50 text-[#185325] border border-emerald-200' :
+                        'bg-blue-50 text-blue-700 border border-blue-200'
                       }`}>
                         {item.status}
                       </span>

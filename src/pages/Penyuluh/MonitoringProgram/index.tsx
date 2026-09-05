@@ -176,23 +176,31 @@ const MonitoringProgramRehabilitasi: React.FC = () => {
       try {
         const res = await getMyPenugasanAPI();
         const apiData = res.data || [];
-        
+
+        // NOTE: endpoint /penugasan/me (myPenugasan()) mengembalikan model
+        // Penugasan MENTAH (snake_case + relasi polymorphic "penugasanable"),
+        // BUKAN format hasil olahan seperti di endpoint index().
+        // Jadi field yang dipakai harus: jenis_kegiatan, penugasanable_type,
+        // penugasanable, dan batas_waktu — BUKAN jenisKegiatan/detail/source_type/batasWaktu.
         const monitoringData = apiData
-          .filter((p: any) => p.jenisKegiatan === 'Monitoring Program')
+          .filter((p: any) => p.jenis_kegiatan === 'Monitoring')
           .map((p: any) => {
-            const detail = p.detail || {};
+            const detail = p.penugasanable || {};
             let programName = '-';
             let location = '-';
             let sumber = '-';
 
-            if (p.source_type === 'App\\Models\\DonationProgram') {
+            if (p.penugasanable_type === 'App\\Models\\DonationProgram') {
               programName = detail.name || '-';
               location = detail.location || '-';
               sumber = 'Donasi';
-            } else if (p.source_type === 'App\\Models\\ProgramApbd' || p.source_type === 'App\\Models\\ProgramCsr') {
+            } else if (
+              p.penugasanable_type === 'App\\Models\\ProgramApbd' ||
+              p.penugasanable_type === 'App\\Models\\ProgramCsr'
+            ) {
               programName = detail.nama_program || '-';
               location = detail.lokasi || '-';
-              sumber = p.source_type.includes('Apbd') ? 'APBD' : 'CSR';
+              sumber = p.penugasanable_type.includes('Apbd') ? 'APBD' : 'CSR';
             }
 
             return {
@@ -200,8 +208,10 @@ const MonitoringProgramRehabilitasi: React.FC = () => {
               nama: programName,
               lokasi: location,
               sumberDana: sumber,
-              tanggalSelesai: p.batasWaktu ? new Date(p.batasWaktu).toLocaleDateString('id-ID') : '-',
-              status: p.status
+              tanggalSelesai: p.batas_waktu
+                ? new Date(p.batas_waktu).toLocaleDateString('id-ID')
+                : '-',
+              status: p.status,
             };
           });
 

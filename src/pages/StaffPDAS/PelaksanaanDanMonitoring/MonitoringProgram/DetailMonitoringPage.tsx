@@ -33,6 +33,7 @@ const DetailMonitoringPage: React.FC = () => {
 
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [programData, setProgramData] = useState<any>(null);
+  const [dokumentasiList, setDokumentasiList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -93,7 +94,14 @@ const DetailMonitoringPage: React.FC = () => {
         const totalTanaman = tanamanHidup + tanamanMati;
         const persentaseHidup = totalTanaman > 0 ? ((tanamanHidup / totalTanaman) * 100).toFixed(2) : 0;
         const countGeotag = petakUkurs.length;
-        const countDokumentasi = (penugasan.dokumentasi || []).length;
+        const dokumentasiFromApi = penugasan.dokumentasi || [];
+        const countDokumentasi = dokumentasiFromApi.length;
+
+        const geotagList = petakUkurs.map((pu: any) => ({
+          lat: pu.latitude ?? pu.lat ?? pu.lokasi_latitude ?? pu.latitude_ ?? null,
+          lng: pu.longitude ?? pu.lng ?? pu.lokasi_longitude ?? pu.longitude_ ?? null,
+          nama: pu.nama || pu.nama_petak || `PU ${pu.id || ''}`.trim() || 'Petak Ukur'
+        })).filter((point: any) => point.lat !== null && point.lng !== null);
 
         setProgramData({
           id: penugasan.id,
@@ -115,8 +123,11 @@ const DetailMonitoringPage: React.FC = () => {
             persentaseHidup,
             countGeotag,
             countDokumentasi
-          }
+          },
+          geotagList,
+          dokumentasiList: dokumentasiFromApi
         });
+        setDokumentasiList(dokumentasiFromApi);
       } catch (error) {
         console.error("Gagal mengambil data detail:", error);
       } finally {
@@ -129,6 +140,13 @@ const DetailMonitoringPage: React.FC = () => {
   if (isLoading) {
     return <div className="p-8 text-center text-slate-500">Memuat data...</div>;
   }
+
+  const dokumentasiPreview = (dokumentasiList || [])
+    .map((item: any) => item.url || item.foto_url || item.file_url || item.path || item.image_url || item.gambar_url)
+    .filter(Boolean)
+    .slice(0, 4);
+
+  const geotagPreview = (programData?.geotagList || []).slice(0, 6);
 
   const getBadgeColor = (status: string) => {
     switch (status) {
@@ -530,8 +548,8 @@ const DetailMonitoringPage: React.FC = () => {
   );
 
   const renderViewMenungguEvaluasi = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <div className="lg:col-span-8 space-y-6">
+    <div className="w-full">
+      <div className="space-y-6">
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h3 className="text-sm font-bold text-slate-900 mb-4">Ringkasan Program</h3>
@@ -622,146 +640,52 @@ const DetailMonitoringPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
             <h3 className="text-sm font-bold text-gray-900 mb-3">Peta Lokasi Monitoring</h3>
-            <div className="h-32 bg-gray-100 rounded-lg bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400')] bg-cover bg-center"></div>
+            {geotagPreview.length > 0 ? (
+              <div className="h-40 rounded-lg overflow-hidden border border-slate-200 bg-gradient-to-br from-emerald-50 via-sky-50 to-slate-100 relative">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(34,197,94,0.2),transparent_30%),radial-gradient(circle_at_70%_35%,rgba(59,130,246,0.18),transparent_28%),linear-gradient(135deg,#effff5,#eef8ff,#f8fafc)]" />
+                {geotagPreview.map((point: any, index: number) => (
+                  <div
+                    key={`${point.lat}-${point.lng}-${index}`}
+                    className="absolute -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                      left: `${18 + (index * 17) % 72}%`,
+                      top: `${30 + (index * 19) % 50}%`
+                    }}
+                  >
+                    <div className="relative">
+                      <span className="block w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-white shadow-md" />
+                      <span className="absolute -top-1 left-1/2 -translate-x-1/2 text-[8px] font-bold text-slate-700 bg-white/80 px-1 rounded">{index + 1}</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="absolute bottom-2 left-2 bg-white/85 backdrop-blur-sm rounded-md px-2 py-1 text-[10px] font-semibold text-slate-700 shadow-sm">
+                  {geotagPreview.length} titik geotag dari data asli
+                </div>
+              </div>
+            ) : (
+              <div className="h-40 rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center text-[11px] text-slate-500">
+                Belum ada data geotag untuk peta lokasi
+              </div>
+            )}
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
             <h3 className="text-sm font-bold text-gray-900 mb-3">Dokumentasi Foto</h3>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4].map(i => <div key={i} className="flex-1 bg-gray-200 rounded h-20 bg-[url('https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=150')] bg-cover"></div>)}
-            </div>
+            {dokumentasiPreview.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {dokumentasiPreview.map((url, i) => (
+                  <img key={`${url}-${i}`} src={url} alt={`Dokumentasi monitoring ${i + 1}`} className="w-full h-20 object-cover rounded-lg border border-slate-200" />
+                ))}
+              </div>
+            ) : (
+              <div className="h-32 rounded-lg border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-[11px] text-slate-500">
+                Belum ada dokumentasi foto
+              </div>
+            )}
           </div>
         </div>
 
       </div>
 
-      <div className="lg:col-span-4 space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center text-center">
-          <div className="w-16 h-16 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-3">
-            <HiOutlineClock className="w-8 h-8" />
-          </div>
-          <h2 className="text-xl font-bold mb-2 text-orange-600">Menunggu Evaluasi</h2>
-          <p className="text-xs text-gray-500">
-            Hasil monitoring telah dikirim dan sedang menunggu proses evaluasi oleh Tim Evaluasi.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100">
-            <h3 className="text-sm font-bold text-slate-800">Ringkasan Status</h3>
-          </div>
-          <div className="p-5 space-y-3.5 text-xs">
-            <div className="grid grid-cols-[130px_10px_1fr] items-center">
-              <span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineClock className="w-4 h-4" /> Status Saat Ini</span>
-              <span className="text-slate-500">:</span>
-              <span>
-                <span className={`px-2 py-0.5 rounded-full border ${getBadgeColor(currentStatus)} font-bold text-[10px]`}>{currentStatus}</span>
-              </span>
-            </div>
-            <div className="grid grid-cols-[130px_10px_1fr] items-start">
-              <span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineCalendar className="w-4 h-4" /> Periode</span>
-              <span className="text-slate-500">:</span>
-              <span className="text-slate-900 font-semibold">P2</span>
-            </div>
-            <div className="grid grid-cols-[130px_10px_1fr] items-start">
-              <span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineUserPlus className="w-4 h-4" /> KTH</span>
-              <span className="text-slate-500">:</span>
-              <span className="text-slate-900 font-semibold">KTH Karangsong Lestari</span>
-            </div>
-            <div className="grid grid-cols-[130px_10px_1fr] items-start">
-              <span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineUserPlus className="w-4 h-4" /> Penyuluh</span>
-              <span className="text-slate-500">:</span>
-              <span className="text-slate-900 font-semibold">Ahmad Fauzi</span>
-            </div>
-            <div className="grid grid-cols-[130px_10px_1fr] items-start">
-              <span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineDocumentText className="w-4 h-4" /> Kabupaten</span>
-              <span className="text-slate-500">:</span>
-              <span className="text-slate-900 font-semibold">Indramayu</span>
-            </div>
-            <div className="grid grid-cols-[130px_10px_1fr] items-start">
-              <span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineMapPin className="w-4 h-4" /> Luas Area</span>
-              <span className="text-slate-500">:</span>
-              <span className="text-slate-900 font-semibold">4,2 Ha</span>
-            </div>
-            <div className="grid grid-cols-[130px_10px_1fr] items-start">
-              <span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineCalendar className="w-4 h-4" /> Jadwal</span>
-              <span className="text-slate-500">:</span>
-              <span className="text-slate-900 font-semibold">10 Mei 2026 – 27 Mei 2026</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Timeline Program (Mirip Siap Monitoring) */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <h3 className="text-sm font-bold text-slate-900 mb-4">Timeline Program</h3>
-          <div className="space-y-6">
-            <div className="flex gap-4 relative">
-              <div className="absolute left-2.75 top-7 bottom-6 w-0.5 bg-green-200"></div>
-              <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center shrink-0 z-10 shadow-sm border-2 border-white">
-                <HiOutlineCheckCircle className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-0.5">
-                  <p className="text-xs font-bold text-gray-900">P0 - Penanaman Awal</p>
-                  <span className="text-[9px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200">Selesai</span>
-                </div>
-                <p className="text-[10px] text-gray-500">10 Mei 2026</p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 relative">
-              <div className="absolute left-2.75 top-7 bottom-6 w-0.5 bg-green-200"></div>
-              <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center shrink-0 z-10 shadow-sm border-2 border-white">
-                <HiOutlineCheckCircle className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-0.5">
-                  <p className="text-xs font-bold text-gray-900">P1 - Monitoring P1</p>
-                  <span className="text-[9px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200">Selesai</span>
-                </div>
-                <p className="text-[10px] text-gray-500">27 Mei – 12 Jun 2026</p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 relative">
-              <div className="absolute left-2.75 top-7 bottom-6 w-0.5 bg-gray-200"></div>
-              <div className="w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center shrink-0 z-10 shadow-sm border-2 border-white">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-0.5">
-                  <p className="text-xs font-bold text-gray-900">P2 - Monitoring P2 (Aktif)</p>
-                  <span className="text-[9px] font-bold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded">Menunggu Evaluasi</span>
-                </div>
-                <p className="text-[10px] text-gray-500">22 Mei 2026 – 27 Mei 2026</p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 relative">
-              <div className="absolute left-2.75 top-7 bottom-6 w-0.5 bg-gray-200"></div>
-              <div className="w-6 h-6 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center shrink-0 z-10"></div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-0.5">
-                  <p className="text-[11px] font-bold text-gray-500">P3 - Monitoring P3</p>
-                  <span className="text-[9px] font-bold text-gray-500">Menunggu</span>
-                </div>
-                <p className="text-[10px] text-gray-400">Jul 2026</p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 relative">
-              <div className="w-6 h-6 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center shrink-0 z-10"></div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-0.5">
-                  <p className="text-[11px] font-bold text-gray-500">P4 - Monitoring P4</p>
-                  <span className="text-[9px] font-bold text-gray-500">Menunggu</span>
-                </div>
-                <p className="text-[10px] text-gray-400">Sep 2026</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
     </div>
   );
 

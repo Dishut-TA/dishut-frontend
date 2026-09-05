@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   HiOutlineChevronLeft, 
   HiOutlineMapPin, 
   HiOutlineCloud, 
-  HiOutlineTrash,
   HiOutlineCheckCircle
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
-interface PetakUkur {
+const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
+
+interface PetakUkurForm {
   id: number;
   nomorPetak: string;
   rencana: number;
@@ -17,39 +18,57 @@ interface PetakUkur {
   tinggiRata: string;
   koordinat: string;
   keterangan: string;
+  foto: File | null;
 }
 
 const InputEvaluasiLapanganStaff: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); 
+  const { id } = useParams();
 
-  const infoTugas = {
-    noSurat: id || 'ST.76/TKTRH/RRPKH/DAS.04.03/B/03/2026',
-    namaProyek: 'Rehabilitasi Lahan Kompensasi PT. Jawa Satu Power',
-    lokasi: 'Hutan Lindung Desa Sudalarang, Kab. Garut',
-    luas: 29.78,
-  };
-
-  const [petakList, setPetakList] = useState<PetakUkur[]>([
-    { id: Date.now(), nomorPetak: 'PU-1', rencana: 0, tumbuh: 0, tinggiRata: '', koordinat: '', keterangan: '' }
-  ]);
+  const [infoTugas, setInfoTugas] = useState<any>(null);
+  const [petakList, setPetakList] = useState<PetakUkurForm[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState<number | null>(null);
 
-  const handleAddPetak = () => {
-    const newId = petakList.length + 1;
-    setPetakList([...petakList, {
-      id: Date.now(),
-      nomorPetak: `PU-${newId}`,
-      rencana: 0, tumbuh: 0, tinggiRata: '', koordinat: '', keterangan: ''
-    }]);
-  };
+  useEffect(() => {
+    const fetchDetail = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/evaluasi/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const json = await res.json();
+        const d = json.data;
+        const program = d?.penugasanable;
 
-  const handleRemovePetak = (removeId: number) => {
-    if (petakList.length === 1) return toast.error('Minimal harus ada 1 Petak Ukur.');
-    setPetakList(petakList.filter(p => p.id !== removeId));
-  };
+        setInfoTugas({
+          noSurat: `TGS-${d?.id}`,
+          namaProyek: program?.name || program?.nama_program || '-',
+          lokasi: program?.location || program?.lokasi || '-',
+          luas: program?.analysisResultZone?.luas_ha || program?.analysis_result_zone?.luas_ha || 0,
+        });
 
-  const handleChange = (idToChange: number, field: keyof PetakUkur, value: any) => {
+        const petaks: PetakUkurForm[] = (d?.petakUkurs || []).map((pu: any) => ({
+          id: pu.id,
+          nomorPetak: pu.nama,
+          rencana: pu.dataTanamans?.length || 0,
+          tumbuh: pu.eval_bibit_tumbuh ?? 0,
+          tinggiRata: pu.eval_tinggi_rata ?? '',
+          koordinat: pu.eval_koordinat ?? '',
+          keterangan: pu.eval_keterangan ?? '',
+          foto: null,
+        }));
+        setPetakList(petaks);
+      } catch (e) {
+        console.error(e);
+        toast.error('Gagal memuat data penugasan');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (id) fetchDetail();
+  }, [id]);
+
+  const handleChange = (idToChange: number, field: keyof PetakUkurForm, value: any) => {
     setPetakList(petakList.map(p => p.id === idToChange ? { ...p, [field]: value } : p));
   };
 
@@ -86,21 +105,61 @@ const InputEvaluasiLapanganStaff: React.FC = () => {
     return 'text-[#00A859]';
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (petakList.length === 0) {
+      toast.error('Tidak ada Petak Ukur untuk dievaluasi.');
+      return;
+    }
     const hasEmptyKoordinat = petakList.some(p => p.koordinat === '');
     if (hasEmptyKoordinat) {
       toast.error('Gagal menyimpan: Pastikan semua Petak Ukur sudah memiliki titik koordinat GPS.');
       return;
     }
 
-    toast.success('Data Lapangan Berhasil Disimpan & Dikirim ke Kabid untuk Verifikasi!');
-    
-    setTimeout(() => {
-        navigate('/admin/staff/evaluasi/penugasan'); 
-    }, 1500);
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      petakList.forEach((p, index) => {
+        formData.append(`petaks[${index}][petak_ukur_id]`, String(p.id));
+        formData.append(`petaks[${index}][bibit_tumbuh]`, String(p.tumbuh || 0));
+        formData.append(`petaks[${index}][tinggi_rata]`, String(p.tinggiRata || ''));
+        formData.append(`petaks[${index}][koordinat]`, p.koordinat);
+        formData.append(`petaks[${index}][keterangan]`, p.keterangan || '');
+        if (p.foto) {
+          formData.append(`petaks[${index}][foto]`, p.foto);
+        }
+      });
+
+      const res = await fetch(`${API_URL}/evaluasi/${id}/submit`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      if (res.ok) {
+        toast.success('Data Lapangan Berhasil Disimpan! Status penugasan diperbarui menjadi Selesai.');
+        setTimeout(() => {
+          navigate('/admin/staff/evaluasi/penugasan');
+        }, 1200);
+      } else {
+        let message = 'Gagal menyimpan data evaluasi';
+        try {
+          const errJson = await res.json();
+          message = errJson.message || Object.values(errJson.errors || {}).flat().join(', ') || message;
+        } catch {}
+        toast.error(message);
+      }
+    } catch (err) {
+      toast.error('Terjadi kesalahan jaringan');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (isLoading) return <div className="p-8 text-center text-sm text-gray-400">Memuat data penugasan...</div>;
 
   return (
     <div className="flex flex-col gap-6 w-full mx-auto pb-12">
@@ -116,12 +175,17 @@ const InputEvaluasiLapanganStaff: React.FC = () => {
           </div>
           
           <div className="bg-[#f8fbf9] border border-[#DCECE0] rounded-xl p-5 text-sm text-gray-700 space-y-2">
-            <p><span className="font-semibold text-gray-500 inline-block w-32">No. Penugasan</span>: <span className="font-bold">{infoTugas.noSurat}</span></p>
-            <p><span className="font-semibold text-gray-500 inline-block w-32">Program</span>: <span className="font-bold text-[#185325]">{infoTugas.namaProyek}</span></p>
-            <p><span className="font-semibold text-gray-500 inline-block w-32">Lokasi & Luas</span>: <span className="font-bold">{infoTugas.lokasi} ({infoTugas.luas} Ha)</span></p>
+            <p><span className="font-semibold text-gray-500 inline-block w-32">No. Penugasan</span>: <span className="font-bold">{infoTugas?.noSurat}</span></p>
+            <p><span className="font-semibold text-gray-500 inline-block w-32">Program</span>: <span className="font-bold text-[#185325]">{infoTugas?.namaProyek}</span></p>
+            <p><span className="font-semibold text-gray-500 inline-block w-32">Lokasi & Luas</span>: <span className="font-bold">{infoTugas?.lokasi} ({infoTugas?.luas} Ha)</span></p>
           </div>
         </div>
 
+        {petakList.length === 0 ? (
+          <div className="text-center py-10 text-sm text-gray-400">
+            Belum ada Petak Ukur pada penugasan Pelaksanaan Penanaman sebelumnya, sehingga tidak ada yang bisa dievaluasi.
+          </div>
+        ) : (
         <form onSubmit={handleSubmit}>
           <div className="space-y-8 mb-8">
             {petakList.map((petak, index) => {
@@ -136,17 +200,8 @@ const InputEvaluasiLapanganStaff: React.FC = () => {
                       <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#DCECE0] text-[#185325] font-bold text-sm">
                         {index + 1}
                       </span>
-                      <input 
-                        type="text" 
-                        required
-                        value={petak.nomorPetak} 
-                        onChange={(e) => handleChange(petak.id, 'nomorPetak', e.target.value)} 
-                        className="font-bold text-[#185325] text-lg bg-transparent border-b border-transparent focus:border-[#185325] focus:outline-none w-24"
-                      />
+                      <span className="font-bold text-[#185325] text-lg">{petak.nomorPetak}</span>
                     </div>
-                    <button type="button" onClick={() => handleRemovePetak(petak.id)} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors border border-transparent hover:border-red-200">
-                      <HiOutlineTrash className="w-5 h-5" />
-                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -154,11 +209,11 @@ const InputEvaluasiLapanganStaff: React.FC = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Bibit Rencana (P0)</label>
-                          <input type="number" required value={petak.rencana || ''} onChange={(e) => handleChange(petak.id, 'rencana', parseInt(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-800 focus:ring-[#185325] outline-none" placeholder="Cth: 110" />
+                          <input type="number" readOnly value={petak.rencana} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-500 bg-gray-100 outline-none" />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Bibit Tumbuh</label>
-                          <input type="number" required value={petak.tumbuh || ''} onChange={(e) => handleChange(petak.id, 'tumbuh', parseInt(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-800 focus:ring-[#185325] outline-none" placeholder="Cth: 98" />
+                          <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Bibit Tumbuh <span className="text-red-500">*</span></label>
+                          <input type="number" required min={0} value={petak.tumbuh || ''} onChange={(e) => handleChange(petak.id, 'tumbuh', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-800 focus:ring-[#185325] outline-none" placeholder="Cth: 98" />
                         </div>
                       </div>
                       
@@ -187,11 +242,18 @@ const InputEvaluasiLapanganStaff: React.FC = () => {
                       </div>
                       
                       <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1.5">Upload Foto Dokumentasi <span className="text-red-500">*</span></label>
+                        <label className="block text-xs font-bold text-gray-700 mb-1.5">Upload Foto Dokumentasi</label>
                         <div className="relative">
-                          <input type="file" id={`foto-${petak.id}`} required className="hidden" accept="image/*" />
+                          <input
+                            type="file"
+                            id={`foto-${petak.id}`}
+                            className="hidden"
+                            accept="image/*"
+                            capture="environment"
+                            onChange={(e) => handleChange(petak.id, 'foto', e.target.files?.[0] || null)}
+                          />
                           <label htmlFor={`foto-${petak.id}`} className="flex items-center justify-between w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors">
-                            <span>Pilih foto lapangan...</span>
+                            <span>{petak.foto ? petak.foto.name : 'Ambil / pilih foto lapangan...'}</span>
                             <HiOutlineCloud className="w-5 h-5 text-[#185325]" />
                           </label>
                         </div>
@@ -209,19 +271,13 @@ const InputEvaluasiLapanganStaff: React.FC = () => {
             })}
           </div>
 
-          <div className="flex justify-center mb-10">
-            <button type="button" onClick={handleAddPetak} className="px-6 py-2.5 border-2 border-dashed border-[#185325] text-[#185325] hover:bg-[#f0f9f3] text-sm font-bold rounded-xl transition-colors flex items-center gap-2">
-              + Tambah Petak Ukur Berikutnya
-            </button>
-          </div>
-
           <div className="border-t border-gray-100 pt-6 flex justify-end">
-            <button type="submit" className="w-full md:w-auto px-10 py-3.5 bg-[#185325] hover:bg-[#123d1c] text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm">
-              <HiOutlineCheckCircle className="w-5 h-5 stroke-2" /> Simpan & Kirim Verifikasi
+            <button type="submit" disabled={isSubmitting} className="w-full md:w-auto px-10 py-3.5 bg-[#185325] hover:bg-[#123d1c] text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60">
+              <HiOutlineCheckCircle className="w-5 h-5 stroke-2" /> {isSubmitting ? 'Menyimpan...' : 'Simpan & Selesaikan Evaluasi'}
             </button>
           </div>
-
         </form>
+        )}
       </div>
     </div>
   );

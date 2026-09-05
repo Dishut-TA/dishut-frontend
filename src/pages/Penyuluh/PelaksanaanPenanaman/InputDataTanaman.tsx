@@ -41,6 +41,9 @@ const MapEvents = ({ onMapClick }: { onMapClick: (lat: number, lng: number) => v
   return null;
 };
 
+const API_BASE_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
+const STORAGE_URL = API_BASE_URL.replace(/\/api\/?$/, '') + '/storage';
+
 const PelaksanaanWizard: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -55,9 +58,91 @@ const PelaksanaanWizard: React.FC = () => {
   const [tanamanList, setTanamanList] = useState<any[]>([]);
   const [availableSeeds, setAvailableSeeds] = useState<any[]>([]);
   const [formTanaman, setFormTanaman] = useState({ seed_id: '', nama_tanaman: '', tinggi: '', catatan: '', photo: null as File | null });
+  const [tanamanPhotoPreview, setTanamanPhotoPreview] = useState<string | null>(null);
+  const [tanamanCoords, setTanamanCoords] = useState<{ lat: number | null; lng: number | null; error: string | null }>({ lat: null, lng: null, error: null });
   const [isNewSeed, setIsNewSeed] = useState(false);
   const [dokumentasiList, setDokumentasiList] = useState<any[]>([]);
   const [formDokumentasi, setFormDokumentasi] = useState({ jenis_dokumentasi: 'Foto Sebelum', keterangan: '', file: null as File | null });
+  const [dokumentasiPreview, setDokumentasiPreview] = useState<string | null>(null);
+  const [puTablePage, setPuTablePage] = useState(1);
+  const PU_TABLE_PAGE_SIZE = 10;
+
+  useEffect(() => {
+    if (!formTanaman.photo) {
+      setTanamanPhotoPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(formTanaman.photo);
+    setTanamanPhotoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [formTanaman.photo]);
+
+  const normalizeSeedOption = (item: any, index: number) => {
+    if (!item) return null;
+
+    const seedId = item.id ?? item.seed_id ?? item.seedId ?? item.seed_specification_id ?? item.seedSpecificationId ?? index + 1;
+    const seedName = item.name ?? item.nama_bibit ?? item.bibit_nama ?? item.jenis_bibit ?? item.nama ?? item.seed_name ?? item.label;
+
+    if (!seedName) return null;
+
+    return {
+      id: String(seedId),
+      name: String(seedName),
+    };
+  };
+
+  const buildSeedOptionsFromProgram = (programData: any) => {
+    const source = programData?.penugasanable || programData;
+    const candidates = [
+      source?.jenis_bibit,
+      source?.jenisBibit,
+      source?.seed_specifications,
+      source?.seedSpecifications,
+      source?.bibit,
+      source?.bibits,
+    ];
+
+    for (const list of candidates) {
+      if (Array.isArray(list) && list.length > 0) {
+        const normalized = list.map(normalizeSeedOption).filter(Boolean);
+        if (normalized.length > 0) return normalized;
+      }
+    }
+
+    return [];
+  };
+
+  const fetchCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setTanamanCoords({ lat: null, lng: null, error: 'Perangkat tidak mendukung GPS' });
+      return;
+    }
+    setTanamanCoords(prev => ({ ...prev, error: null }));
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setTanamanCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude, error: null });
+      },
+      () => {
+        setTanamanCoords({ lat: null, lng: null, error: 'Gagal mengambil lokasi. Aktifkan izin GPS.' });
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  useEffect(() => {
+    if (currentStep === 3) fetchCurrentLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (!formDokumentasi.file) {
+      setDokumentasiPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(formDokumentasi.file);
+    setDokumentasiPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [formDokumentasi.file]);
 
   useEffect(() => {
     const fetchAPI = async () => {
@@ -98,7 +183,7 @@ const PelaksanaanWizard: React.FC = () => {
           periodeMulai: d.tanggal_mulai ? new Date(d.tanggal_mulai).toLocaleDateString('id-ID') : '-',
           periodeSelesai: d.batas_waktu ? new Date(d.batas_waktu).toLocaleDateString('id-ID') : '-',
           jenisKegiatan: d.jenis_kegiatan,
-          targetPerPu: '50',
+          targetPerPu: (parseInt(totalPu) || 0) > 0 ? String(Math.max(1, Math.floor((parseInt(targetBibit) || 0) / (parseInt(totalPu) || 1)))) : '0',
           luasArea: d.penugasanable?.analysisResultZone?.luas_ha || 0
         });
 
@@ -129,10 +214,16 @@ const PelaksanaanWizard: React.FC = () => {
         });
         setPuList(updatedList);
         
-        // Fetch Seeds
-        const resSeeds = await fetch(`${API_URL}/penugasan/${id}/seeds`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const jsonSeeds = await resSeeds.json();
-        setAvailableSeeds(jsonSeeds.data || []);
+        // Prioritaskan bibit dari data program donasi / APBD / CSR, baru fallback ke endpoint seeds bawaan penugasan
+        const programSeedOptions = buildSeedOptionsFromProgram(d);
+        if (programSeedOptions.length > 0) {
+          setAvailableSeeds(programSeedOptions);
+        } else {
+          const resSeeds = await fetch(`${API_URL}/penugasan/${id}/seeds`, { headers: { 'Authorization': `Bearer ${token}` } });
+          const jsonSeeds = await resSeeds.json();
+          const fallbackSeeds = (jsonSeeds.data || []).map(normalizeSeedOption).filter(Boolean);
+          setAvailableSeeds(fallbackSeeds.length > 0 ? fallbackSeeds : []);
+        }
         
         // Fetch Dokumentasi
         const resDok = await fetch(`${API_URL}/penugasan/${id}/dokumentasi`, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -211,6 +302,37 @@ const PelaksanaanWizard: React.FC = () => {
     }
   };
 
+  const refreshPuList = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
+      const resPU = await fetch(`${API_URL}/penugasan/${id}/petak-ukur`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const jsonPU = await resPU.json();
+      const dataPU = jsonPU.data || [];
+      const puCount = parseInt(penugasanData?.totalPu || '0') || dataPU.length;
+
+      const updatedList = Array.from({ length: puCount }, (_, i) => {
+        if (dataPU[i]) {
+          return {
+            id: dataPU[i].id,
+            num: i + 1,
+            status: dataPU[i].status,
+            luas: `${dataPU[i].luas} ha`,
+            dataTanamans: dataPU[i].data_tanamans || dataPU[i].dataTanamans || []
+          };
+        }
+        return { id: null, num: i + 1, status: 'Belum Dibuat', luas: '-', dataTanamans: [] };
+      });
+      setPuList(updatedList);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    setPuTablePage(1);
+  }, [puList.length]);
+
   const fetchTanamanByPu = async (puId: number) => {
     try {
       const token = localStorage.getItem('token');
@@ -228,32 +350,41 @@ const PelaksanaanWizard: React.FC = () => {
     if (!activePu) return toast.error('Pilih PU terlebih dahulu');
     if (!isNewSeed && !formTanaman.seed_id) return toast.error('Pilih jenis tanaman');
     if (isNewSeed && !formTanaman.nama_tanaman) return toast.error('Isi nama tanaman baru');
+    if (!formTanaman.tinggi) return toast.error('Isi tinggi tanaman');
+    if (!formTanaman.photo) return toast.error('Foto tanaman wajib diambil');
+    if (tanamanCoords.lat === null || tanamanCoords.lng === null) return toast.error('Koordinat lokasi belum tersedia, coba ambil ulang lokasi');
 
     try {
       const token = localStorage.getItem('token');
       const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
-      const payload: any = {
-        jumlah: 1, // Default 1 per entry
-        kondisi_tanaman: 'Baik',
-        keterangan: formTanaman.catatan
-      };
-      
+
+      const formData = new FormData();
+      formData.append('jumlah', '1');
+      formData.append('kondisi_tanaman', 'Baik');
+      formData.append('keterangan', formTanaman.catatan);
+      formData.append('tinggi_tanaman', formTanaman.tinggi);
+      formData.append('latitude', String(tanamanCoords.lat));
+      formData.append('longitude', String(tanamanCoords.lng));
+      formData.append('photo', formTanaman.photo);
+
       if (isNewSeed) {
-        payload.nama_tanaman = formTanaman.nama_tanaman;
+        formData.append('nama_tanaman', formTanaman.nama_tanaman);
       } else {
-        payload.seed_id = formTanaman.seed_id;
+        formData.append('seed_id', formTanaman.seed_id);
       }
 
       const res = await fetch(`${API_URL}/petak-ukur/${activePu.id}/tanaman`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(payload)
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
       });
       if (res.ok) {
         toast.success('Data tanaman disimpan');
         setFormTanaman({ seed_id: '', nama_tanaman: '', tinggi: '', catatan: '', photo: null });
         setIsNewSeed(false);
         fetchTanamanByPu(activePu.id);
+        refreshPuList();
+        fetchCurrentLocation();
       } else {
         toast.error('Gagal menyimpan tanaman');
       }
@@ -265,6 +396,7 @@ const PelaksanaanWizard: React.FC = () => {
   const handleUploadDokumentasi = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formDokumentasi.file) return toast.error('Pilih file terlebih dahulu');
+    if (!formDokumentasi.keterangan.trim()) return toast.error('Isi keterangan foto terlebih dahulu');
     try {
       const token = localStorage.getItem('token');
       const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
@@ -284,9 +416,16 @@ const PelaksanaanWizard: React.FC = () => {
         const resDok = await fetch(`${API_URL}/penugasan/${id}/dokumentasi`, { headers: { 'Authorization': `Bearer ${token}` } });
         const jsonDok = await resDok.json();
         setDokumentasiList(jsonDok.data || []);
+      } else {
+        let message = 'Gagal mengunggah dokumentasi';
+        try {
+          const errJson = await res.json();
+          message = errJson.message || Object.values(errJson.errors || {}).flat().join(', ') || message;
+        } catch {}
+        toast.error(message);
       }
     } catch (e) {
-      toast.error('Terjadi kesalahan upload');
+      toast.error('Terjadi kesalahan jaringan saat upload');
     }
   };
 
@@ -665,30 +804,71 @@ const PelaksanaanWizard: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-800 mb-2">3. Foto Tanaman</label>
-              <div className="grid grid-cols-2 gap-4 mb-3">
-                <div className="relative rounded-lg overflow-hidden border border-slate-200 h-28 group bg-slate-100 flex items-center justify-center">
-                  <span className="text-xs text-slate-400">Belum ada foto</span>
+              <label className="block text-[11px] font-bold text-slate-800 mb-2">3. Foto Tanaman <span className="text-red-500">*</span></label>
+              {formTanaman.photo ? (
+                <div className="relative rounded-lg overflow-hidden border border-slate-200 h-40 bg-slate-100 mb-3">
+                  <img src={tanamanPhotoPreview || undefined} className="w-full h-full object-cover" alt="Preview tanaman" />
+                  <button
+                    type="button"
+                    onClick={() => setFormTanaman({ ...formTanaman, photo: null })}
+                    className="absolute top-2 right-2 bg-white/90 hover:bg-white text-slate-600 rounded-full p-1.5 shadow-sm"
+                  >
+                    <HiOutlineArrowPath className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-                <button type="button" className="rounded-lg border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center h-28 hover:bg-slate-100 transition-colors">
-                  <HiOutlineCamera className="w-6 h-6 text-slate-400 mb-1.5" />
-                  <span className="text-xs font-bold text-slate-700">Ambil Foto</span>
-                </button>
-              </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <label className="rounded-lg border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center h-28 hover:bg-slate-100 transition-colors cursor-pointer">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setFormTanaman({ ...formTanaman, photo: e.target.files[0] });
+                        }
+                      }}
+                    />
+                    <HiOutlineCamera className="w-6 h-6 text-slate-400 mb-1.5" />
+                    <span className="text-xs font-bold text-slate-700">Ambil Foto</span>
+                  </label>
+                  <label className="rounded-lg border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center h-28 hover:bg-slate-100 transition-colors cursor-pointer">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setFormTanaman({ ...formTanaman, photo: e.target.files[0] });
+                        }
+                      }}
+                    />
+                    <HiOutlinePhoto className="w-6 h-6 text-slate-400 mb-1.5" />
+                    <span className="text-xs font-bold text-slate-700">Dari Galeri</span>
+                  </label>
+                </div>
+              )}
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-800 mb-2">4. Koordinat Lokasi (Otomatis)</label>
-              <div className="grid grid-cols-2 gap-4 mb-3">
+              <div className="grid grid-cols-2 gap-4 mb-2">
                 <div>
                   <span className="block text-[10px] text-slate-500 mb-1">Latitude</span>
-                  <input type="text" readOnly value="-7.6321456" className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-xs bg-slate-50 font-semibold text-slate-700 shadow-sm" />
+                  <input type="text" readOnly value={tanamanCoords.lat !== null ? tanamanCoords.lat.toFixed(7) : 'Mengambil...'} className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-xs bg-slate-50 font-semibold text-slate-700 shadow-sm" />
                 </div>
                 <div>
                   <span className="block text-[10px] text-slate-500 mb-1">Longitude</span>
-                  <input type="text" readOnly value="107.6587921" className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-xs bg-slate-50 font-semibold text-slate-700 shadow-sm" />
+                  <input type="text" readOnly value={tanamanCoords.lng !== null ? tanamanCoords.lng.toFixed(7) : 'Mengambil...'} className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-xs bg-slate-50 font-semibold text-slate-700 shadow-sm" />
                 </div>
               </div>
+              {tanamanCoords.error && (
+                <p className="text-[10px] text-red-600 mb-1">{tanamanCoords.error}</p>
+              )}
+              <button type="button" onClick={fetchCurrentLocation} className="text-blue-600 text-[10px] font-bold flex items-center gap-1 hover:underline">
+                <HiOutlineArrowPath className="w-3 h-3" /> Ambil ulang lokasi
+              </button>
             </div>
 
             <div>
@@ -730,8 +910,12 @@ const PelaksanaanWizard: React.FC = () => {
             {tanamanList.map((item, index) => (
               <div key={item.id} className="flex gap-3 items-start border-b border-slate-100 pb-4 last:border-0 last:pb-0">
                 <div className="w-5 h-5 rounded text-[#008A4B] font-bold text-[10px] flex items-center justify-center shrink-0 mt-1">{index + 1}</div>
-                <div className="w-12 h-12 bg-slate-100 rounded border border-slate-200 flex items-center justify-center">
-                  <PiPlant className="text-slate-400 w-6 h-6" />
+                <div className="w-12 h-12 bg-slate-100 rounded border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                  {item.foto_url ? (
+                    <img src={`${STORAGE_URL}/${item.foto_url}`} className="w-full h-full object-cover" alt={item.nama_tanaman || 'Foto tanaman'} />
+                  ) : (
+                    <PiPlant className="text-slate-400 w-6 h-6" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-slate-900 truncate">{item.nama_tanaman || item.seed?.name || 'Tanaman'}</p>
@@ -762,19 +946,19 @@ const PelaksanaanWizard: React.FC = () => {
           <div className="grid grid-cols-4 gap-2 mb-4">
             <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
               <p className="text-[9px] text-slate-500 mb-1 leading-tight font-medium">Target Tanaman</p>
-              <p className="text-base font-black text-slate-900">50</p>
+              <p className="text-base font-black text-slate-900">{penugasanData?.targetPerPu || '0'}</p>
             </div>
             <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
               <p className="text-[9px] text-slate-500 mb-1 leading-tight font-medium">Sudah Input</p>
-              <p className="text-base font-black text-slate-900">12</p>
+              <p className="text-base font-black text-slate-900">{tanamanList.length}</p>
             </div>
             <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
               <p className="text-[9px] text-slate-500 mb-1 leading-tight font-medium">Belum Input</p>
-              <p className="text-base font-black text-slate-900">38</p>
+              <p className="text-base font-black text-slate-900">{Math.max(0, (parseInt(penugasanData?.targetPerPu || '0')) - tanamanList.length)}</p>
             </div>
             <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
               <p className="text-[9px] text-slate-500 mb-1 leading-tight font-medium">Kelengkapan Data</p>
-              <p className="text-base font-black text-slate-900">100%</p>
+              <p className="text-base font-black text-slate-900">{Math.min(100, Math.round((tanamanList.length / (parseInt(penugasanData?.targetPerPu || '1') || 1)) * 100))}%</p>
             </div>
           </div>
           <div className="flex items-start gap-2 text-[10px] text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-100">
@@ -862,18 +1046,60 @@ const PelaksanaanWizard: React.FC = () => {
 
               <div>
                  <label className="block text-xs font-bold text-slate-800 mb-3">2. Foto Dokumentasi <span className="text-red-500">*</span></label>
-                 <label className="w-full h-36 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center hover:bg-slate-100 transition-colors mb-4 cursor-pointer">
-                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        setFormDokumentasi({...formDokumentasi, file: e.target.files[0]});
-                      }
-                    }} />
-                    <HiOutlineCamera className="w-8 h-8 text-slate-400 mb-2" />
-                    <span className="text-sm font-bold text-slate-700">
-                      {formDokumentasi.file ? formDokumentasi.file.name : 'Klik untuk ambil foto'}
-                    </span>
-                    <span className="text-xs text-slate-500 mt-1">atau seret file ke sini</span>
-                 </label>
+
+                 {formDokumentasi.file ? (
+                   <div className="w-full rounded-xl border border-slate-300 bg-slate-50 p-3 mb-4">
+                      <div className="relative w-full h-40 rounded-lg overflow-hidden mb-3 bg-slate-200">
+                         <img
+                           src={dokumentasiPreview || undefined}
+                           className="w-full h-full object-cover"
+                           alt="Preview dokumentasi"
+                         />
+                         <button
+                           type="button"
+                           onClick={() => setFormDokumentasi({ ...formDokumentasi, file: null })}
+                           className="absolute top-2 right-2 bg-white/90 hover:bg-white text-slate-600 rounded-full p-1.5 shadow-sm"
+                         >
+                           <HiOutlineArrowPath className="w-3.5 h-3.5" />
+                         </button>
+                      </div>
+                      <p className="text-xs font-bold text-slate-700 truncate">{formDokumentasi.file.name}</p>
+                      <p className="text-[10px] text-slate-500">{(formDokumentasi.file.size / 1024).toFixed(0)} KB</p>
+                   </div>
+                 ) : (
+                   <div className="grid grid-cols-2 gap-3 mb-4">
+                      <label className="h-32 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer">
+                         <input
+                           type="file"
+                           className="hidden"
+                           accept="image/*"
+                           capture="environment"
+                           onChange={(e) => {
+                             if (e.target.files && e.target.files[0]) {
+                               setFormDokumentasi({ ...formDokumentasi, file: e.target.files[0] });
+                             }
+                           }}
+                         />
+                         <HiOutlineCamera className="w-7 h-7 text-slate-400 mb-2" />
+                         <span className="text-xs font-bold text-slate-700 text-center px-2">Ambil Foto (Kamera)</span>
+                      </label>
+
+                      <label className="h-32 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer">
+                         <input
+                           type="file"
+                           className="hidden"
+                           accept="image/*"
+                           onChange={(e) => {
+                             if (e.target.files && e.target.files[0]) {
+                               setFormDokumentasi({ ...formDokumentasi, file: e.target.files[0] });
+                             }
+                           }}
+                         />
+                         <HiOutlinePhoto className="w-7 h-7 text-slate-400 mb-2" />
+                         <span className="text-xs font-bold text-slate-700 text-center px-2">Pilih dari Galeri</span>
+                      </label>
+                   </div>
+                 )}
               </div>
 
               <div>
@@ -900,7 +1126,7 @@ const PelaksanaanWizard: React.FC = () => {
        <div className="lg:col-span-4 space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
              <div className="flex justify-between items-center mb-5">
-                <h3 className="font-bold text-slate-900 text-sm">Dokumentasi Kegiatan (8)</h3>
+                <h3 className="font-bold text-slate-900 text-sm">Dokumentasi Kegiatan ({dokumentasiList.length})</h3>
                 <button className="px-2.5 py-1.5 border border-slate-300 rounded-md text-[10px] font-bold flex items-center gap-1 hover:bg-slate-50 shadow-sm text-slate-700">
                   <HiOutlineAdjustmentsHorizontal className="w-3.5 h-3.5" /> Filter
                 </button>
@@ -910,7 +1136,7 @@ const PelaksanaanWizard: React.FC = () => {
                 {dokumentasiList.map((item: any, i) => (
                    <div key={item.id} className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm flex flex-col">
                       <div className="h-20 w-full relative">
-                         <img src={`http://127.0.0.1:8000/storage/${item.file_path}`} className="w-full h-full object-cover" alt={item.jenis_dokumentasi} />
+                         <img src={`${STORAGE_URL}/${item.file_path}`} className="w-full h-full object-cover" alt={item.jenis_dokumentasi} />
                          <div className="absolute top-1.5 left-1.5 w-4 h-4 bg-white/90 rounded text-[#008A4B] font-bold text-[9px] flex items-center justify-center shadow-sm">{i + 1}</div>
                       </div>
                       <div className="p-2 flex-1 flex flex-col">
@@ -937,19 +1163,19 @@ const PelaksanaanWizard: React.FC = () => {
             <div className="grid grid-cols-4 gap-2 mb-4">
               <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
                 <p className="text-[8px] text-slate-500 mb-1 font-medium">Total Foto</p>
-                <p className="text-sm font-black text-slate-900">8 <span className="text-[9px] font-normal text-slate-500">foto</span></p>
+                <p className="text-sm font-black text-slate-900">{dokumentasiList.length} <span className="text-[9px] font-normal text-slate-500">foto</span></p>
               </div>
               <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
                 <p className="text-[8px] text-slate-500 mb-1 font-medium">Proses Penanaman</p>
-                <p className="text-sm font-black text-slate-900">4 <span className="text-[9px] font-normal text-slate-500">foto</span></p>
+                <p className="text-sm font-black text-slate-900">{dokumentasiList.filter((d: any) => d.jenis_dokumentasi === 'Proses Penanaman').length} <span className="text-[9px] font-normal text-slate-500">foto</span></p>
               </div>
               <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
                 <p className="text-[8px] text-slate-500 mb-1 font-medium">Kondisi Lokasi</p>
-                <p className="text-sm font-black text-slate-900">3 <span className="text-[9px] font-normal text-slate-500">foto</span></p>
+                <p className="text-sm font-black text-slate-900">{dokumentasiList.filter((d: any) => d.jenis_dokumentasi === 'Kondisi Lokasi').length} <span className="text-[9px] font-normal text-slate-500">foto</span></p>
               </div>
               <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
                 <p className="text-[8px] text-slate-500 mb-1 font-medium">Partisipasi Masyarakat</p>
-                <p className="text-sm font-black text-slate-900">1 <span className="text-[9px] font-normal text-slate-500">foto</span></p>
+                <p className="text-sm font-black text-slate-900">{dokumentasiList.filter((d: any) => d.jenis_dokumentasi === 'Partisipasi Masyarakat').length} <span className="text-[9px] font-normal text-slate-500">foto</span></p>
               </div>
             </div>
             <div className="flex items-start gap-2 text-[10px] text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-100">
@@ -968,6 +1194,9 @@ const PelaksanaanWizard: React.FC = () => {
     const totalRealisasi = puList.reduce((acc, pu) => acc + (pu.dataTanamans?.length || 0), 0);
     const targetBibit = parseInt(penugasanData?.targetBibit || '0');
     const targetPerPu = Math.max(1, Math.floor(targetBibit / Math.max(1, puList.length)));
+    const totalPuPages = Math.max(1, Math.ceil(puList.length / PU_TABLE_PAGE_SIZE));
+    const safePuPage = Math.min(puTablePage, totalPuPages);
+    const paginatedPuList = puList.slice((safePuPage - 1) * PU_TABLE_PAGE_SIZE, safePuPage * PU_TABLE_PAGE_SIZE);
 
     return (
     <div className="flex flex-col gap-6 w-full max-w-300 mx-auto pb-24">
@@ -1097,7 +1326,7 @@ const PelaksanaanWizard: React.FC = () => {
                </tr>
              </thead>
              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-               {puList.map((pu, _idx) => {
+               {paginatedPuList.map((pu, _idx) => {
                  const realisasi = pu.dataTanamans?.length || 0;
                  const selisih = realisasi - targetPerPu;
                  const isPoligon = pu.status === 'Selesai';
@@ -1126,10 +1355,33 @@ const PelaksanaanWizard: React.FC = () => {
            </table>
            <div className="flex justify-center mt-4 pb-2">
              <div className="flex items-center gap-2 text-xs">
-               <button className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-400 hover:bg-slate-50"><HiChevronLeft className="w-3.5 h-3.5" /></button>
-               <button className="px-2.5 py-1 rounded-md bg-[#008A4B] text-white font-bold">1</button>
-               <button className="px-2.5 py-1 rounded-md bg-white text-slate-600 font-bold hover:bg-slate-50 border border-transparent">2</button>
-               <button className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-400 hover:bg-slate-50"><HiChevronRight className="w-3.5 h-3.5" /></button>
+               <button
+                 onClick={() => setPuTablePage(p => Math.max(1, p - 1))}
+                 disabled={safePuPage <= 1}
+                 className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:text-slate-300 disabled:cursor-not-allowed"
+               >
+                 <HiChevronLeft className="w-3.5 h-3.5" />
+               </button>
+               {Array.from({ length: totalPuPages }, (_, i) => i + 1).map(pageNum => (
+                 <button
+                   key={pageNum}
+                   onClick={() => setPuTablePage(pageNum)}
+                   className={`px-2.5 py-1 rounded-md font-bold ${
+                     pageNum === safePuPage
+                       ? 'bg-[#008A4B] text-white'
+                       : 'bg-white text-slate-600 hover:bg-slate-50 border border-transparent'
+                   }`}
+                 >
+                   {pageNum}
+                 </button>
+               ))}
+               <button
+                 onClick={() => setPuTablePage(p => Math.min(totalPuPages, p + 1))}
+                 disabled={safePuPage >= totalPuPages}
+                 className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:text-slate-300 disabled:cursor-not-allowed"
+               >
+                 <HiChevronRight className="w-3.5 h-3.5" />
+               </button>
              </div>
            </div>
          </div>

@@ -8,13 +8,17 @@ import {
   HiOutlineUserPlus,
   HiChevronLeft,
   HiChevronRight,
+  HiOutlineCheckCircle,
 } from 'react-icons/hi2';
 import ModalBuatPenugasan from './components/CreatePenugasanModal';
 import TugaskanModal from './components/TugaskanModal';
 import { useNavigate } from 'react-router-dom';
 
 type JenisKegiatan = 'Validasi Lokasi' | 'Pelaksanaan Penanaman';
-type StatusPenugasan = 'Menunggu Penugasan' | 'Ditugaskan' | 'Berjalan' | 'Menunggu Verifikasi' | 'Selesai';
+type StatusPenugasan = 'Menunggu Penugasan' | 'Ditugaskan' | 'Berjalan' | 'Menunggu Verifikasi' | 'Selesai' | 'Menunggu Evaluasi' | 'Monitoring Selesai' | 'Tindak Lanjut';
+
+const normalizeStatus = (status: StatusPenugasan) =>
+  status === 'Menunggu Evaluasi' ? 'Selesai' : status;
 
 interface PenugasanData {
   id: string;
@@ -86,6 +90,9 @@ const PenugasanPenyuluh: React.FC = () => {
       case 'Berjalan': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'Menunggu Verifikasi': return 'bg-yellow-50 text-yellow-600 border-yellow-100';
       case 'Selesai': return 'bg-green-50 text-green-600 border-green-100';
+      case 'Menunggu Evaluasi': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'Monitoring Selesai': return 'bg-green-50 text-green-600 border-green-100';
+      case 'Tindak Lanjut': return 'bg-purple-50 text-purple-600 border-purple-100';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -93,6 +100,17 @@ const PenugasanPenyuluh: React.FC = () => {
   const handleTugaskan = (item: PenugasanData) => {
     setSelectedPenugasan(item);
     setIsTugaskanModalOpen(true);
+  };
+
+  // Hardcode di frontend: status Menunggu Evaluasi langsung dianggap selesai
+  const handleSelesaikanEvaluasi = async (item: PenugasanData) => {
+    const targetId = item.penugasan_id || item.id;
+    const confirmed = window.confirm('Tandai penugasan ini sebagai Selesai?');
+    if (!confirmed) return;
+
+    setPenugasanData(prev => prev.map(p =>
+      (p.penugasan_id || p.id) === targetId ? { ...p, status: 'Selesai' as StatusPenugasan } : p
+    ));
   };
 
   // Navigasi ke Halaman Detail sambil MENGIRIMKAN STATUS
@@ -114,7 +132,7 @@ const PenugasanPenyuluh: React.FC = () => {
   }, [penugasanData]);
 
   const statusOptions = useMemo(() => {
-    const set = new Set(penugasanData.map((d) => d.status).filter(Boolean));
+    const set = new Set(penugasanData.map((d) => normalizeStatus(d.status)).filter(Boolean));
     return Array.from(set).sort();
   }, [penugasanData]);
 
@@ -128,9 +146,11 @@ const PenugasanPenyuluh: React.FC = () => {
     const q = searchTerm.trim().toLowerCase();
 
     let result = penugasanData.filter((item) => {
+      const resolvedStatus = normalizeStatus(item.status);
+
       if (activeTab !== 'Semua' && item.jenisKegiatan !== activeTab) return false;
       if (filterWilayah !== 'Semua Wilayah' && item.wilayah !== filterWilayah) return false;
-      if (filterStatus !== 'Semua Status' && item.status !== filterStatus) return false;
+      if (filterStatus !== 'Semua Status' && resolvedStatus !== filterStatus) return false;
       if (filterPenyuluh !== 'Semua Penyuluh' && item.penyuluh !== filterPenyuluh) return false;
 
       if (q) {
@@ -283,55 +303,67 @@ const PenugasanPenyuluh: React.FC = () => {
                 <tr>
                   <td colSpan={10} className="px-4 py-8 text-center text-gray-500">Tidak ada data yang cocok dengan filter.</td>
                 </tr>
-              ) : paginatedData.map((item, index) => (
-                <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-4 py-4 text-xs">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
-                  <td className="px-4 py-4 text-gray-900 font-medium min-w-45 leading-snug">{item.program}</td>
-                  <td className="px-4 py-4 text-xs min-w-40 leading-snug text-gray-600">{item.lokasi}</td>
-                  <td className="px-4 py-4">
-                    {item.jenisKegiatan === 'Validasi Lokasi' ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 whitespace-nowrap">
-                        <HiOutlineMapPin className="w-3.5 h-3.5" /> Validasi Lokasi
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
-                        <SproutIcon className="w-3.5 h-3.5" /> Pelaksanaan Penanaman
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-4 text-xs whitespace-nowrap">{item.wilayah}</td>
-                  <td className="px-4 py-4 text-xs whitespace-pre-line text-gray-500 leading-snug min-w-30">{item.rencanaPeriode}</td>
-                  <td className="px-4 py-4 text-xs font-medium text-gray-700 whitespace-nowrap">{item.penyuluh}</td>
-                  <td className="px-4 py-4">                    <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${getStatusStyle(item.status)}`}>
-                      {item.status}
+              ) : paginatedData.map((item, index) => {
+                const resolvedStatus = normalizeStatus(item.status);
 
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-xs text-gray-500 whitespace-nowrap">{item.tanggalPenugasan}</td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center justify-end gap-3 whitespace-nowrap">
-
-                      {item.status === 'Menunggu Penugasan' && (
-                        <button
-                          onClick={() => handleTugaskan(item)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#008A4B] hover:bg-emerald-800 text-white text-[11px] font-bold rounded-full transition-colors shadow-sm cursor-pointer"
-                        >
-                          <HiOutlineUserPlus className="w-3.5 h-3.5" /> Tugaskan
-                        </button>
+                return (
+                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-4 py-4 text-xs">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
+                    <td className="px-4 py-4 text-gray-900 font-medium min-w-45 leading-snug">{item.program}</td>
+                    <td className="px-4 py-4 text-xs min-w-40 leading-snug text-gray-600">{item.lokasi}</td>
+                    <td className="px-4 py-4">
+                      {item.jenisKegiatan === 'Validasi Lokasi' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 whitespace-nowrap">
+                          <HiOutlineMapPin className="w-3.5 h-3.5" /> Validasi Lokasi
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
+                          <SproutIcon className="w-3.5 h-3.5" /> Pelaksanaan Penanaman
+                        </span>
                       )}
+                    </td>
+                    <td className="px-4 py-4 text-xs whitespace-nowrap">{item.wilayah}</td>
+                    <td className="px-4 py-4 text-xs whitespace-pre-line text-gray-500 leading-snug min-w-30">{item.rencanaPeriode}</td>
+                    <td className="px-4 py-4 text-xs font-medium text-gray-700 whitespace-nowrap">{item.penyuluh}</td>
+                    <td className="px-4 py-4">
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${getStatusStyle(resolvedStatus)}`}>
+                        {resolvedStatus}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-xs text-gray-500 whitespace-nowrap">{item.tanggalPenugasan}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center justify-end gap-3 whitespace-nowrap">
+                        {item.status === 'Menunggu Penugasan' && (
+                          <button
+                            onClick={() => handleTugaskan(item)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#008A4B] hover:bg-emerald-800 text-white text-[11px] font-bold rounded-full transition-colors shadow-sm cursor-pointer"
+                          >
+                            <HiOutlineUserPlus className="w-3.5 h-3.5" /> Tugaskan
+                          </button>
+                        )}
 
-                      {(item.status === 'Berjalan' || item.status === 'Menunggu Verifikasi' || item.status === 'Selesai' || item.status === 'Ditugaskan') && (
-                        <button
-                          onClick={() => handleBukaDetail(item)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-[11px] font-bold rounded-full transition-colors shadow-sm cursor-pointer"
-                        >
-                          <HiOutlineEye className="w-3.5 h-3.5" /> Detail
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {(item.status === 'Berjalan' || item.status === 'Menunggu Verifikasi' || resolvedStatus === 'Selesai' || item.status === 'Ditugaskan') && (
+                          <button
+                            onClick={() => handleBukaDetail(item)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-[11px] font-bold rounded-full transition-colors shadow-sm cursor-pointer"
+                          >
+                            <HiOutlineEye className="w-3.5 h-3.5" /> Detail
+                          </button>
+                        )}
+
+                        {(item.status === 'Monitoring Selesai' || item.status === 'Tindak Lanjut') && (
+                          <button
+                            onClick={() => handleBukaDetail(item)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-[11px] font-bold rounded-full transition-colors shadow-sm cursor-pointer"
+                          >
+                            <HiOutlineEye className="w-3.5 h-3.5" /> Detail
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

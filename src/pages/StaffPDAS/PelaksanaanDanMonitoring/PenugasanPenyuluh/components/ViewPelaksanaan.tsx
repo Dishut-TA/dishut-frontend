@@ -59,8 +59,12 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
   console.log("Data dari Prop:", data);
   console.log("===============================");
 
+  const displayStatus = (status || '').toLowerCase().trim().includes('menunggu evaluasi')
+    ? 'Selesai'
+    : status;
+
   const getStatusInfo = () => {
-    const s = (status || '').toLowerCase().trim();
+    const s = (displayStatus || '').toLowerCase().trim();
     if (s.includes('berjalan')) {
       return { color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', text: 'Berjalan', desc: 'Pelaksanaan sedang berlangsung' };
     }
@@ -72,7 +76,7 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
     }
     
     // Tampilkan raw status jika tidak ada yang cocok, bukan fallback ke Menunggu Verifikasi
-    return { color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', text: status || 'Unknown', desc: 'Status tidak diketahui' };
+    return { color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', text: displayStatus || 'Unknown', desc: 'Status tidak diketahui' };
   };
 
   const statusInfo = getStatusInfo();
@@ -143,8 +147,8 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Status Saat Ini</p>
           <div className="flex items-center gap-2 mb-1">
             <h2 className={`text-xl font-bold uppercase ${statusInfo.color}`}>{statusInfo.text}</h2>
-            {status === 'Berjalan' && <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>}
-            {status !== 'Berjalan' && <span className={`w-2.5 h-2.5 rounded-full ${status === 'Selesai' ? 'bg-emerald-500' : 'bg-yellow-400'}`}></span>}
+            {displayStatus === 'Berjalan' && <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>}
+            {displayStatus !== 'Berjalan' && <span className={`w-2.5 h-2.5 rounded-full ${displayStatus === 'Selesai' ? 'bg-emerald-500' : 'bg-yellow-400'}`}></span>}
           </div>
           <p className={`text-xs font-medium ${statusInfo.color}`}>{statusInfo.desc}</p>
         </div>
@@ -309,7 +313,7 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
         )}
       </div>
 
-      {status === 'Selesai' && (
+      {displayStatus === 'Selesai' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col md:flex-row justify-between items-center gap-6 mt-6">
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-1">Pelaksanaan Penanaman Selesai</h3>
