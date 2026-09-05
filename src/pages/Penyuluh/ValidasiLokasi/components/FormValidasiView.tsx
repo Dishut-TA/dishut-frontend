@@ -114,7 +114,7 @@ export const FormValidasiView = ({ data, navigate }: { data: any, navigate: any 
     payloadData.append('kendala_lapangan', formData.status === 'Tidak Sesuai' ? formData.kesesuaian : '');
     
     if (uploadedPhotos.length > 0) {
-      payloadData.append('foto_lokasi_url', uploadedPhotos[0].file);
+      payloadData.append('foto', uploadedPhotos[0].file);
     }
 
     try {

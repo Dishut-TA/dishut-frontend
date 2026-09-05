@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  HiOutlineClipboardDocumentList, 
-  HiOutlineMapPin, 
+import {
+  HiOutlineClipboardDocumentList,
+  HiOutlineMapPin,
   HiOutlineUsers,
   HiOutlineChartBar,
 } from 'react-icons/hi2';
@@ -43,11 +43,10 @@ const StatusBadge = ({ status }: { status: string }) => {
 const ActionButton = ({ status }: { status: string }) => {
   const isLanjutkan = status === 'Berjalan' || status === 'Menunggu Verifikasi';
   return (
-    <button className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
-      isLanjutkan 
-        ? 'border-emerald-500 text-emerald-600 hover:bg-emerald-50' 
+    <button className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${isLanjutkan
+        ? 'border-emerald-500 text-emerald-600 hover:bg-emerald-50'
         : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-    }`}>
+      }`}>
       {isLanjutkan ? 'Lanjutkan' : 'Lihat Detail'}
     </button>
   );
@@ -104,7 +103,7 @@ const DashboardPenyuluh: React.FC = () => {
   const STATS_DATA = [
     { title: 'Total Penugasan Aktif', value: totalAktif.toString(), sub: 'Penugasan', icon: <HiOutlineClipboardDocumentList />, color: 'text-gray-700', bg: 'bg-[#f0f9f3]', iconColor: 'text-emerald-700' },
     { title: 'Validasi Lokasi', value: validasiMenunggu.toString(), sub: 'Menunggu', subColor: 'text-orange-500', icon: <HiOutlineMapPin />, color: 'text-gray-700', bg: 'bg-orange-50', iconColor: 'text-orange-600' },
-    { title: 'Pelaksanaan Berjalan', value: pelaksanaanBerjalan.toString(), sub: 'Program', subColor: 'text-emerald-600', icon: <HiOutlineUsers />, color: 'text-gray-700', bg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+    { title: 'Pelaksanaan Penanaman', value: pelaksanaanBerjalan.toString(), sub: 'Program', subColor: 'text-emerald-600', icon: <HiOutlineUsers />, color: 'text-gray-700', bg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
     { title: 'Monitoring Belum Selesai', value: monitoringBelumSelesai.toString(), sub: 'Program', subColor: 'text-blue-500', icon: <HiOutlineChartBar />, color: 'text-gray-700', bg: 'bg-blue-50', iconColor: 'text-blue-500' },
   ];
 
@@ -112,33 +111,33 @@ const DashboardPenyuluh: React.FC = () => {
     .filter(p => p.status === 'Berjalan' || p.status === 'Menunggu Verifikasi')
     .slice(0, 5)
     .map(p => {
-    const detail = p.detail || p.penugasanable || {};
-    const sourceType = p.source_type || p.penugasanable_type;
-    const jenisK = p.jenisKegiatan || p.jenis_kegiatan || '-';
-    const tglP = p.tanggalPenugasan || p.tanggal_penugasan;
+      const detail = p.detail || p.penugasanable || {};
+      const sourceType = p.source_type || p.penugasanable_type;
+      const jenisK = p.jenisKegiatan || p.jenis_kegiatan || '-';
+      const tglP = p.tanggalPenugasan || p.tanggal_penugasan;
 
-    let programName = '-';
-    let location = '-';
-    if (sourceType === 'App\\Models\\DonationProgram') {
-      programName = detail.name || '-';
-      location = detail.location || '-';
-    } else if (sourceType === 'App\\Models\\ProgramApbd' || sourceType === 'App\\Models\\ProgramCsr') {
-      programName = detail.nama_program || '-';
-      location = detail.lokasi || (detail.kth ? `${detail.kth.desa_kelurahan}, ${detail.kth.kabupaten_kota}` : '-');
-    } else if (sourceType === 'App\\Models\\AnalysisResultZone') {
-      programName = 'Validasi Lahan Kritis';
-      location = detail.desa ? `${detail.desa}, ${detail.kabupaten}` : (detail.kabupaten || '-');
-    }
+      let programName = '-';
+      let location = '-';
+      if (sourceType === 'App\\Models\\DonationProgram') {
+        programName = detail.name || '-';
+        location = detail.location || '-';
+      } else if (sourceType === 'App\\Models\\ProgramApbd' || sourceType === 'App\\Models\\ProgramCsr') {
+        programName = detail.nama_program || '-';
+        location = detail.lokasi || (detail.kth ? `${detail.kth.desa_kelurahan}, ${detail.kth.kabupaten_kota}` : '-');
+      } else if (sourceType === 'App\\Models\\AnalysisResultZone') {
+        programName = 'Validasi Lahan Kritis';
+        location = detail.desa ? `${detail.desa}, ${detail.kabupaten}` : (detail.kabupaten || '-');
+      }
 
-    return {
-      id: p.id,
-      name: programName,
-      loc: location,
-      stage: jenisK,
-      date: tglP ? new Date(tglP).toLocaleDateString('id-ID') : '-',
-      status: p.status
-    };
-  });
+      return {
+        id: p.id,
+        name: programName,
+        loc: location,
+        stage: jenisK,
+        date: tglP ? new Date(tglP).toLocaleDateString('id-ID') : '-',
+        status: p.status
+      };
+    });
 
   // Marker peta: hanya program yang sudah punya Petak Ukur (jadi punya koordinat asli)
   const mapMarkers = useMemo(() => {
@@ -241,7 +240,7 @@ const DashboardPenyuluh: React.FC = () => {
             <h3>Program Aktif Saya</h3>
           </div>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-[#DCECE0] text-[#3A4D3F] text-xs uppercase tracking-wider font-bold">
@@ -287,7 +286,7 @@ const DashboardPenyuluh: React.FC = () => {
         <PembaruanTerbaru penugasans={penugasans} />
       </div>
     </div>
-    
+
   );
 };
 

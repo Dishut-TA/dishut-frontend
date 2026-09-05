@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { 
-  HiOutlineArrowLeft, HiOutlineMapPin, HiOutlineCalendar, HiCheckCircle, 
+import {
+  HiOutlineArrowLeft, HiOutlineMapPin, HiOutlineCalendar, HiCheckCircle,
   HiOutlineUser, HiOutlineMap, HiOutlineCamera, HiOutlineShieldCheck, HiCheck,
   HiOutlinePencil, HiOutlineArrowDownTray
 } from 'react-icons/hi2';
@@ -11,10 +11,10 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
@@ -26,24 +26,24 @@ interface Props {
 
 export default function ViewValidasiLokasi({ status, activeId, data }: Props) {
   const navigate = useNavigate();
-  
+
   const detail = data?.detail || {};
   const tanggalPenugasan = data?.tanggalPenugasan || '-';
   const penyuluhName = data?.penyuluh || '-';
   const lokasi = data?.lokasi || detail?.desa || '-';
   const wilayah = data?.wilayah || detail?.kabupaten || '-';
   const luasUsulan = detail?.luas_ha || 0;
-  
+
   // Asumsi koordinat jika tersedia di tabel AnalysisResultZone
   const lat = detail?.latitude || -7.033;
   const lng = detail?.longitude || 107.522;
   const position: [number, number] = [lat, lng];
-  
+
   const fieldValidation = detail?.field_validations?.[0] || null;
 
   return (
     <div className="max-w-[1200px] mx-auto space-y-6 animate-in fade-in duration-300">
-      
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -95,15 +95,13 @@ export default function ViewValidasiLokasi({ status, activeId, data }: Props) {
               </p>
             </div>
             <div className="flex-1 space-y-4 text-sm justify-center flex flex-col">
-              <div className="flex justify-between items-center border-b border-gray-100 pb-2"><span className="text-gray-600 flex items-center gap-2"><HiOutlineMapPin className="w-4 h-4 text-gray-400"/> Kesesuaian Lokasi</span><span className="font-bold text-emerald-600">{fieldValidation ? 'Sesuai' : 'Belum Ada'}</span></div>
-              <div className="flex justify-between items-center border-b border-gray-100 pb-2"><span className="text-gray-600 flex items-center gap-2"><HiOutlineMap className="w-4 h-4 text-gray-400"/> Kondisi Lahan</span><span className="font-bold text-emerald-600">{fieldValidation?.kondisi_lahan || 'Belum Ada'}</span></div>
-              <div className="flex justify-between items-center border-b border-gray-100 pb-2"><span className="text-gray-600 flex items-center gap-2"><HiOutlineUser className="w-4 h-4 text-gray-400"/> Aksesibilitas / Kendala</span><span className="font-bold text-emerald-600">{fieldValidation?.kendala_lapangan || 'Belum Ada'}</span></div>
-              <div className="flex justify-between items-center border-b border-gray-100 pb-2"><span className="text-gray-600 flex items-center gap-2"><HiOutlineShieldCheck className="w-4 h-4 text-gray-400"/> Kondisi Vegetasi</span><span className="font-bold text-emerald-600">{fieldValidation?.kondisi_vegetasi || 'Belum Ada'}</span></div>
-              <div className="flex justify-between items-center"><span className="text-gray-600 flex items-center gap-2"><HiCheckCircle className="w-4 h-4 text-gray-400"/> Status Verifikasi Kabid</span><span className="font-bold text-emerald-600">{fieldValidation?.status_verifikasi || 'Belum'}</span></div>
+              <div className="flex justify-between items-center border-b border-gray-100 pb-2"><span className="text-gray-600 flex items-center gap-2"><HiOutlineMapPin className="w-4 h-4 text-gray-400" /> Kesesuaian Lokasi</span><span className="font-bold text-emerald-600">{fieldValidation ? 'Sesuai' : 'Belum Ada'}</span></div>
+              <div className="flex justify-between items-center border-b border-gray-100 pb-2"><span className="text-gray-600 flex items-center gap-2"><HiOutlineMap className="w-4 h-4 text-gray-400" /> Kondisi Lahan</span><span className="font-bold text-emerald-600">{fieldValidation?.kondisi_lahan || 'Belum Ada'}</span></div>
+              <div className="flex justify-between items-center"><span className="text-gray-600 flex items-center gap-2"><HiCheckCircle className="w-4 h-4 text-gray-400" /> Status Verifikasi Kabid</span><span className="font-bold text-emerald-600">{fieldValidation?.status_verifikasi || 'Belum'}</span></div>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
           <h3 className="text-base font-bold text-gray-900 mb-6">Koordinat Lokasi Terverifikasi</h3>
           <div className="flex gap-6 items-center flex-1">
@@ -130,7 +128,7 @@ export default function ViewValidasiLokasi({ status, activeId, data }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1  gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-base font-bold text-gray-900 mb-6">Dokumentasi Lapangan</h3>
           <div className="grid grid-cols-5 gap-3">
@@ -146,17 +144,7 @@ export default function ViewValidasiLokasi({ status, activeId, data }: Props) {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
-          <h3 className="text-base font-bold text-gray-900 mb-6">Checklist Validasi</h3>
-          <div className="grid grid-cols-2 gap-y-4 gap-x-8 flex-1 content-center">
-            <div className="flex items-center gap-3"><div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0"><HiCheck className="w-3.5 h-3.5 stroke-3"/></div><span className="text-sm font-medium text-gray-700">Koordinat lokasi</span></div>
-            <div className="flex items-center gap-3"><div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0"><HiCheck className="w-3.5 h-3.5 stroke-3"/></div><span className="text-sm font-medium text-gray-700">Status kepemilikan</span></div>
-            <div className="flex items-center gap-3"><div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0"><HiCheck className="w-3.5 h-3.5 stroke-3"/></div><span className="text-sm font-medium text-gray-700">Kondisi lahan</span></div>
-            <div className="flex items-center gap-3"><div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0"><HiCheck className="w-3.5 h-3.5 stroke-3"/></div><span className="text-sm font-medium text-gray-700">Aksesibilitas</span></div>
-            <div className="flex items-center gap-3"><div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0"><HiCheck className="w-3.5 h-3.5 stroke-3"/></div><span className="text-sm font-medium text-gray-700">Foto lokasi</span></div>
-            <div className="flex items-center gap-3"><div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0"><HiCheck className="w-3.5 h-3.5 stroke-3"/></div><span className="text-sm font-medium text-gray-700">Catatan lapangan</span></div>
-          </div>
-        </div>
+
       </div>
 
       {status === 'Selesai' && (
@@ -164,21 +152,14 @@ export default function ViewValidasiLokasi({ status, activeId, data }: Props) {
           <div className="flex-1">
             <h3 className="text-sm font-bold text-gray-900 mb-2">Catatan Hasil Validasi</h3>
             <p className="text-xs text-gray-600 leading-relaxed font-medium max-w-3xl">
-              Lokasi berada di kawasan prioritas rehabilitasi. Lahan berupa lahan kritis dengan tutupan semak dan ilalang.<br/>
+              Lokasi berada di kawasan prioritas rehabilitasi. Lahan berupa lahan kritis dengan tutupan semak dan ilalang.<br />
               Tidak terdapat konflik pemanfaatan lahan. Akses menuju lokasi dapat dilalui kendaraan roda dua.
             </p>
           </div>
           <div className="flex gap-3 shrink-0 w-full md:w-auto">
-            <button className="flex-1 md:flex-none px-6 py-2.5 bg-white border border-[#008A4B] text-[#008A4B] text-xs font-bold rounded-lg hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2 cursor-pointer">
-              <HiOutlinePencil className="w-4 h-4" /> Ubah Penugasan
-            </button>
-            <button className="flex-1 md:flex-none px-6 py-2.5 bg-[#008A4B] text-white text-xs font-bold rounded-lg hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer">
-              <HiOutlineArrowDownTray className="w-4 h-4" /> Unduh Laporan
-            </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }

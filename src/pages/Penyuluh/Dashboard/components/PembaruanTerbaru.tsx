@@ -80,9 +80,6 @@ const PembaruanTerbaru: React.FC<Props> = ({ penugasans }) => {
         </div>
       )}
 
-      <button className="text-emerald-600 text-xs font-bold flex items-center gap-1 mt-4 hover:underline w-fit">
-        Lihat Semua Notifikasi
-      </button>
     </div>
   );
 };

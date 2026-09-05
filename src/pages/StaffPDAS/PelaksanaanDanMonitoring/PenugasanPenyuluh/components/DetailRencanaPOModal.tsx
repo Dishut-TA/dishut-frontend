@@ -1,5 +1,5 @@
 import React from 'react';
-import { 
+import {
   HiOutlineXMark,
   HiOutlineInformationCircle,
   HiOutlineMap,
@@ -37,12 +37,12 @@ const UsersIcon = ({ className }: { className?: string }) => (
 const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onClose, data }) => {
   if (!isOpen) return null;
 
-  const targetKegiatan = data?.source_type === 'App\\Models\\DonationProgram' 
-    ? (data?.detail?.total_seeds_bast || 0) 
+  const targetKegiatan = data?.source_type === 'App\\Models\\DonationProgram'
+    ? (data?.detail?.total_seeds_bast || 0)
     : (data?.detail?.total_seeds_collected || data?.detail?.jumlah_bibit || data?.detail?.target_amount || 0);
-  const tahunProgram = data?.detail?.start_date ? new Date(data.detail.start_date).getFullYear() 
-                     : data?.detail?.tanggal_mulai ? new Date(data.detail.tanggal_mulai).getFullYear() 
-                     : data?.detail?.created_at ? new Date(data.detail.created_at).getFullYear() : '-';
+  const tahunProgram = data?.detail?.start_date ? new Date(data.detail.start_date).getFullYear()
+    : data?.detail?.tanggal_mulai ? new Date(data.detail.tanggal_mulai).getFullYear()
+      : data?.detail?.created_at ? new Date(data.detail.created_at).getFullYear() : '-';
   const sumberDana = data?.source_type === 'App\\Models\\DonationProgram' ? 'Donasi' : data?.source_type === 'App\\Models\\ProgramApbd' ? 'APBD' : 'CSR';
 
   // Calculate or get Total PU
@@ -60,7 +60,7 @@ const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onC
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
       <div className="bg-[#f8faf9] rounded-2xl shadow-xl w-full max-w-275 max-h-[95vh] overflow-y-auto flex flex-col animate-in fade-in zoom-in-95 duration-200">
-        
+
         {/* HEADER */}
         <div className="px-6 py-5 bg-white border-b border-gray-100 flex items-center justify-between sticky top-0 z-10 rounded-t-2xl">
           <div className="flex items-center gap-4">
@@ -83,7 +83,7 @@ const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onC
         {/* BODY */}
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* KARTU INFO UTAMA */}
             <div className="lg:col-span-2 bg-white rounded-xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -mr-8 -mt-8 z-0"></div>
@@ -103,32 +103,8 @@ const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onC
                 <div className="flex"><span className="w-32 text-gray-500">Sumber Dana</span><span className="font-semibold">: {sumberDana}</span></div>
               </div>
             </div>
-            
-            {/* PETA LOKASI */}
-            <div className="h-full min-h-50">
-              <div className="flex items-center gap-2 mb-3">
-                <HiOutlineMap className="w-4 h-4 text-emerald-700" />
-                <h3 className="text-xs font-bold text-emerald-800">Peta Lokasi Program</h3>
-              </div>
-              <div className="w-full h-48 bg-gray-200 rounded-xl overflow-hidden relative border border-gray-200">
-                <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1000&auto=format&fit=crop" alt="Peta" className="w-full h-full object-cover opacity-80" />
-                {/* Mockup Polygon */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg width="150" height="100" viewBox="0 0 150 100" fill="none">
-                    <polygon points="10,10 140,20 120,90 30,80" fill="rgba(16, 185, 129, 0.4)" stroke="#10b981" strokeWidth="2" strokeDasharray="4 4" />
-                    <circle cx="10" cy="10" r="3" fill="white" stroke="#10b981" strokeWidth="1.5" />
-                    <circle cx="140" cy="20" r="3" fill="white" stroke="#10b981" strokeWidth="1.5" />
-                    <circle cx="120" cy="90" r="3" fill="white" stroke="#10b981" strokeWidth="1.5" />
-                    <circle cx="30" cy="80" r="3" fill="white" stroke="#10b981" strokeWidth="1.5" />
-                  </svg>
-                </div>
-                <div className="absolute top-2 right-2 bg-white rounded-md p-1.5 shadow-sm"><HiOutlineMap className="w-4 h-4 text-gray-700" /></div>
-                <div className="absolute left-2 top-2 flex flex-col gap-1">
-                  <div className="w-6 h-6 bg-white rounded flex items-center justify-center text-sm font-bold shadow-sm">+</div>
-                  <div className="w-6 h-6 bg-white rounded flex items-center justify-center text-sm font-bold shadow-sm">-</div>
-                </div>
-              </div>
-            </div>
+
+
           </div>
 
           {/* RENCANA PENANAMAN P0 (Cards) */}
@@ -137,7 +113,7 @@ const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onC
               <HiOutlineDocumentText className="w-5 h-5 text-emerald-700" />
               <h3 className="text-sm font-bold text-emerald-800">Rencana Penanaman P0 (Rencana Penanaman Awal)</h3>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="p-4 border border-gray-100 rounded-xl bg-gray-50/50">
                 <p className="text-xs text-gray-500 mb-2 font-medium">Periode</p>
