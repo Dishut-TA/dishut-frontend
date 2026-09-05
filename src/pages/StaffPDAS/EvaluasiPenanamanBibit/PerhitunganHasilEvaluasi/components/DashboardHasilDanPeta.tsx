@@ -16,16 +16,14 @@ interface DashboardHasilDanPetaProps {
   dataPetakUkur: PetakUkur[];
 }
 
-const createCustomMarker = (isKritis: boolean) => {
-  const colorClass = isKritis ? 'bg-orange-500 border-white' : 'bg-[#00A859] border-white';
-  const pingClass = isKritis ? 'bg-orange-400' : 'bg-green-400';
-  
+// Marker akan selalu berwarna Oranye karena kita hanya menampilkan PU yang kritis
+const createCustomMarker = () => {
   return L.divIcon({
     className: 'custom-div-icon',
     html: `
       <div class="relative w-6 h-6">
-        <div class="absolute inset-0 rounded-full border-2 shadow-lg z-10 ${colorClass}"></div>
-        <div class="absolute inset-0 rounded-full animate-ping opacity-75 ${pingClass}"></div>
+        <div class="absolute inset-0 rounded-full border-2 shadow-lg z-10 bg-orange-500 border-white"></div>
+        <div class="absolute inset-0 rounded-full animate-ping opacity-75 bg-orange-400"></div>
       </div>
     `,
     iconSize: [24, 24],
@@ -36,17 +34,33 @@ const createCustomMarker = (isKritis: boolean) => {
 
 const DashboardHasilDanPeta: React.FC<DashboardHasilDanPetaProps> = ({ mockStatus, hasilIntegrasi, dataPetakUkur }) => {
   
-  // Fungsi pecah string koordinat "-6.21, 106.82" jadi array angka [-6.21, 106.82] untuk Leaflet
+  // Fungsi aman untuk memecah string koordinat GPS
   const parseCoord = (coordStr: string): [number, number] => {
+    if (!coordStr || coordStr.trim() === '' || coordStr === '-') return [-6.20, 106.81];
     const [lat, lng] = coordStr.split(',').map(s => parseFloat(s.trim()));
-    return [isNaN(lat) ? -6.20 : lat, isNaN(lng) ? 106.81 : lng]; // Fallback
+    return [isNaN(lat) ? -6.20 : lat, isNaN(lng) ? 106.81 : lng];
   };
 
-  const mapCenter = dataPetakUkur.length > 0 ? parseCoord(dataPetakUkur[0].koordinat) : [-6.20, 106.81] as [number, number];
+  // Cari center map dari PU pertama yang punya koordinat valid (agar peta tetap berada di lokasi hutan)
+  const firstValidPU = dataPetakUkur.find(item => item.koordinat && item.koordinat.includes(','));
+  const mapCenter = firstValidPU ? parseCoord(firstValidPU.koordinat) : [-6.20, 106.81] as [number, number];
+
+  // =====================================================================
+  // FILTER DATA PETA CERDAS:
+  // 1. Abaikan PU yang tidak punya rencana bibit (rencana <= 0)
+  // 2. HANYA masukkan PU yang tingkat tumbuhnya kritis (< 75%)
+  // =====================================================================
+  const mapMarkersData = dataPetakUkur.filter(item => {
+    if (item.rencana <= 0) return false;
+    const persen = (item.tumbuh / item.rencana) * 100;
+    return persen < 75; 
+  });
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8 mb-8 border-t border-gray-100 pt-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* KOLOM KIRI: STATISTIK HASIL EVALUASI */}
         <div className="space-y-6">
           <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
             {mockStatus === 'HASIL TERVALIDASI' ? 'Ringkasan Hasil Evaluasi' : '2. Matriks Hasil Perhitungan'}
@@ -81,34 +95,51 @@ const DashboardHasilDanPeta: React.FC<DashboardHasilDanPetaProps> = ({ mockStatu
           </div>
         </div>
 
-        <div className="space-y-6 flex flex-col h-full">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
-              {mockStatus === 'HASIL TERVALIDASI' ? 'Peta WebGIS Terintegrasi' : '3. Visualisasi Sebaran Petak Ukur'}
-            </h3>
-            <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold border border-blue-200 flex items-center gap-1"><HiOutlineMap className="w-3 h-3"/> Live Map</span>
+        {/* KOLOM KANAN: PETA WEBGIS */}
+        <div className="space-y-4 flex flex-col h-full">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                {mockStatus === 'HASIL TERVALIDASI' ? 'Peta WebGIS Terintegrasi' : '3. Visualisasi Titik Kritis Lapangan'}
+              </h3>
+              <p className="text-[10px] text-gray-500 mt-1">Hanya menampilkan Petak Ukur kritis (&lt; 75%) yang memerlukan tindak lanjut.</p>
+            </div>
+            <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold border border-blue-200 flex items-center gap-1 shrink-0">
+                <HiOutlineMap className="w-3 h-3"/> Live Map
+            </span>
           </div>
 
-          <div className="bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden relative flex-1 min-h-87.5 shadow-inner z-0">
+          <div className="bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden relative flex-1 min-h-[350px] shadow-inner z-0">
+            
+            {/* OVERLAY: Jika tidak ada titik kritis yang ditemukan */}
+            {mapMarkersData.length === 0 ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/85 z-10 backdrop-blur-sm p-6 text-center">
+                <div className="w-16 h-16 bg-green-100 text-[#185325] rounded-full flex items-center justify-center mb-3">
+                  <HiOutlineMap className="w-8 h-8" />
+                </div>
+                <p className="text-sm font-bold text-gray-800">Tidak Ada Titik Kritis Lapangan</p>
+                <p className="text-xs text-gray-500 mt-1 max-w-xs">Seluruh Petak Ukur lapangan memenuhi standar keberhasilan tumbuh (&gt; 75%) atau tidak ada data penanaman di dalamnya.</p>
+              </div>
+            ) : null}
+
             <MapContainer center={mapCenter} zoom={13} scrollWheelZoom={true} style={{ height: '100%', width: '100%', zIndex: 0 }}>
               <TileLayer
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EAW, and the GIS User Community"
+                attribution="Tiles &copy; Esri &mdash; Source: Esri"
               />
               
-              {dataPetakUkur.map((item, idx) => {
-                const persen = item.rencana > 0 ? ((item.tumbuh / item.rencana) * 100).toFixed(2) : "0.00";
-                const isKritis = parseFloat(persen) < 75;
+              {mapMarkersData.map((item, idx) => {
+                const persen = ((item.tumbuh / item.rencana) * 100).toFixed(2);
                 const bibitMati = item.rencana - item.tumbuh;
                 const pos = parseCoord(item.koordinat);
 
                 return (
-                  <Marker key={idx} position={pos} icon={createCustomMarker(isKritis)}>
+                  <Marker key={idx} position={pos} icon={createCustomMarker()}>
                     <Popup className="custom-popup">
                       <div className="w-52 p-1">
                         <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100">
                           <span className="text-sm font-bold text-gray-800 m-0">{item.pu}</span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isKritis ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
                             {persen}%
                           </span>
                         </div>
@@ -131,11 +162,9 @@ const DashboardHasilDanPeta: React.FC<DashboardHasilDanPetaProps> = ({ mockStatu
                               <span className="text-xs font-bold text-red-600">{bibitMati}</span>
                             </div>
                           </div>
-                          {isKritis && (
-                            <div className="mt-2 bg-orange-50 text-orange-600 text-[10px] font-bold p-1 rounded text-center border border-orange-100">
-                              Perlu Tindak Lanjut!
-                            </div>
-                          )}
+                          <div className="mt-2 bg-orange-50 text-orange-600 text-[10px] font-bold p-1 rounded text-center border border-orange-100">
+                            Perlu Tindak Lanjut Lapangan!
+                          </div>
                         </div>
                       </div>
                     </Popup>

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineMagnifyingGlass, HiOutlineEye } from 'react-icons/hi2';
-
-const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
+import { getPenugasanEvaluasiList } from '@/services/penugasanEvaluasi.service';
 
 const PenugasanEvaluasiStaff: React.FC = () => {
   const navigate = useNavigate();
@@ -13,10 +12,9 @@ const PenugasanEvaluasiStaff: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/evaluasi`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const json = await res.json();
-        setData(json.data || []);
+        const res = await getPenugasanEvaluasiList();
+        setData(res.data || []);
+        console.log(res.data);
       } catch (e) {
         console.error(e);
       } finally {
@@ -26,18 +24,9 @@ const PenugasanEvaluasiStaff: React.FC = () => {
     fetchData();
   }, []);
 
-  const getProgramName = (item: any) => {
-    const p = item.penugasanable;
-    return p?.name || p?.nama_program || '-';
-  };
-  const getLokasi = (item: any) => {
-    const p = item.penugasanable;
-    return p?.location || p?.lokasi || (p?.kth ? `${p.kth.desa_kelurahan || p.kth.name || ''}` : '-');
-  };
-
   const filteredData = data.filter((item) =>
-    getProgramName(item).toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getLokasi(item).toLowerCase().includes(searchTerm.toLowerCase())
+    (item.nama_proyek_lokasi || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.nomor_surat || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -81,22 +70,28 @@ const PenugasanEvaluasiStaff: React.FC = () => {
                 <tr><td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400">Belum ada penugasan evaluasi</td></tr>
               )}
               {filteredData.map((item) => {
-                const isPending = item.status === 'Menunggu Evaluasi';
-                const isSelesai = item.status === 'Monitoring Selesai';
+                const isPending = item.status_penugasan === 'Menunggu Evaluasi' || item.status_penugasan === 'TELAH DITUGASKAN';
+                const isSelesai = item.status_penugasan === 'Monitoring Selesai' || item.status_penugasan === 'Selesai';
                 return (
                   <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-5">
-                      <div className="font-bold text-gray-800">{getProgramName(item)}</div>
-                      <div className="text-xs text-gray-500 mt-1">{getLokasi(item)}</div>
+                      <div className="font-bold text-gray-800">{item.nama_proyek_lokasi?.split(' - ')[0] || item.nama_proyek_lokasi || '-'}</div>
+                      <div className="text-xs text-gray-500 mt-1">{item.nama_proyek_lokasi?.split(' - ')[1] || '-'}</div>
                     </td>
                     <td className="px-6 py-5">
                       <span className="text-xs font-bold text-[#185325] bg-[#EBF8F1] border border-[#C6EBD6] px-3 py-1 rounded-full whitespace-nowrap">
-                        {item.periode_monitoring || '-'}
+                        {item.tahap_evaluasi || '-'}
                       </span>
-                      <div className="text-[10px] text-gray-400 font-medium mt-2">Mulai: {item.tanggal_penugasan ? new Date(item.tanggal_penugasan).toLocaleDateString('id-ID') : '-'}</div>
+                      <div className="text-[10px] text-gray-400 font-medium mt-2">Mulai: {item.tanggal_surat || '-'}</div>
                     </td>
                     <td className="px-6 py-5 text-sm font-semibold text-gray-700">
-                      {item.penyuluh?.name || '-'}
+                      {item.tim?.length > 0 ? (
+                        <div className="flex flex-col gap-1 text-xs">
+                          {item.tim.map((t: any) => (
+                            <span key={t.id_user || Math.random()}>{t.user?.nama_pengguna || t.user?.username || 'Staff'} ({t.peran})</span>
+                          ))}
+                        </div>
+                      ) : '-'}
                     </td>
                     <td className="px-6 py-5 text-center">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
@@ -104,7 +99,7 @@ const PenugasanEvaluasiStaff: React.FC = () => {
                         isSelesai ? 'bg-emerald-50 text-[#185325] border border-emerald-200' :
                         'bg-blue-50 text-blue-700 border border-blue-200'
                       }`}>
-                        {item.status}
+                        {item.status_penugasan}
                       </span>
                     </td>
                     <td className="px-6 py-5 flex justify-center">

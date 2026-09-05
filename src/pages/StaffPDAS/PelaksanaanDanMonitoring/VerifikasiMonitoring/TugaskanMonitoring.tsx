@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
+import {
   HiOutlineArrowLeft,
   HiOutlineDocument,
   HiOutlinePaperAirplane,
@@ -21,7 +21,7 @@ const TugaskanMonitoring: React.FC = () => {
   const { id } = useParams();
 
   // Mock state untuk file uploader
-  const [uploadedFile, ] = useState<{ name: string; size: string } | null>({
+  const [uploadedFile,] = useState<{ name: string; size: string } | null>({
     name: 'Surat_Tugas_Monitoring_P2.pdf',
     size: '1.2 MB'
   });
@@ -47,7 +47,7 @@ const TugaskanMonitoring: React.FC = () => {
         const res = await getPenugasanByIdAPI(id);
         const penugasan = res.data;
         const source = penugasan.penugasanable;
-        
+
         let pName = '-';
         let pKth = '-';
         let pLuas = '-';
@@ -58,7 +58,7 @@ const TugaskanMonitoring: React.FC = () => {
         const zoneLokasi = zone && (zone.desa || zone.kecamatan || zone.kabupaten) ? [zone.desa, zone.kecamatan, zone.kabupaten].filter(Boolean).join(', ') : '-';
         const zoneLuas = zone?.luas_ha ? `${zone.luas_ha} Ha` : '-';
         const zoneKth = zone?.nama_kelompok || '-';
-        
+
         const kthObj = source?.kth || penugasan.penyuluh?.kth;
         const kthLokasi = kthObj && kthObj.desa_kelurahan ? [kthObj.desa_kelurahan, kthObj.kabupaten_kota].filter(Boolean).join(', ') : '-';
 
@@ -119,7 +119,7 @@ const TugaskanMonitoring: React.FC = () => {
   return (
     <div className="w-full bg-[#F8FAFC] min-h-screen font-sans text-slate-800 pb-12">
       <div className="max-w-[1600px] mx-auto">
-        
+
         {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
@@ -135,14 +135,8 @@ const TugaskanMonitoring: React.FC = () => {
             <button onClick={() => navigate(-1)} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2">
               <HiOutlineArrowLeft className="w-4 h-4" /> Kembali
             </button>
-            <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2">
-              <HiOutlineDocument className="w-4 h-4" /> Simpan Draft
-            </button>
             <button onClick={handleSubmit} disabled={isSubmitting} className="px-4 py-2 bg-[#008A4B] text-white text-sm font-semibold rounded-lg hover:bg-emerald-800 transition-colors flex items-center gap-2 shadow-sm">
               <HiOutlinePaperAirplane className="w-4 h-4" /> {isSubmitting ? 'Mengirim...' : 'Kirim Penugasan'}
-            </button>
-            <button className="p-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
-              <HiEllipsisVertical className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -153,7 +147,7 @@ const TugaskanMonitoring: React.FC = () => {
             <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 border border-emerald-100">
               <PiPlant className="w-7 h-7 text-[#008A4B]" />
             </div>
-            
+
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 w-full">
               <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs">
                 <span className="text-slate-500 font-medium">ID Program</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{programData?.sourceId || 'PRG-2026-0007'}</span>
@@ -161,17 +155,17 @@ const TugaskanMonitoring: React.FC = () => {
               <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs">
                 <span className="text-slate-500 font-medium">Sumber Dana</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{programData?.sumberDana || 'APBD'}</span>
               </div>
-              
+
               {/* Kolom Peta, dipindah ke kanan pada layout lg, tapi masuk flow grid di mobile */}
               <div className="row-span-4 hidden md:block lg:hidden">
-                 <div className="w-full h-full min-h-25 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400')] bg-cover bg-center border border-slate-200">
-                    <HiOutlineMapPin className="w-6 h-6 text-red-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow-md" />
-                    <div className="absolute bottom-2 left-2">
-                      <button className="text-[10px] font-bold text-blue-600 bg-white/90 px-2 py-1 rounded shadow-sm flex items-center gap-1">
-                        Lihat di Peta <HiOutlineMapPin className="w-3 h-3" />
-                      </button>
-                    </div>
+                <div className="w-full h-full min-h-25 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400')] bg-cover bg-center border border-slate-200">
+                  <HiOutlineMapPin className="w-6 h-6 text-red-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow-md" />
+                  <div className="absolute bottom-2 left-2">
+                    <button className="text-[10px] font-bold text-blue-600 bg-white/90 px-2 py-1 rounded shadow-sm flex items-center gap-1">
+                      Lihat di Peta <HiOutlineMapPin className="w-3 h-3" />
+                    </button>
                   </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs">
@@ -212,36 +206,34 @@ const TugaskanMonitoring: React.FC = () => {
         </div>
 
         {/* MAIN CONTENT GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+        <div className="grid grid-cols-1  gap-6">
+
           {/* Kolom Kiri: Form Penugasan */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <h3 className="text-base font-bold text-slate-900 mb-5">Penugasan Monitoring</h3>
-              
+
               <div className="space-y-5">
                 {/* Row 1 */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">Periode Monitoring <span className="text-red-500">*</span></label>
-                    <select 
+                    <select
                       value={form.periode_monitoring}
-                      onChange={(e) => setForm({...form, periode_monitoring: e.target.value})}
+                      onChange={(e) => setForm({ ...form, periode_monitoring: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:border-[#008A4B] focus:ring-1 focus:ring-[#008A4B] appearance-none"
                     >
                       <option value="P1">P1</option>
-                      <option value="P2">P2</option>
-                      <option value="P3">P3</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tanggal Penugasan <span className="text-red-500">*</span></label>
                     <div className="relative">
-                      <input 
-                        type="date" 
+                      <input
+                        type="date"
                         value={form.tanggal_penugasan}
-                        onChange={(e) => setForm({...form, tanggal_penugasan: e.target.value})}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#008A4B] focus:ring-1 focus:ring-[#008A4B]" 
+                        onChange={(e) => setForm({ ...form, tanggal_penugasan: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#008A4B] focus:ring-1 focus:ring-[#008A4B]"
                       />
                       <HiOutlineCalendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     </div>
@@ -249,11 +241,11 @@ const TugaskanMonitoring: React.FC = () => {
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">Target Batas Monitoring <span className="text-red-500">*</span></label>
                     <div className="relative">
-                      <input 
-                        type="date" 
+                      <input
+                        type="date"
                         value={form.batas_waktu}
-                        onChange={(e) => setForm({...form, batas_waktu: e.target.value})}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#008A4B] focus:ring-1 focus:ring-[#008A4B]" 
+                        onChange={(e) => setForm({ ...form, batas_waktu: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#008A4B] focus:ring-1 focus:ring-[#008A4B]"
                       />
                       <HiOutlineCalendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     </div>
@@ -284,9 +276,9 @@ const TugaskanMonitoring: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">Metode Monitoring <span className="text-red-500">*</span></label>
-                    <select 
+                    <select
                       value={form.metode}
-                      onChange={(e) => setForm({...form, metode: e.target.value})}
+                      onChange={(e) => setForm({ ...form, metode: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:border-[#008A4B] focus:ring-1 focus:ring-[#008A4B] appearance-none"
                     >
                       <option value="Monitoring Lapangan">Monitoring Lapangan</option>
@@ -299,9 +291,9 @@ const TugaskanMonitoring: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-1">
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">Prioritas <span className="text-red-500">*</span></label>
-                    <select 
+                    <select
                       value={form.prioritas}
-                      onChange={(e) => setForm({...form, prioritas: e.target.value})}
+                      onChange={(e) => setForm({ ...form, prioritas: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#008A4B] focus:ring-1 focus:ring-[#008A4B] appearance-none"
                     >
                       <option value="Tinggi">Tinggi</option>
@@ -311,10 +303,10 @@ const TugaskanMonitoring: React.FC = () => {
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tujuan Monitoring <span className="text-red-500">*</span></label>
-                    <textarea 
-                      rows={2} 
+                    <textarea
+                      rows={2}
                       value={form.tujuan}
-                      onChange={(e) => setForm({...form, tujuan: e.target.value})}
+                      onChange={(e) => setForm({ ...form, tujuan: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#008A4B] focus:ring-1 focus:ring-[#008A4B] resize-none text-slate-600"
                     ></textarea>
                   </div>
@@ -323,10 +315,10 @@ const TugaskanMonitoring: React.FC = () => {
                 {/* Row 4 */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">Arahan Monitoring <span className="text-red-500">*</span></label>
-                  <textarea 
-                    rows={4} 
+                  <textarea
+                    rows={4}
                     value={form.arahan}
-                    onChange={(e) => setForm({...form, arahan: e.target.value})}
+                    onChange={(e) => setForm({ ...form, arahan: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-[#008A4B] focus:ring-1 focus:ring-[#008A4B] resize-none text-slate-600"
                   ></textarea>
                 </div>
@@ -337,14 +329,14 @@ const TugaskanMonitoring: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-22.5">
                       <div className="flex items-center gap-3">
-                         <HiOutlineCloudArrowUp className="w-8 h-8 text-slate-500" />
-                         <div className="text-left">
-                           <p className="text-xs font-medium text-slate-700">Drag & drop file di sini atau klik untuk unggah</p>
-                           <p className="text-[10px] text-slate-500">PDF, JPG, PNG (Maks. 5MB)</p>
-                         </div>
+                        <HiOutlineCloudArrowUp className="w-8 h-8 text-slate-500" />
+                        <div className="text-left">
+                          <p className="text-xs font-medium text-slate-700">Drag & drop file di sini atau klik untuk unggah</p>
+                          <p className="text-[10px] text-slate-500">PDF, JPG, PNG (Maks. 5MB)</p>
+                        </div>
                       </div>
                     </div>
-                    
+
                     {/* Mock Uploaded File */}
                     {uploadedFile && (
                       <div className="border border-slate-200 rounded-lg p-4 flex items-center justify-between min-h-22.5 bg-white">
@@ -403,63 +395,6 @@ const TugaskanMonitoring: React.FC = () => {
               </div>
             </div>
 
-          </div>
-
-          {/* Kolom Kanan: Ringkasan Card */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-              <div className="px-5 py-4 border-b border-slate-100">
-                <h3 className="text-sm font-bold text-slate-900">Ringkasan Penugasan</h3>
-              </div>
-              <div className="p-5 space-y-4 text-xs">
-                <div className="grid grid-cols-[100px_10px_1fr]">
-                  <span className="text-slate-500 font-medium">Status Saat Ini</span><span>:</span>
-                  <span className="font-bold text-[#008A4B]">Siap Ditugaskan</span>
-                </div>
-                <div className="grid grid-cols-[100px_10px_1fr]">
-                  <span className="text-slate-500 font-medium">Periode</span><span>:</span>
-                  <span className="font-semibold text-slate-900">{form.periode_monitoring || '-'}</span>
-                </div>
-                <div className="grid grid-cols-[100px_10px_1fr]">
-                  <span className="text-slate-500 font-medium">KTH</span><span>:</span>
-                  <span className="font-semibold text-slate-900">{programData?.kth || '-'}</span>
-                </div>
-                <div className="grid grid-cols-[100px_10px_1fr]">
-                  <span className="text-slate-500 font-medium">Penyuluh</span><span>:</span>
-                  <span className="font-semibold text-slate-900">{programData?.penyuluh || '-'}</span>
-                </div>
-                <div className="grid grid-cols-[100px_10px_1fr]">
-                  <span className="text-slate-500 font-medium">Kabupaten</span><span>:</span>
-                  <span className="font-semibold text-slate-900">{programData?.lokasi ? programData.lokasi.split(',').pop()?.trim() : '-'}</span>
-                </div>
-                <div className="grid grid-cols-[100px_10px_1fr]">
-                  <span className="text-slate-500 font-medium">Luas Area</span><span>:</span>
-                  <span className="font-semibold text-slate-900">{programData?.luasArea || '-'}</span>
-                </div>
-                <div className="grid grid-cols-[100px_10px_1fr]">
-                  <span className="text-slate-500 font-medium">Tanggal Monitoring</span><span>:</span>
-                  <span className="font-semibold text-slate-900">
-                    {form.tanggal_penugasan && form.batas_waktu 
-                      ? `${new Date(form.tanggal_penugasan).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})} - ${new Date(form.batas_waktu).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})}`
-                      : '-'}
-                  </span>
-                </div>
-                
-                <div className="mt-6 pt-4 border-t border-slate-100">
-                  <h4 className="font-bold text-slate-800 mb-2">Catatan Sistem</h4>
-                  <div className="p-3 border border-slate-200 rounded-lg text-slate-600 bg-slate-50/50">
-                    KTH dan penyuluh tetap sama dengan pelaksanaan sebelumnya.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#F0FDF4] p-4 flex gap-3 border border-[#BBF7D0] rounded-xl">
-              <HiOutlineInformationCircle className="w-5 h-5 text-[#15803D] shrink-0 mt-0.5" />
-              <p className="text-xs text-[#166534] leading-relaxed">
-                Setelah penugasan disimpan dan dikirim, penugasan monitoring akan dikirimkan kepada Penyuluh dan KTH terkait melalui sistem dan notifikasi.
-              </p>
-            </div>
           </div>
 
         </div>

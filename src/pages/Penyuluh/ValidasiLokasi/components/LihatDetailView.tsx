@@ -1,7 +1,7 @@
-import { 
-  HiOutlineArrowLeft, HiCheckCircle, HiOutlineDocumentText, 
-  HiOutlineMapPin, HiOutlineSquare2Stack, HiOutlineCalendar, HiOutlineUser, 
-  HiOutlineInformationCircle, HiOutlineDocumentCheck, HiOutlineXMark, 
+import {
+  HiOutlineArrowLeft, HiCheckCircle, HiOutlineDocumentText,
+  HiOutlineMapPin, HiOutlineSquare2Stack, HiOutlineCalendar, HiOutlineUser,
+  HiOutlineInformationCircle, HiOutlineDocumentCheck, HiOutlineXMark,
   HiOutlineArrowDownTray
 } from 'react-icons/hi2';
 
@@ -101,9 +101,7 @@ export const LihatDetailView = ({ data, navigate }: { data: any, navigate: any }
               <HiOutlineArrowLeft className="w-3.5 h-3.5" /> Kembali ke Daftar
             </button>
             <div className="flex flex-col sm:flex-row gap-3">
-              <button className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 shadow-sm">
-                <HiOutlineArrowDownTray className="w-4 h-4" /> Unduh PDF
-              </button>
+
             </div>
           </div>
         </div>

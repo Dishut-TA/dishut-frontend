@@ -1,23 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineMagnifyingGlass, HiOutlinePlus, HiOutlineEye, HiOutlineMapPin } from 'react-icons/hi2';
-import { getStoredPenugasanList, type PenugasanItem } from './dummyData';
+import { getPenugasanEvaluasiList } from '@/services/penugasanEvaluasi.service';
 
 const InisiasiPenugasanKABID: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [dataPenugasan, setDataPenugasan] = useState<PenugasanItem[]>([]);
+  const [dataPenugasan, setDataPenugasan] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Memuat data dummy dari storage / mock
-    const loadData = () => {
+    const loadData = async () => {
       setIsLoading(true);
       try {
-        const dummyList = getStoredPenugasanList();
-        setDataPenugasan(dummyList);
+        const response = await getPenugasanEvaluasiList();
+        setDataPenugasan(response.data || []);
       } catch (err) {
-        console.error('Error loading penugasan dummy:', err);
+        console.error('Error loading penugasan:', err);
       } finally {
         setIsLoading(false);
       }
@@ -27,11 +26,10 @@ const InisiasiPenugasanKABID: React.FC = () => {
 
   const filteredData = dataPenugasan.filter((item) => {
     const query = searchTerm.toLowerCase();
-    const proyek = (item.proyek || item.nama_proyek || '').toLowerCase();
-    const lokasi = (item.lokasi || '').toLowerCase();
+    const proyek = (item.nama_proyek_lokasi || '').toLowerCase();
     const jenis = (item.jenis_program || '').toLowerCase();
-    const noSurat = (item.nomor_surat || item.noSurat || '').toLowerCase();
-    return proyek.includes(query) || lokasi.includes(query) || jenis.includes(query) || noSurat.includes(query);
+    const noSurat = (item.nomor_surat || '').toLowerCase();
+    return proyek.includes(query) || jenis.includes(query) || noSurat.includes(query);
   });
 
   return (
@@ -83,19 +81,19 @@ const InisiasiPenugasanKABID: React.FC = () => {
                 </tr>
               ) : filteredData.length > 0 ? (
                 filteredData.map((item) => {
-                  const id = item.id_penugasan || item.id;
-                  const isAssigned = item.status_surat === 'TELAH DITUGASKAN';
-                  const isProcess = item.status_surat === 'DALAM PROSES EVALUASI';
+                  const id = item.id;
+                  const isAssigned = item.status_penugasan === 'TELAH DITUGASKAN' || item.status_penugasan === 'Menunggu Pelaksanaan';
+                  const isProcess = item.status_penugasan === 'DALAM PROSES EVALUASI' || item.status_penugasan === 'Sedang Berjalan';
 
                   return (
                     <tr key={id} className="hover:bg-gray-50/70 transition-colors">
                       <td className="px-6 py-5">
-                        <div className="font-bold text-gray-800 text-sm">{item.proyek || item.nama_proyek}</div>
+                        <div className="font-bold text-gray-800 text-sm">{item.nama_proyek_lokasi?.split(' - ')[0] || item.nama_proyek_lokasi}</div>
                         <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                           <HiOutlineMapPin className="w-3.5 h-3.5 text-[#185325]" />
-                          <span>{item.lokasi}</span>
+                          <span>{item.nama_proyek_lokasi?.split(' - ')[1] || '-'}</span>
                           <span className="text-gray-300">•</span>
-                          <span className="text-gray-500 font-mono text-[11px]">{item.nomor_surat || item.noSurat}</span>
+                          <span className="text-gray-500 font-mono text-[11px]">{item.nomor_surat || '-'}</span>
                         </div>
                       </td>
                       <td className="px-6 py-5 text-center">
@@ -108,11 +106,11 @@ const InisiasiPenugasanKABID: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-5 text-center text-sm font-semibold text-gray-700">
-                        {item.luas || item.luas_ha} Ha
+                        {item.luas} Ha
                       </td>
                       <td className="px-6 py-5 text-center">
                         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#EBF8F1] text-[#185325] border border-[#C6EBD6]">
-                          {item.periode_evaluasi || item.periode || item.status_program}
+                          {item.tahap_evaluasi}
                         </span>
                       </td>
                       <td className="px-6 py-5 text-center">
@@ -123,7 +121,7 @@ const InisiasiPenugasanKABID: React.FC = () => {
                             ? 'bg-amber-50 text-amber-800 border border-amber-200' 
                             : 'bg-gray-100 text-gray-700'
                         }`}>
-                          {item.status_surat || 'TELAH DITUGASKAN'}
+                          {item.status_penugasan}
                         </span>
                       </td>
                       <td className="px-6 py-5 text-center">

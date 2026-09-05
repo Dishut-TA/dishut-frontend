@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  HiChevronRight, 
+import {
+  HiChevronRight,
   HiOutlineInformationCircle,
   HiCheck,
   HiChevronDown,
@@ -149,7 +149,7 @@ const PelaksanaanWizard: React.FC = () => {
       try {
         const token = localStorage.getItem('token');
         const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
-        
+
         // 1. Fetch Penugasan Detail
         const resP = await fetch(`${API_URL}/penugasan/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
         const jsonP = await resP.json();
@@ -160,7 +160,7 @@ const PelaksanaanWizard: React.FC = () => {
         let kth = '-';
         let targetBibit = '0';
         let totalPu = '0';
-        
+
         if (d.penugasanable_type === 'App\\Models\\DonationProgram') {
           programName = d.penugasanable?.name || '-';
           location = d.penugasanable?.location || '-';
@@ -190,17 +190,17 @@ const PelaksanaanWizard: React.FC = () => {
         // 2. Fetch PU List
         const resPU = await fetch(`${API_URL}/penugasan/${id}/petak-ukur`, { headers: { 'Authorization': `Bearer ${token}` } });
         const jsonPU = await resPU.json();
-        
+
         const dataPU = jsonPU.data || [];
         const puCount = parseInt(totalPu) || 0;
-        
+
         // Merge fetched data with placeholders
         const updatedList = Array.from({ length: puCount }, (_, i) => {
           if (dataPU[i]) {
-            return { 
-              id: dataPU[i].id, 
-              num: i + 1, 
-              status: dataPU[i].status, 
+            return {
+              id: dataPU[i].id,
+              num: i + 1,
+              status: dataPU[i].status,
               luas: `${dataPU[i].luas} ha`,
               dataTanamans: dataPU[i].data_tanamans || dataPU[i].dataTanamans || []
             };
@@ -213,7 +213,7 @@ const PelaksanaanWizard: React.FC = () => {
           };
         });
         setPuList(updatedList);
-        
+
         // Prioritaskan bibit dari data program donasi / APBD / CSR, baru fallback ke endpoint seeds bawaan penugasan
         const programSeedOptions = buildSeedOptionsFromProgram(d);
         if (programSeedOptions.length > 0) {
@@ -224,7 +224,7 @@ const PelaksanaanWizard: React.FC = () => {
           const fallbackSeeds = (jsonSeeds.data || []).map(normalizeSeedOption).filter(Boolean);
           setAvailableSeeds(fallbackSeeds.length > 0 ? fallbackSeeds : []);
         }
-        
+
         // Fetch Dokumentasi
         const resDok = await fetch(`${API_URL}/penugasan/${id}/dokumentasi`, { headers: { 'Authorization': `Bearer ${token}` } });
         const jsonDok = await resDok.json();
@@ -252,7 +252,7 @@ const PelaksanaanWizard: React.FC = () => {
 
   const prevStep = () => {
     if (currentStep > 2) setCurrentStep(currentStep - 1);
-    else navigate(-1); 
+    else navigate(-1);
   };
 
   // FUNGSI KONTROL POLIGON
@@ -269,12 +269,12 @@ const PelaksanaanWizard: React.FC = () => {
       toast.error('Minimal 3 titik untuk membentuk poligon PU');
       return;
     }
-    
+
     try {
       const token = localStorage.getItem('token');
       const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
       const createdPuCount = puList.filter(p => p.status === 'Selesai').length;
-      
+
       const payload = {
         penugasan_id: id,
         nama: `PU ${createdPuCount + 1}`,
@@ -287,7 +287,7 @@ const PelaksanaanWizard: React.FC = () => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload)
       });
-      
+
       if (res.ok) {
         toast.success('PU berhasil disimpan!');
         setPolygonPoints([]);
@@ -421,7 +421,7 @@ const PelaksanaanWizard: React.FC = () => {
         try {
           const errJson = await res.json();
           message = errJson.message || Object.values(errJson.errors || {}).flat().join(', ') || message;
-        } catch {}
+        } catch { }
         toast.error(message);
       }
     } catch (e) {
@@ -460,14 +460,14 @@ const PelaksanaanWizard: React.FC = () => {
         {steps.map((step, index) => {
           const isCompleted = step.status === 'Selesai';
           const isActive = currentStep === step.num;
-          
+
           return (
             <React.Fragment key={step.num}>
               <div className={`flex items-center gap-3 shrink-0 ${!isCompleted && !isActive ? 'opacity-50' : ''}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 
-                  ${isCompleted ? 'bg-[#008A4B] border-[#008A4B] text-white' : 
-                    isActive ? 'bg-[#008A4B] border-[#008A4B] text-white' : 
-                    'bg-white border-gray-300 text-gray-400'}`}
+                  ${isCompleted ? 'bg-[#008A4B] border-[#008A4B] text-white' :
+                    isActive ? 'bg-[#008A4B] border-[#008A4B] text-white' :
+                      'bg-white border-gray-300 text-gray-400'}`}
                 >
                   {isCompleted ? <HiCheck className="w-5 h-5" /> : step.num}
                 </div>
@@ -495,141 +495,140 @@ const PelaksanaanWizard: React.FC = () => {
     const persentasePu = Math.round((puSelesai / (parseInt(penugasanData.totalPu) || 1)) * 100);
 
     return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-8">
-      <div className="lg:col-span-3 space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <div className="flex justify-between items-center mb-4">
-             <h3 className="font-bold text-slate-900">Informasi Kegiatan</h3>
-             <HiOutlineInformationCircle className="w-4 h-4 text-slate-400" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-8">
+        <div className="lg:col-span-3 space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-slate-900">Informasi Kegiatan</h3>
+              <HiOutlineInformationCircle className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="space-y-3 text-xs">
+              <div className="flex"><span className="w-2/5 text-slate-500">ID Penugasan</span><span className="w-3/5 text-emerald-700 font-bold">{penugasanData.idPenugasan}</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500">ID Program</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.idProgram}</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500">Program</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.programName}</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500">Lokasi</span><span className="w-3/5 text-slate-900 font-medium whitespace-pre-line">{penugasanData.location}</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500">KTH</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.kth}</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500">Jenis Kegiatan</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.jenisKegiatan}</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500">Target Bibit</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.targetBibit} bibit</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500">Jumlah PU</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.totalPu} PU</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500">Target per PU</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.targetPerPu} bibit</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500">Periode</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.periodeMulai} - {penugasanData.periodeSelesai}</span></div>
+            </div>
           </div>
-          <div className="space-y-3 text-xs">
-            <div className="flex"><span className="w-2/5 text-slate-500">ID Penugasan</span><span className="w-3/5 text-emerald-700 font-bold">{penugasanData.idPenugasan}</span></div>
-            <div className="flex"><span className="w-2/5 text-slate-500">ID Program</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.idProgram}</span></div>
-            <div className="flex"><span className="w-2/5 text-slate-500">Program</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.programName}</span></div>
-            <div className="flex"><span className="w-2/5 text-slate-500">Lokasi</span><span className="w-3/5 text-slate-900 font-medium whitespace-pre-line">{penugasanData.location}</span></div>
-            <div className="flex"><span className="w-2/5 text-slate-500">KTH</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.kth}</span></div>
-            <div className="flex"><span className="w-2/5 text-slate-500">Jenis Kegiatan</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.jenisKegiatan}</span></div>
-            <div className="flex"><span className="w-2/5 text-slate-500">Target Bibit</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.targetBibit} bibit</span></div>
-            <div className="flex"><span className="w-2/5 text-slate-500">Jumlah PU</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.totalPu} PU</span></div>
-            <div className="flex"><span className="w-2/5 text-slate-500">Target per PU</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.targetPerPu} bibit</span></div>
-            <div className="flex"><span className="w-2/5 text-slate-500">Periode</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData.periodeMulai} - {penugasanData.periodeSelesai}</span></div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-slate-900">Ringkasan PU</h3>
+              <HiOutlineDocumentText className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="space-y-2 text-xs border-b border-slate-100 pb-4 mb-4">
+              <div className="flex justify-between"><span className="text-slate-500 flex items-center gap-2"><BiMapAlt className="w-4 h-4" /> Total PU</span><span className="font-bold text-blue-600">{penugasanData.totalPu}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500 flex items-center gap-2"><HiOutlineCheckCircle className="w-4 h-4" /> PU Selesai</span><span className="font-bold text-emerald-600">{puSelesai}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500 flex items-center gap-2"><HiOutlineClock className="w-4 h-4" /> PU Belum Dibuat</span><span className="font-bold text-blue-600">{puBelum}</span></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-xs mb-3">
+              <div><span className="text-slate-500 block mb-1">Luas Total (Target)</span><span className="font-bold text-blue-700 text-sm">{penugasanData.luasArea} ha</span></div>
+              <div><span className="text-slate-500 block mb-1">Luas Terpetakan</span><span className="font-bold text-emerald-600 text-sm">{(puSelesai * 0.18).toFixed(2)} ha</span></div>
+            </div>
+            <div className="flex justify-between items-end mb-1 text-[10px]"><span className="text-slate-500">Persentase</span><span className="font-bold text-emerald-600">{persentasePu}%</span></div>
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-emerald-500" style={{ width: `${persentasePu}%` }}></div></div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <div className="flex justify-between items-center mb-4">
-             <h3 className="font-bold text-slate-900">Ringkasan PU</h3>
-             <HiOutlineDocumentText className="w-4 h-4 text-slate-400" />
-          </div>
-          <div className="space-y-2 text-xs border-b border-slate-100 pb-4 mb-4">
-            <div className="flex justify-between"><span className="text-slate-500 flex items-center gap-2"><BiMapAlt className="w-4 h-4"/> Total PU</span><span className="font-bold text-blue-600">{penugasanData.totalPu}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500 flex items-center gap-2"><HiOutlineCheckCircle className="w-4 h-4"/> PU Selesai</span><span className="font-bold text-emerald-600">{puSelesai}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500 flex items-center gap-2"><HiOutlineArrowPath className="w-4 h-4"/> PU Dalam Proses</span><span className="font-bold text-orange-500">{puProses}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500 flex items-center gap-2"><HiOutlineClock className="w-4 h-4"/> PU Belum Dibuat</span><span className="font-bold text-blue-600">{puBelum}</span></div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 text-xs mb-3">
-             <div><span className="text-slate-500 block mb-1">Luas Total (Target)</span><span className="font-bold text-blue-700 text-sm">{penugasanData.luasArea} ha</span></div>
-             <div><span className="text-slate-500 block mb-1">Luas Terpetakan</span><span className="font-bold text-emerald-600 text-sm">{(puSelesai * 0.18).toFixed(2)} ha</span></div>
-          </div>
-          <div className="flex justify-between items-end mb-1 text-[10px]"><span className="text-slate-500">Persentase</span><span className="font-bold text-emerald-600">{persentasePu}%</span></div>
-          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-emerald-500" style={{ width: `${persentasePu}%` }}></div></div>
-        </div>
-      </div>
+        {/* TENGAH: Peta Lokasi Kegiatan ASLI (Leaflet) */}
+        <div className="lg:col-span-6 space-y-4">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+              <h3 className="font-bold text-slate-900">Peta Lokasi Kegiatan</h3>
+              <BiMapAlt className="w-5 h-5 text-slate-400" />
+            </div>
 
-      {/* TENGAH: Peta Lokasi Kegiatan ASLI (Leaflet) */}
-      <div className="lg:col-span-6 space-y-4">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
-            <h3 className="font-bold text-slate-900">Peta Lokasi Kegiatan</h3>
-            <BiMapAlt className="w-5 h-5 text-slate-400" />
-          </div>
-          
-          <div className="w-full h-100 relative bg-slate-100">
-            <MapContainer 
-              center={[-7.6321456, 107.6587921]} 
-              zoom={15} 
-              style={{ width: '100%', height: '100%', zIndex: 10 }}
-              zoomControl={false}
-            >
-              <TileLayer 
-                url="https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}" 
-                subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
-                maxZoom={20}
-              />
-              <MapEvents onMapClick={handleMapClick} />
+            <div className="w-full h-100 relative bg-slate-100">
+              <MapContainer
+                center={[-7.6321456, 107.6587921]}
+                zoom={15}
+                style={{ width: '100%', height: '100%', zIndex: 10 }}
+                zoomControl={false}
+              >
+                <TileLayer
+                  url="https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}"
+                  subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+                  maxZoom={20}
+                />
+                <MapEvents onMapClick={handleMapClick} />
+                {polygonPoints.length > 0 && (
+                  <Polygon
+                    positions={polygonPoints}
+                    pathOptions={{ color: '#10B981', fillColor: '#10B981', fillOpacity: 0.4, weight: 2, dashArray: '5,5' }}
+                  />
+                )}
+                {polygonPoints.map((pos, idx) => (
+                  <CircleMarker
+                    key={idx}
+                    center={pos}
+                    radius={5}
+                    pathOptions={{ color: 'white', weight: 2, fillColor: '#10B981', fillOpacity: 1 }}
+                  />
+                ))}
+              </MapContainer>
+
+              {/* Tombol Aksi Poligon */}
               {polygonPoints.length > 0 && (
-                <Polygon 
-                  positions={polygonPoints} 
-                  pathOptions={{ color: '#10B981', fillColor: '#10B981', fillOpacity: 0.4, weight: 2, dashArray: '5,5' }} 
-                />
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[9999] bg-white p-2 rounded-xl shadow-lg border border-slate-200">
+                  <button
+                    onClick={handleClearPolygon}
+                    className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSavePolygon}
+                    className="px-6 py-2 bg-[#008A4B] text-white hover:bg-emerald-800 rounded-lg text-xs font-bold transition-colors"
+                  >
+                    Simpan PU ({polygonPoints.length} Titik)
+                  </button>
+                </div>
               )}
-              {polygonPoints.map((pos, idx) => (
-                <CircleMarker 
-                  key={idx} 
-                  center={pos} 
-                  radius={5} 
-                  pathOptions={{ color: 'white', weight: 2, fillColor: '#10B981', fillOpacity: 1 }} 
-                />
-              ))}
-            </MapContainer>
 
-            {/* Tombol Aksi Poligon */}
-            {polygonPoints.length > 0 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[9999] bg-white p-2 rounded-xl shadow-lg border border-slate-200">
-                <button 
-                  onClick={handleClearPolygon}
-                  className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition-colors"
-                >
-                  Batal
-                </button>
-                <button 
-                  onClick={handleSavePolygon}
-                  className="px-6 py-2 bg-[#008A4B] text-white hover:bg-emerald-800 rounded-lg text-xs font-bold transition-colors"
-                >
-                  Simpan PU ({polygonPoints.length} Titik)
-                </button>
-              </div>
-            )}
-            
-            {/* Info Mode */}
-            {polygonPoints.length === 0 && (
-              <div className="absolute top-4 left-4 z-[9999]">
-                 <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-sm border border-slate-200 flex items-center gap-2">
+              {/* Info Mode */}
+              {polygonPoints.length === 0 && (
+                <div className="absolute top-4 left-4 z-[9999]">
+                  <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-sm border border-slate-200 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
                     <span className="text-xs font-bold text-slate-700">Mode Gambar Aktif: PU {puSelesai + 1}</span>
-                 </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-white border-t border-slate-100">
+              <h4 className="text-xs font-bold text-slate-800 mb-3">Cara Menggambar Poligon</h4>
+              <div className="grid grid-cols-5 gap-2 text-center text-[9px] font-medium text-slate-600">
+                <div><div className="w-10 h-10 bg-emerald-50 text-emerald-600 mx-auto rounded mb-1 flex items-center justify-center"><HiOutlineMapPin className="w-5 h-5" /></div>1. Klik pada peta untuk menambahkan titik awal</div>
+                <div><div className="w-10 h-10 bg-emerald-50 text-emerald-600 mx-auto rounded mb-1 flex items-center justify-center"><PiTree className="w-5 h-5" /></div>2. Klik titik berikutnya untuk membentuk sisi poligon</div>
+                <div><div className="w-10 h-10 bg-emerald-50 text-emerald-600 mx-auto rounded mb-1 flex items-center justify-center"><HiOutlineAdjustmentsHorizontal className="w-5 h-5" /></div>3. Minimal 3 titik untuk membentuk poligon</div>
+                <div><div className="w-10 h-10 bg-emerald-50 text-emerald-600 mx-auto rounded mb-1 flex items-center justify-center"><HiOutlineCheckCircle className="w-5 h-5" /></div>4. Poligon akan otomatis tertutup</div>
+                <div><div className="w-10 h-10 bg-emerald-50 text-emerald-600 mx-auto rounded mb-1 flex items-center justify-center"><HiOutlineDocumentArrowDown className="w-5 h-5" /></div>5. Klik Simpan PU jika sudah sesuai</div>
               </div>
-            )}
-          </div>
-          
-          <div className="p-4 bg-white border-t border-slate-100">
-             <h4 className="text-xs font-bold text-slate-800 mb-3">Cara Menggambar Poligon</h4>
-             <div className="grid grid-cols-5 gap-2 text-center text-[9px] font-medium text-slate-600">
-                <div><div className="w-10 h-10 bg-emerald-50 text-emerald-600 mx-auto rounded mb-1 flex items-center justify-center"><HiOutlineMapPin className="w-5 h-5"/></div>1. Klik pada peta untuk menambahkan titik awal</div>
-                <div><div className="w-10 h-10 bg-emerald-50 text-emerald-600 mx-auto rounded mb-1 flex items-center justify-center"><PiTree className="w-5 h-5"/></div>2. Klik titik berikutnya untuk membentuk sisi poligon</div>
-                <div><div className="w-10 h-10 bg-emerald-50 text-emerald-600 mx-auto rounded mb-1 flex items-center justify-center"><HiOutlineAdjustmentsHorizontal className="w-5 h-5"/></div>3. Minimal 3 titik untuk membentuk poligon</div>
-                <div><div className="w-10 h-10 bg-emerald-50 text-emerald-600 mx-auto rounded mb-1 flex items-center justify-center"><HiOutlineCheckCircle className="w-5 h-5"/></div>4. Poligon akan otomatis tertutup</div>
-                <div><div className="w-10 h-10 bg-emerald-50 text-emerald-600 mx-auto rounded mb-1 flex items-center justify-center"><HiOutlineDocumentArrowDown className="w-5 h-5"/></div>5. Klik Simpan PU jika sudah sesuai</div>
-             </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="lg:col-span-3">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-145">
-           <div className="p-4 border-b border-slate-100">
+        <div className="lg:col-span-3">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-145">
+            <div className="p-4 border-b border-slate-100">
               <button className="w-full py-2 border border-[#008A4B] text-[#008A4B] rounded-lg text-xs font-bold flex justify-center items-center gap-1 hover:bg-emerald-50 transition-colors">
-                <HiOutlinePlus className="w-4 h-4"/> Tambah PU <HiChevronDown className="w-3 h-3 ml-2"/>
+                <HiOutlinePlus className="w-4 h-4" /> Tambah PU <HiChevronDown className="w-3 h-3 ml-2" />
               </button>
-           </div>
-           <div className="p-4 border-b border-slate-100 flex justify-between items-center">
+            </div>
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-sm font-bold text-slate-800">Daftar PU ({penugasanData.totalPu})</h3>
               <HiOutlineInformationCircle className="w-4 h-4 text-slate-400" />
-           </div>
-           <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
               {puList.map(pu => (
-                <div 
-                  key={pu.num} 
+                <div
+                  key={pu.num}
                   onClick={() => {
                     if (pu.status === 'Selesai') {
                       setActivePu(pu);
@@ -637,40 +636,38 @@ const PelaksanaanWizard: React.FC = () => {
                       setCurrentStep(3);
                     }
                   }}
-                  className={`flex items-center justify-between p-3 rounded-lg border ${
-                    pu.status === 'Sedang Dibuat' ? 'bg-orange-50 border-orange-100' : 
-                    pu.status === 'Selesai' ? 'hover:bg-slate-50 cursor-pointer border-transparent border-b-slate-100 last:border-b-transparent' : 
-                    'hover:bg-slate-50 border-transparent border-b-slate-100 last:border-b-transparent'
-                  }`}
+                  className={`flex items-center justify-between p-3 rounded-lg border ${pu.status === 'Sedang Dibuat' ? 'bg-orange-50 border-orange-100' :
+                    pu.status === 'Selesai' ? 'hover:bg-slate-50 cursor-pointer border-transparent border-b-slate-100 last:border-b-transparent' :
+                      'hover:bg-slate-50 border-transparent border-b-slate-100 last:border-b-transparent'
+                    }`}
                 >
-                   <div className="flex items-center gap-3">
-                      <HiOutlineBars3 className={`w-4 h-4 ${pu.status === 'Sedang Dibuat' ? 'text-slate-400' : 'text-slate-300'}`} />
-                      <span className={`text-xs font-medium ${pu.status === 'Sedang Dibuat' ? 'font-bold text-slate-800' : 'text-slate-600'}`}>PU {pu.num}</span>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
-                        pu.status === 'Selesai' ? 'bg-emerald-100 text-emerald-600' :
-                        pu.status === 'Sedang Dibuat' ? 'bg-orange-100 text-orange-600' :
+                  <div className="flex items-center gap-3">
+                    <HiOutlineBars3 className={`w-4 h-4 ${pu.status === 'Sedang Dibuat' ? 'text-slate-400' : 'text-slate-300'}`} />
+                    <span className={`text-xs font-medium ${pu.status === 'Sedang Dibuat' ? 'font-bold text-slate-800' : 'text-slate-600'}`}>PU {pu.num}</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${pu.status === 'Selesai' ? 'bg-emerald-100 text-emerald-600' :
+                      pu.status === 'Sedang Dibuat' ? 'bg-orange-100 text-orange-600' :
                         'bg-slate-100 text-slate-500'
                       }`}>{pu.status}</span>
-                   </div>
-                   <div className="flex items-center gap-3">
-                      <span className={`text-[10px] ${pu.status === 'Belum Dibuat' ? 'text-slate-400' : 'font-medium text-slate-600'}`}>{pu.luas}</span>
-                      {pu.status === 'Sedang Dibuat' ? (
-                        <HiOutlinePencil className="w-4 h-4 text-slate-500 cursor-pointer hover:text-slate-800" />
-                      ) : (
-                        <HiEllipsisVertical className="w-4 h-4 text-slate-400 cursor-pointer" />
-                      )}
-                   </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-[10px] ${pu.status === 'Belum Dibuat' ? 'text-slate-400' : 'font-medium text-slate-600'}`}>{pu.luas}</span>
+                    {pu.status === 'Sedang Dibuat' ? (
+                      <HiOutlinePencil className="w-4 h-4 text-slate-500 cursor-pointer hover:text-slate-800" />
+                    ) : (
+                      <HiEllipsisVertical className="w-4 h-4 text-slate-400 cursor-pointer" />
+                    )}
+                  </div>
                 </div>
               ))}
-           </div>
-           <div className="p-4 border-t border-slate-100">
+            </div>
+            <div className="p-4 border-t border-slate-100">
               <button className="w-full py-2.5 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold flex justify-center items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm">
-                <HiOutlineDocumentText className="w-4 h-4"/> Lihat Ringkasan Semua PU
+                <HiOutlineDocumentText className="w-4 h-4" /> Lihat Ringkasan Semua PU
               </button>
-           </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
     );
   };
 
@@ -686,7 +683,7 @@ const PelaksanaanWizard: React.FC = () => {
           <span className="inline-block px-3 py-1 bg-[#008A4B] text-white text-xs font-bold rounded mb-4 shadow-sm">
             PU {activePu?.num || activePu?.nama || '-'}
           </span>
-          
+
           <div className="space-y-3 text-xs">
             <div className="flex gap-4">
               <span className="w-1/3 text-slate-500">Lokasi</span>
@@ -703,7 +700,7 @@ const PelaksanaanWizard: React.FC = () => {
           </div>
 
           <hr className="my-4 border-slate-100" />
-          
+
           <div className="space-y-2 text-xs">
             <div className="flex justify-between">
               <span className="text-slate-500">Target di PU ini</span>
@@ -737,11 +734,6 @@ const PelaksanaanWizard: React.FC = () => {
 
       {/* Kolom Tengah: Form Input */}
       <div className="lg:col-span-5 space-y-6">
-        {/* INFO BANNER */}
-        <div className="bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl p-4 flex items-start gap-3 text-xs text-[#166534] shadow-sm">
-          <HiOutlineInformationCircle className="w-5 h-5 text-[#008A4B] shrink-0 mt-0.5" />
-          <p className="leading-relaxed">Setiap tanaman wajib difoto, diambil koordinatnya, dan diisi tinggi tanamannya. Pastikan data akurat karena akan digunakan untuk monitoring dan evaluasi.</p>
-        </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex justify-between items-center mb-6">
@@ -752,15 +744,15 @@ const PelaksanaanWizard: React.FC = () => {
           <form className="space-y-5" onSubmit={handleSaveTanaman}>
             <div>
               <label className="block text-[11px] font-bold text-slate-800 mb-2">1. Jenis Tanaman <span className="text-red-500">*</span></label>
-              
+
               {!isNewSeed ? (
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <PiLeaf className="h-4 w-4 text-[#008A4B]" />
                   </div>
-                  <select 
+                  <select
                     value={formTanaman.seed_id}
-                    onChange={(e) => setFormTanaman({...formTanaman, seed_id: e.target.value})}
+                    onChange={(e) => setFormTanaman({ ...formTanaman, seed_id: e.target.value })}
                     required
                     className="w-full pl-9 pr-10 py-2.5 border border-slate-300 rounded-lg text-xs focus:ring-[#008A4B] focus:border-[#008A4B] appearance-none bg-white font-semibold text-slate-900 shadow-sm">
                     <option value="">Pilih Tanaman...</option>
@@ -775,15 +767,15 @@ const PelaksanaanWizard: React.FC = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <PiLeaf className="h-4 w-4 text-[#008A4B]" />
                   </div>
-                  <input type="text" 
+                  <input type="text"
                     value={formTanaman.nama_tanaman}
-                    onChange={(e) => setFormTanaman({...formTanaman, nama_tanaman: e.target.value})}
+                    onChange={(e) => setFormTanaman({ ...formTanaman, nama_tanaman: e.target.value })}
                     placeholder="Ketik nama tanaman baru..."
                     required
                     className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:ring-[#008A4B] focus:border-[#008A4B] shadow-sm" />
                 </div>
               )}
-              
+
               <button type="button" onClick={() => setIsNewSeed(!isNewSeed)} className="text-blue-600 text-[10px] font-bold mt-2 flex items-center gap-1 hover:underline">
                 {isNewSeed ? 'Kembali pilih dari daftar' : '+ Tambah jenis tanaman baru'}
               </button>
@@ -792,9 +784,9 @@ const PelaksanaanWizard: React.FC = () => {
             <div>
               <label className="block text-[11px] font-bold text-slate-800 mb-2">2. Tinggi Tanaman <span className="text-red-500">*</span></label>
               <div className="relative">
-                <input type="number" 
+                <input type="number"
                   value={formTanaman.tinggi}
-                  onChange={(e) => setFormTanaman({...formTanaman, tinggi: e.target.value})}
+                  onChange={(e) => setFormTanaman({ ...formTanaman, tinggi: e.target.value })}
                   className="w-full pl-3 pr-12 py-2.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:ring-[#008A4B] focus:border-[#008A4B] shadow-sm" />
                 <div className="absolute inset-y-0 right-0 px-3 border-l border-slate-300 flex items-center bg-slate-50 rounded-r-lg">
                   <span className="text-slate-500 text-[11px] font-medium">cm</span>
@@ -873,9 +865,9 @@ const PelaksanaanWizard: React.FC = () => {
 
             <div>
               <label className="block text-[11px] font-bold text-slate-800 mb-2">5. Catatan (Opsional)</label>
-              <textarea rows={2} 
+              <textarea rows={2}
                 value={formTanaman.catatan}
-                onChange={(e) => setFormTanaman({...formTanaman, catatan: e.target.value})}
+                onChange={(e) => setFormTanaman({ ...formTanaman, catatan: e.target.value })}
                 placeholder="Contoh: Tanaman tumbuh baik, akar kuat..." className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-xs focus:ring-[#008A4B] focus:border-[#008A4B] resize-none shadow-sm"></textarea>
             </div>
 
@@ -890,7 +882,7 @@ const PelaksanaanWizard: React.FC = () => {
 
       {/* Kolom Kanan: Daftar & Ringkasan */}
       <div className="lg:col-span-4 space-y-6">
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-slate-900 text-sm">Daftar Tanaman di PU {activePu?.num || '-'}</h3>
@@ -903,7 +895,7 @@ const PelaksanaanWizard: React.FC = () => {
               </button>
             </div>
           </div>
-          
+
           <p className="text-xs font-bold text-[#008A4B] mb-4">{tanamanList.length} <span className="font-normal text-slate-500">tanaman</span></p>
 
           <div className="space-y-4 mb-4">
@@ -919,11 +911,11 @@ const PelaksanaanWizard: React.FC = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-slate-900 truncate">{item.nama_tanaman || item.seed?.name || 'Tanaman'}</p>
-                  <p className="text-[9px] text-slate-500 flex items-center gap-1 mt-1"><PiLeaf className="w-3 h-3 text-[#008A4B]"/> {item.kondisi_tanaman}</p>
+                  <p className="text-[9px] text-slate-500 flex items-center gap-1 mt-1"><PiLeaf className="w-3 h-3 text-[#008A4B]" /> {item.kondisi_tanaman}</p>
                   <p className="text-[9px] text-slate-500 truncate mt-0.5">{item.keterangan || '-'}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <button className="text-slate-400 hover:text-slate-600"><HiEllipsisVertical className="w-4 h-4"/></button>
+                  <button className="text-slate-400 hover:text-slate-600"><HiEllipsisVertical className="w-4 h-4" /></button>
                   <div className="text-center mt-1">
                     <p className="text-[9px] text-slate-500">Jumlah</p>
                     <p className="text-xs font-bold text-[#008A4B]">{item.jumlah}</p>
@@ -937,35 +929,10 @@ const PelaksanaanWizard: React.FC = () => {
           </div>
 
           <button className="w-full py-2.5 border border-[#008A4B] text-[#008A4B] rounded-lg text-xs font-bold flex justify-center items-center gap-2 hover:bg-emerald-50 transition-colors shadow-sm">
-             <HiOutlineBars3 className="w-4 h-4"/> Lihat Semua Tanaman
+            <HiOutlineBars3 className="w-4 h-4" /> Lihat Semua Tanaman
           </button>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <h3 className="font-bold text-slate-900 mb-4 text-sm">Ringkasan Input PU {activePu?.num || '-'}</h3>
-          <div className="grid grid-cols-4 gap-2 mb-4">
-            <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
-              <p className="text-[9px] text-slate-500 mb-1 leading-tight font-medium">Target Tanaman</p>
-              <p className="text-base font-black text-slate-900">{penugasanData?.targetPerPu || '0'}</p>
-            </div>
-            <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
-              <p className="text-[9px] text-slate-500 mb-1 leading-tight font-medium">Sudah Input</p>
-              <p className="text-base font-black text-slate-900">{tanamanList.length}</p>
-            </div>
-            <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
-              <p className="text-[9px] text-slate-500 mb-1 leading-tight font-medium">Belum Input</p>
-              <p className="text-base font-black text-slate-900">{Math.max(0, (parseInt(penugasanData?.targetPerPu || '0')) - tanamanList.length)}</p>
-            </div>
-            <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
-              <p className="text-[9px] text-slate-500 mb-1 leading-tight font-medium">Kelengkapan Data</p>
-              <p className="text-base font-black text-slate-900">{Math.min(100, Math.round((tanamanList.length / (parseInt(penugasanData?.targetPerPu || '1') || 1)) * 100))}%</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2 text-[10px] text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-100">
-            <HiOutlineInformationCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <p className="leading-relaxed">Pastikan semua tanaman memiliki foto, koordinat, dan tinggi tanaman sebelum melanjutkan.</p>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -975,215 +942,185 @@ const PelaksanaanWizard: React.FC = () => {
   // ==========================================================================
   const renderStep4 = () => (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-24">
-       {/* Kolom Kiri: Info */}
-       <div className="lg:col-span-3 space-y-6">
-         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-           <h3 className="font-bold text-slate-900 mb-4">Informasi Kegiatan</h3>
-           <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-full mb-5">{penugasanData?.idPenugasan || '-'}</span>
-           
-           <div className="space-y-3 text-xs">
-             <div className="flex gap-3"><span className="w-1/3 text-slate-500">Program</span><span className="w-2/3 text-slate-900 font-medium">{penugasanData?.programName || '-'}</span></div>
-             <div className="flex gap-3"><span className="w-1/3 text-slate-500">Kegiatan</span><span className="w-2/3 text-slate-900 font-medium">{penugasanData?.jenisKegiatan || '-'}</span></div>
-             <div className="flex gap-3"><span className="w-1/3 text-slate-500">Lokasi</span><span className="w-2/3 text-slate-900 font-medium leading-relaxed">{penugasanData?.location || '-'}</span></div>
-             <div className="flex gap-3"><span className="w-1/3 text-slate-500">KTH</span><span className="w-2/3 text-slate-900 font-medium">{penugasanData?.kth || '-'}</span></div>
-             <div className="flex gap-3"><span className="w-1/3 text-slate-500">Periode</span><span className="w-2/3 text-slate-900 font-medium">{penugasanData?.periodeMulai || '-'} s.d {penugasanData?.periodeSelesai || '-'}</span></div>
-           </div>
-         </div>
+      {/* Kolom Kiri: Info */}
+      <div className="lg:col-span-3 space-y-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <h3 className="font-bold text-slate-900 mb-4">Informasi Kegiatan</h3>
+          <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-full mb-5">{penugasanData?.idPenugasan || '-'}</span>
 
-         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-           <h3 className="font-bold text-slate-900 mb-4 text-sm">Ringkasan Input</h3>
-           <div className="space-y-3 text-xs mb-5">
-              <div className="flex justify-between"><span className="text-slate-500">Jumlah PU</span><span className="font-bold text-slate-900">{puList.length} PU</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Target Tanaman</span><span className="font-bold text-slate-900">{penugasanData?.targetBibit || '0'} tanaman</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Dokumentasi</span><span className="font-bold text-slate-900">{dokumentasiList.length} foto</span></div>
-           </div>
-           
-           <div className="flex justify-between items-end mb-2">
-             <span className="text-xs text-slate-500">Kelengkapan Data</span>
-             <span className="text-sm font-bold text-slate-900">
-               {Math.min(100, ((dokumentasiList.length / 5) * 100)).toFixed(0)}%
-             </span>
-           </div>
-           <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-6">
-             <div className="h-full bg-[#008A4B] rounded-full" style={{ width: `${Math.min(100, (dokumentasiList.length / 5) * 100)}%` }}></div>
-           </div>
-           <button onClick={() => setCurrentStep(3)} className="w-full py-2.5 border border-slate-200 text-slate-700 rounded-lg font-bold text-xs hover:bg-slate-50 flex justify-center items-center gap-2 transition-colors shadow-sm">
-             <HiOutlineBars3 className="w-4 h-4" /> Kembali ke Input Tanaman
-           </button>
-         </div>
-       </div>
+          <div className="space-y-3 text-xs">
+            <div className="flex gap-3"><span className="w-1/3 text-slate-500">Program</span><span className="w-2/3 text-slate-900 font-medium">{penugasanData?.programName || '-'}</span></div>
+            <div className="flex gap-3"><span className="w-1/3 text-slate-500">Kegiatan</span><span className="w-2/3 text-slate-900 font-medium">{penugasanData?.jenisKegiatan || '-'}</span></div>
+            <div className="flex gap-3"><span className="w-1/3 text-slate-500">Lokasi</span><span className="w-2/3 text-slate-900 font-medium leading-relaxed">{penugasanData?.location || '-'}</span></div>
+            <div className="flex gap-3"><span className="w-1/3 text-slate-500">KTH</span><span className="w-2/3 text-slate-900 font-medium">{penugasanData?.kth || '-'}</span></div>
+            <div className="flex gap-3"><span className="w-1/3 text-slate-500">Periode</span><span className="w-2/3 text-slate-900 font-medium">{penugasanData?.periodeMulai || '-'} s.d {penugasanData?.periodeSelesai || '-'}</span></div>
+          </div>
+        </div>
 
-       {/* Kolom Tengah: Form Tambah Dokumentasi */}
-       <div className="lg:col-span-5 space-y-6">
-         {/* INFO BANNER */}
-         <div className="bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl p-4 flex items-start gap-3 text-xs text-[#166534] shadow-sm mb-6">
-            <HiOutlineInformationCircle className="w-5 h-5 text-[#008A4B] shrink-0 mt-0.5" />
-            <p className="leading-relaxed">Upload foto kegiatan yang menggambarkan proses pelaksanaan penanaman, kondisi lokasi, dan partisipasi masyarakat (jika ada).</p>
-         </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <h3 className="font-bold text-slate-900 mb-4 text-sm">Ringkasan Input</h3>
+          <div className="space-y-3 text-xs mb-5">
+            <div className="flex justify-between"><span className="text-slate-500">Jumlah PU</span><span className="font-bold text-slate-900">{puList.length} PU</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Target Tanaman</span><span className="font-bold text-slate-900">{penugasanData?.targetBibit || '0'} tanaman</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Dokumentasi</span><span className="font-bold text-slate-900">{dokumentasiList.length} foto</span></div>
+          </div>
 
-         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-           <h3 className="font-bold text-slate-900 mb-6 text-base">Tambah Dokumentasi Kegiatan</h3>
-           
-           <form className="space-y-6" onSubmit={handleUploadDokumentasi}>
-              <div>
-                 <label className="block text-xs font-bold text-slate-800 mb-3">1. Jenis Dokumentasi <span className="text-red-500">*</span></label>
-                 <div className="flex flex-wrap gap-2">
-                    {['Foto Sebelum', 'Proses Penanaman', 'Kondisi Lokasi', 'Partisipasi Masyarakat', 'Lainnya'].map(jenis => (
-                      <button 
-                        key={jenis}
-                        type="button" 
-                        onClick={() => setFormDokumentasi({...formDokumentasi, jenis_dokumentasi: jenis})}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-sm transition-colors ${
-                          formDokumentasi.jenis_dokumentasi === jenis 
-                            ? 'bg-emerald-50 text-[#008A4B] border border-[#008A4B]' 
-                            : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'
-                        }`}>
-                        <HiOutlineCamera className="w-4 h-4" /> {jenis}
-                      </button>
-                    ))}
-                 </div>
-              </div>
+          <div className="flex justify-between items-end mb-2">
+            <span className="text-xs text-slate-500">Kelengkapan Data</span>
+            <span className="text-sm font-bold text-slate-900">
+              {Math.min(100, ((dokumentasiList.length / 5) * 100)).toFixed(0)}%
+            </span>
+          </div>
+          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-6">
+            <div className="h-full bg-[#008A4B] rounded-full" style={{ width: `${Math.min(100, (dokumentasiList.length / 5) * 100)}%` }}></div>
+          </div>
+          <button onClick={() => setCurrentStep(3)} className="w-full py-2.5 border border-slate-200 text-slate-700 rounded-lg font-bold text-xs hover:bg-slate-50 flex justify-center items-center gap-2 transition-colors shadow-sm">
+            <HiOutlineBars3 className="w-4 h-4" /> Kembali ke Input Tanaman
+          </button>
+        </div>
+      </div>
 
-              <div>
-                 <label className="block text-xs font-bold text-slate-800 mb-3">2. Foto Dokumentasi <span className="text-red-500">*</span></label>
+      {/* Kolom Tengah: Form Tambah Dokumentasi */}
+      <div className="lg:col-span-5 space-y-6">
 
-                 {formDokumentasi.file ? (
-                   <div className="w-full rounded-xl border border-slate-300 bg-slate-50 p-3 mb-4">
-                      <div className="relative w-full h-40 rounded-lg overflow-hidden mb-3 bg-slate-200">
-                         <img
-                           src={dokumentasiPreview || undefined}
-                           className="w-full h-full object-cover"
-                           alt="Preview dokumentasi"
-                         />
-                         <button
-                           type="button"
-                           onClick={() => setFormDokumentasi({ ...formDokumentasi, file: null })}
-                           className="absolute top-2 right-2 bg-white/90 hover:bg-white text-slate-600 rounded-full p-1.5 shadow-sm"
-                         >
-                           <HiOutlineArrowPath className="w-3.5 h-3.5" />
-                         </button>
-                      </div>
-                      <p className="text-xs font-bold text-slate-700 truncate">{formDokumentasi.file.name}</p>
-                      <p className="text-[10px] text-slate-500">{(formDokumentasi.file.size / 1024).toFixed(0)} KB</p>
-                   </div>
-                 ) : (
-                   <div className="grid grid-cols-2 gap-3 mb-4">
-                      <label className="h-32 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer">
-                         <input
-                           type="file"
-                           className="hidden"
-                           accept="image/*"
-                           capture="environment"
-                           onChange={(e) => {
-                             if (e.target.files && e.target.files[0]) {
-                               setFormDokumentasi({ ...formDokumentasi, file: e.target.files[0] });
-                             }
-                           }}
-                         />
-                         <HiOutlineCamera className="w-7 h-7 text-slate-400 mb-2" />
-                         <span className="text-xs font-bold text-slate-700 text-center px-2">Ambil Foto (Kamera)</span>
-                      </label>
 
-                      <label className="h-32 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer">
-                         <input
-                           type="file"
-                           className="hidden"
-                           accept="image/*"
-                           onChange={(e) => {
-                             if (e.target.files && e.target.files[0]) {
-                               setFormDokumentasi({ ...formDokumentasi, file: e.target.files[0] });
-                             }
-                           }}
-                         />
-                         <HiOutlinePhoto className="w-7 h-7 text-slate-400 mb-2" />
-                         <span className="text-xs font-bold text-slate-700 text-center px-2">Pilih dari Galeri</span>
-                      </label>
-                   </div>
-                 )}
-              </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h3 className="font-bold text-slate-900 mb-6 text-base">Tambah Dokumentasi Kegiatan</h3>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-2">3. Keterangan Foto <span className="text-red-500">*</span></label>
-                <textarea rows={3} 
-                  value={formDokumentasi.keterangan}
-                  onChange={(e) => setFormDokumentasi({...formDokumentasi, keterangan: e.target.value})}
-                  placeholder="Jelaskan kegiatan pada foto ini..." className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-xs focus:ring-[#008A4B] focus:border-[#008A4B] resize-none shadow-sm"></textarea>
-              </div>
-
-              <div className="flex gap-3 justify-between pt-2">
-                <button type="button" className="px-6 py-2.5 text-slate-600 font-bold text-xs hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 shadow-sm bg-white">
-                  Batal
-                </button>
-                <button type="submit" className="px-6 py-2.5 bg-[#008A4B] text-white font-bold text-xs hover:bg-emerald-800 rounded-lg transition-colors shadow-sm">
-                  Simpan Dokumentasi
-                </button>
-              </div>
-           </form>
-         </div>
-       </div>
-
-       {/* Kolom Kanan: Daftar Dokumentasi */}
-       <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-             <div className="flex justify-between items-center mb-5">
-                <h3 className="font-bold text-slate-900 text-sm">Dokumentasi Kegiatan ({dokumentasiList.length})</h3>
-                <button className="px-2.5 py-1.5 border border-slate-300 rounded-md text-[10px] font-bold flex items-center gap-1 hover:bg-slate-50 shadow-sm text-slate-700">
-                  <HiOutlineAdjustmentsHorizontal className="w-3.5 h-3.5" /> Filter
-                </button>
-             </div>
-             
-             <div className="grid grid-cols-2 gap-3 mb-4">
-                {dokumentasiList.map((item: any, i) => (
-                   <div key={item.id} className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm flex flex-col">
-                      <div className="h-20 w-full relative">
-                         <img src={`${STORAGE_URL}/${item.file_path}`} className="w-full h-full object-cover" alt={item.jenis_dokumentasi} />
-                         <div className="absolute top-1.5 left-1.5 w-4 h-4 bg-white/90 rounded text-[#008A4B] font-bold text-[9px] flex items-center justify-center shadow-sm">{i + 1}</div>
-                      </div>
-                      <div className="p-2 flex-1 flex flex-col">
-                         <div className="flex justify-between items-start mb-1">
-                           <p className="text-[10px] font-bold text-slate-800 leading-tight">{item.jenis_dokumentasi}</p>
-                           <button className="text-slate-400 hover:text-slate-600"><HiEllipsisVertical className="w-3 h-3"/></button>
-                         </div>
-                         <p className="text-[8px] text-slate-500 mt-auto">{new Date(item.created_at).toLocaleDateString('id-ID')}</p>
-                      </div>
-                   </div>
+          <form className="space-y-6" onSubmit={handleUploadDokumentasi}>
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-3">1. Jenis Dokumentasi <span className="text-red-500">*</span></label>
+              <div className="flex flex-wrap gap-2">
+                {['Foto Sebelum', 'Proses Penanaman', 'Kondisi Lokasi', 'Partisipasi Masyarakat', 'Lainnya'].map(jenis => (
+                  <button
+                    key={jenis}
+                    type="button"
+                    onClick={() => setFormDokumentasi({ ...formDokumentasi, jenis_dokumentasi: jenis })}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-sm transition-colors ${formDokumentasi.jenis_dokumentasi === jenis
+                      ? 'bg-emerald-50 text-[#008A4B] border border-[#008A4B]'
+                      : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'
+                      }`}>
+                    <HiOutlineCamera className="w-4 h-4" /> {jenis}
+                  </button>
                 ))}
-                {dokumentasiList.length === 0 && (
-                  <div className="col-span-2 text-center py-6 text-slate-400 text-xs">Belum ada dokumentasi</div>
-                )}
-             </div>
-
-             <button className="w-full py-2.5 border border-[#008A4B] text-[#008A4B] rounded-lg text-xs font-bold flex justify-center items-center gap-2 hover:bg-emerald-50 transition-colors shadow-sm">
-                <HiOutlinePhoto className="w-4 h-4"/> Lihat Semua Dokumentasi
-             </button>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <h3 className="font-bold text-slate-900 mb-4 text-sm">Ringkasan Dokumentasi</h3>
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
-                <p className="text-[8px] text-slate-500 mb-1 font-medium">Total Foto</p>
-                <p className="text-sm font-black text-slate-900">{dokumentasiList.length} <span className="text-[9px] font-normal text-slate-500">foto</span></p>
-              </div>
-              <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
-                <p className="text-[8px] text-slate-500 mb-1 font-medium">Proses Penanaman</p>
-                <p className="text-sm font-black text-slate-900">{dokumentasiList.filter((d: any) => d.jenis_dokumentasi === 'Proses Penanaman').length} <span className="text-[9px] font-normal text-slate-500">foto</span></p>
-              </div>
-              <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
-                <p className="text-[8px] text-slate-500 mb-1 font-medium">Kondisi Lokasi</p>
-                <p className="text-sm font-black text-slate-900">{dokumentasiList.filter((d: any) => d.jenis_dokumentasi === 'Kondisi Lokasi').length} <span className="text-[9px] font-normal text-slate-500">foto</span></p>
-              </div>
-              <div className="border border-slate-100 bg-slate-50 rounded-lg p-2 text-center shadow-sm">
-                <p className="text-[8px] text-slate-500 mb-1 font-medium">Partisipasi Masyarakat</p>
-                <p className="text-sm font-black text-slate-900">{dokumentasiList.filter((d: any) => d.jenis_dokumentasi === 'Partisipasi Masyarakat').length} <span className="text-[9px] font-normal text-slate-500">foto</span></p>
               </div>
             </div>
-            <div className="flex items-start gap-2 text-[10px] text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-100">
-              <HiOutlineInformationCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <p className="leading-relaxed">Dokumentasi yang lengkap membantu validasi dan monitoring hasil pelaksanaan kegiatan.</p>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-3">2. Foto Dokumentasi <span className="text-red-500">*</span></label>
+
+              {formDokumentasi.file ? (
+                <div className="w-full rounded-xl border border-slate-300 bg-slate-50 p-3 mb-4">
+                  <div className="relative w-full h-40 rounded-lg overflow-hidden mb-3 bg-slate-200">
+                    <img
+                      src={dokumentasiPreview || undefined}
+                      className="w-full h-full object-cover"
+                      alt="Preview dokumentasi"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormDokumentasi({ ...formDokumentasi, file: null })}
+                      className="absolute top-2 right-2 bg-white/90 hover:bg-white text-slate-600 rounded-full p-1.5 shadow-sm"
+                    >
+                      <HiOutlineArrowPath className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-xs font-bold text-slate-700 truncate">{formDokumentasi.file.name}</p>
+                  <p className="text-[10px] text-slate-500">{(formDokumentasi.file.size / 1024).toFixed(0)} KB</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <label className="h-32 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setFormDokumentasi({ ...formDokumentasi, file: e.target.files[0] });
+                        }
+                      }}
+                    />
+                    <HiOutlineCamera className="w-7 h-7 text-slate-400 mb-2" />
+                    <span className="text-xs font-bold text-slate-700 text-center px-2">Ambil Foto (Kamera)</span>
+                  </label>
+
+                  <label className="h-32 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setFormDokumentasi({ ...formDokumentasi, file: e.target.files[0] });
+                        }
+                      }}
+                    />
+                    <HiOutlinePhoto className="w-7 h-7 text-slate-400 mb-2" />
+                    <span className="text-xs font-bold text-slate-700 text-center px-2">Pilih dari Galeri</span>
+                  </label>
+                </div>
+              )}
             </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-2">3. Keterangan Foto <span className="text-red-500">*</span></label>
+              <textarea rows={3}
+                value={formDokumentasi.keterangan}
+                onChange={(e) => setFormDokumentasi({ ...formDokumentasi, keterangan: e.target.value })}
+                placeholder="Jelaskan kegiatan pada foto ini..." className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-xs focus:ring-[#008A4B] focus:border-[#008A4B] resize-none shadow-sm"></textarea>
+            </div>
+
+            <div className="flex gap-3 justify-between pt-2">
+              <button type="button" className="px-6 py-2.5 text-slate-600 font-bold text-xs hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 shadow-sm bg-white">
+                Batal
+              </button>
+              <button type="submit" className="px-6 py-2.5 bg-[#008A4B] text-white font-bold text-xs hover:bg-emerald-800 rounded-lg transition-colors shadow-sm">
+                Simpan Dokumentasi
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Kolom Kanan: Daftar Dokumentasi */}
+      <div className="lg:col-span-4 space-y-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="font-bold text-slate-900 text-sm">Dokumentasi Kegiatan ({dokumentasiList.length})</h3>
+            <button className="px-2.5 py-1.5 border border-slate-300 rounded-md text-[10px] font-bold flex items-center gap-1 hover:bg-slate-50 shadow-sm text-slate-700">
+              <HiOutlineAdjustmentsHorizontal className="w-3.5 h-3.5" /> Filter
+            </button>
           </div>
-       </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {dokumentasiList.map((item: any, i) => (
+              <div key={item.id} className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm flex flex-col">
+                <div className="h-20 w-full relative">
+                  <img src={`${STORAGE_URL}/${item.file_path}`} className="w-full h-full object-cover" alt={item.jenis_dokumentasi} />
+                  <div className="absolute top-1.5 left-1.5 w-4 h-4 bg-white/90 rounded text-[#008A4B] font-bold text-[9px] flex items-center justify-center shadow-sm">{i + 1}</div>
+                </div>
+                <div className="p-2 flex-1 flex flex-col">
+                  <div className="flex justify-between items-start mb-1">
+                    <p className="text-[10px] font-bold text-slate-800 leading-tight">{item.jenis_dokumentasi}</p>
+                    <button className="text-slate-400 hover:text-slate-600"><HiEllipsisVertical className="w-3 h-3" /></button>
+                  </div>
+                  <p className="text-[8px] text-slate-500 mt-auto">{new Date(item.created_at).toLocaleDateString('id-ID')}</p>
+                </div>
+              </div>
+            ))}
+            {dokumentasiList.length === 0 && (
+              <div className="col-span-2 text-center py-6 text-slate-400 text-xs">Belum ada dokumentasi</div>
+            )}
+          </div>
+
+          <button className="w-full py-2.5 border border-[#008A4B] text-[#008A4B] rounded-lg text-xs font-bold flex justify-center items-center gap-2 hover:bg-emerald-50 transition-colors shadow-sm">
+            <HiOutlinePhoto className="w-4 h-4" /> Lihat Semua Dokumentasi
+          </button>
+        </div>
+
+      </div>
     </div>
   );
 
@@ -1199,233 +1136,222 @@ const PelaksanaanWizard: React.FC = () => {
     const paginatedPuList = puList.slice((safePuPage - 1) * PU_TABLE_PAGE_SIZE, safePuPage * PU_TABLE_PAGE_SIZE);
 
     return (
-    <div className="flex flex-col gap-6 w-full max-w-300 mx-auto pb-24">
-      {/* Top Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-         {/* Informasi Kegiatan */}
-         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <div className="flex flex-col gap-6 w-full max-w-300 mx-auto pb-24">
+        {/* Top Info Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Informasi Kegiatan */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <h3 className="font-bold text-slate-900 mb-4 text-sm">Informasi Kegiatan</h3>
             <div className="space-y-3 text-xs">
-              <div className="flex"><span className="w-2/5 text-slate-500 flex items-center gap-1.5"><HiOutlineDocumentText className="w-3.5 h-3.5"/> ID Penugasan</span><span className="w-3/5 text-emerald-600 font-bold">{penugasanData?.idPenugasan || '-'}</span></div>
-              <div className="flex"><span className="w-2/5 text-slate-500 flex items-center gap-1.5"><PiPlant className="w-3.5 h-3.5"/> Program</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData?.programName || '-'}</span></div>
-              <div className="flex"><span className="w-2/5 text-slate-500 flex items-center gap-1.5"><PiTree className="w-3.5 h-3.5"/> Kegiatan</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData?.jenisKegiatan || '-'}</span></div>
-              <div className="flex items-start"><span className="w-2/5 text-slate-500 flex items-center gap-1.5 mt-0.5"><HiOutlineMapPin className="w-3.5 h-3.5"/> Lokasi</span><span className="w-3/5 text-slate-900 font-medium leading-relaxed">{penugasanData?.location || '-'}</span></div>
-              <div className="flex"><span className="w-2/5 text-slate-500 flex items-center gap-1.5"><HiOutlineUserGroup className="w-3.5 h-3.5"/> KTH</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData?.kth || '-'}</span></div>
-              <div className="flex"><span className="w-2/5 text-slate-500 flex items-center gap-1.5"><HiOutlineCalendar className="w-3.5 h-3.5"/> Periode</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData?.periodeMulai || '-'} - {penugasanData?.periodeSelesai || '-'}</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500 flex items-center gap-1.5"><HiOutlineDocumentText className="w-3.5 h-3.5" /> ID Penugasan</span><span className="w-3/5 text-emerald-600 font-bold">{penugasanData?.idPenugasan || '-'}</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500 flex items-center gap-1.5"><PiPlant className="w-3.5 h-3.5" /> Program</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData?.programName || '-'}</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500 flex items-center gap-1.5"><PiTree className="w-3.5 h-3.5" /> Kegiatan</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData?.jenisKegiatan || '-'}</span></div>
+              <div className="flex items-start"><span className="w-2/5 text-slate-500 flex items-center gap-1.5 mt-0.5"><HiOutlineMapPin className="w-3.5 h-3.5" /> Lokasi</span><span className="w-3/5 text-slate-900 font-medium leading-relaxed">{penugasanData?.location || '-'}</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500 flex items-center gap-1.5"><HiOutlineUserGroup className="w-3.5 h-3.5" /> KTH</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData?.kth || '-'}</span></div>
+              <div className="flex"><span className="w-2/5 text-slate-500 flex items-center gap-1.5"><HiOutlineCalendar className="w-3.5 h-3.5" /> Periode</span><span className="w-3/5 text-slate-900 font-medium">{penugasanData?.periodeMulai || '-'} - {penugasanData?.periodeSelesai || '-'}</span></div>
             </div>
-         </div>
+          </div>
 
-         {/* Status Kelengkapan Data */}
-         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          {/* Status Kelengkapan Data */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <h3 className="font-bold text-slate-900 mb-4 text-sm">Status Kelengkapan Data</h3>
             <div className="space-y-4 text-xs mb-5">
               <div className="flex items-start gap-3">
-                 <HiCheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"/>
-                 <div className="flex-1"><p className="font-bold text-slate-800">Poligon PU</p><p className="text-[9px] text-slate-500 mt-0.5">Semua PU telah dibuat</p></div>
-                 <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold text-[10px]">{puList.filter(p => p.status === 'Selesai').length} / {penugasanData?.totalPu || '0'} PU</span>
+                <HiCheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="flex-1"><p className="font-bold text-slate-800">Poligon PU</p><p className="text-[9px] text-slate-500 mt-0.5">Semua PU telah dibuat</p></div>
+                <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold text-[10px]">{puList.filter(p => p.status === 'Selesai').length} / {penugasanData?.totalPu || '0'} PU</span>
               </div>
               <div className="flex items-start gap-3">
-                 <HiCheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"/>
-                 <div className="flex-1"><p className="font-bold text-slate-800">Data Tanaman</p><p className="text-[9px] text-slate-500 mt-0.5">Data tanaman telah diinput</p></div>
-                 <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold text-[10px]">{totalRealisasi} / {penugasanData?.targetBibit || '0'}</span>
+                <HiCheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="flex-1"><p className="font-bold text-slate-800">Data Tanaman</p><p className="text-[9px] text-slate-500 mt-0.5">Data tanaman telah diinput</p></div>
+                <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold text-[10px]">{totalRealisasi} / {penugasanData?.targetBibit || '0'}</span>
               </div>
               <div className="flex items-start gap-3">
-                 <HiCheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"/>
-                 <div className="flex-1"><p className="font-bold text-slate-800">Dokumentasi Kegiatan</p><p className="text-[9px] text-slate-500 mt-0.5">Dokumentasi kegiatan tersedia</p></div>
-                 <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold text-[10px]">{dokumentasiList.length} Foto</span>
+                <HiCheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="flex-1"><p className="font-bold text-slate-800">Dokumentasi Kegiatan</p><p className="text-[9px] text-slate-500 mt-0.5">Dokumentasi kegiatan tersedia</p></div>
+                <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold text-[10px]">{dokumentasiList.length} Foto</span>
               </div>
             </div>
-         </div>
+          </div>
 
-         {/* Rekap Realisasi & Jenis */}
-         <div className="col-span-1 md:col-span-2 space-y-6">
+          {/* Rekap Realisasi & Jenis */}
+          <div className="col-span-1 md:col-span-2 space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-               <h3 className="font-bold text-slate-900 mb-4 text-sm">Rekap Realisasi Penanaman</h3>
-               <div className="grid grid-cols-3 gap-4 mb-4 text-center">
-                  <div>
-                    <p className="text-[10px] text-slate-500 font-medium mb-1">Target Bibit</p>
-                    <h3 className="text-2xl font-black text-slate-900">{penugasanData?.targetBibit || '0'}</h3>
-                    <p className="text-[10px] text-slate-400">tanaman</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-500 font-medium mb-1">Realisasi</p>
-                    <h3 className="text-2xl font-black text-slate-900">{totalRealisasi}</h3>
-                    <p className="text-[10px] text-slate-400">tanaman</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-500 font-medium mb-1">Selisih</p>
-                    <h3 className={`text-2xl font-black ${totalRealisasi - targetBibit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                      {totalRealisasi - targetBibit > 0 ? `+${totalRealisasi - targetBibit}` : totalRealisasi - targetBibit}
-                    </h3>
-                    <p className="text-[10px] text-slate-400">tanaman</p>
-                  </div>
-               </div>
-               <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-center">
-                     <p className="text-[10px] text-slate-500 font-medium mb-1">Luas Area Tanam</p>
-                     <p className="text-sm font-bold text-slate-900">{penugasanData?.luasArea || 0} ha</p>
-                  </div>
-                  <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-center">
-                     <p className="text-[10px] text-slate-500 font-medium mb-1">Jumlah PU</p>
-                     <p className="text-sm font-bold text-slate-900">{puList.length} PU</p>
-                  </div>
-               </div>
+              <h3 className="font-bold text-slate-900 mb-4 text-sm">Rekap Realisasi Penanaman</h3>
+              <div className="grid grid-cols-3 gap-4 mb-4 text-center">
+                <div>
+                  <p className="text-[10px] text-slate-500 font-medium mb-1">Target Bibit</p>
+                  <h3 className="text-2xl font-black text-slate-900">{penugasanData?.targetBibit || '0'}</h3>
+                  <p className="text-[10px] text-slate-400">tanaman</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 font-medium mb-1">Realisasi</p>
+                  <h3 className="text-2xl font-black text-slate-900">{totalRealisasi}</h3>
+                  <p className="text-[10px] text-slate-400">tanaman</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 font-medium mb-1">Selisih</p>
+                  <h3 className={`text-2xl font-black ${totalRealisasi - targetBibit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                    {totalRealisasi - targetBibit > 0 ? `+${totalRealisasi - targetBibit}` : totalRealisasi - targetBibit}
+                  </h3>
+                  <p className="text-[10px] text-slate-400">tanaman</p>
+                </div>
+              </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-               <h3 className="font-bold text-slate-900 mb-4 text-sm">Rekap Berdasarkan Jenis Tanaman</h3>
-               <table className="w-full text-left text-xs">
-                 <thead className="text-slate-500 border-b border-slate-100">
-                   <tr><th className="py-2 font-medium">Jenis Tanaman</th><th className="py-2 font-medium text-right">Jumlah (tanaman)</th></tr>
-                 </thead>
-                 <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                   {(() => {
-                      const speciesCount: Record<string, number> = {};
-                      puList.forEach(pu => {
-                        (pu.dataTanamans || []).forEach((t: any) => {
-                          const name = t.nama_tanaman || t.seed?.name || t.seed?.nama || 'Tanaman';
-                          speciesCount[name] = (speciesCount[name] || 0) + (t.jumlah || 1);
-                        });
+              <h3 className="font-bold text-slate-900 mb-4 text-sm">Rekap Berdasarkan Jenis Tanaman</h3>
+              <table className="w-full text-left text-xs">
+                <thead className="text-slate-500 border-b border-slate-100">
+                  <tr><th className="py-2 font-medium">Jenis Tanaman</th><th className="py-2 font-medium text-right">Jumlah (tanaman)</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                  {(() => {
+                    const speciesCount: Record<string, number> = {};
+                    puList.forEach(pu => {
+                      (pu.dataTanamans || []).forEach((t: any) => {
+                        const name = t.nama_tanaman || t.seed?.name || t.seed?.nama || 'Tanaman';
+                        speciesCount[name] = (speciesCount[name] || 0) + (t.jumlah || 1);
                       });
-                      const speciesEntries = Object.entries(speciesCount);
-                      if (speciesEntries.length === 0) {
-                        return <tr><td colSpan={2} className="py-4 text-center text-slate-400 font-normal">Belum ada data tanaman</td></tr>;
-                      }
-                      return (
-                        <>
-                          {speciesEntries.map(([name, count], idx) => (
-                             <tr key={idx}><td className="py-2.5">{name}</td><td className="py-2.5 text-right">{count}</td></tr>
-                          ))}
-                          <tr className="bg-emerald-50/50"><td className="py-2.5 text-emerald-700 font-bold px-2">Total</td><td className="py-2.5 text-right text-emerald-700 font-bold px-2">{totalRealisasi}</td></tr>
-                        </>
-                      );
-                   })()}
-                 </tbody>
-               </table>
+                    });
+                    const speciesEntries = Object.entries(speciesCount);
+                    if (speciesEntries.length === 0) {
+                      return <tr><td colSpan={2} className="py-4 text-center text-slate-400 font-normal">Belum ada data tanaman</td></tr>;
+                    }
+                    return (
+                      <>
+                        {speciesEntries.map(([name, count], idx) => (
+                          <tr key={idx}><td className="py-2.5">{name}</td><td className="py-2.5 text-right">{count}</td></tr>
+                        ))}
+                        <tr className="bg-emerald-50/50"><td className="py-2.5 text-emerald-700 font-bold px-2">Total</td><td className="py-2.5 text-right text-emerald-700 font-bold px-2">{totalRealisasi}</td></tr>
+                      </>
+                    );
+                  })()}
+                </tbody>
+              </table>
             </div>
-         </div>
-      </div>
+          </div>
+        </div>
 
-      {/* Tabel Daftar PU */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-         <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
-           <h3 className="text-sm font-bold text-slate-900">Daftar PU dan Rekap Realisasi</h3>
-         </div>
-         <div className="overflow-x-auto p-4">
-           <table className="w-full text-center text-[11px]">
-             <thead className="bg-[#DCECE0] text-[#3A4D3F] text-xs uppercase tracking-wider font-bold">
-               <tr>
-                 <th className="py-3 px-3 text-left">No.</th>
-                 <th className="py-3 px-3 text-left">Kode PU</th>
-                 <th className="py-3 px-3">Luas (Ha)</th>
-                 <th className="py-3 px-3">Target (tanaman)</th>
-                 <th className="py-3 px-3">Realisasi (tanaman)</th>
-                 <th className="py-3 px-3">Selisih</th>
-                 <th className="py-3 px-3">Status Kelengkapan</th>
-                 <th className="py-3 px-3">Aksi</th>
-               </tr>
-             </thead>
-             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-               {paginatedPuList.map((pu, _idx) => {
-                 const realisasi = pu.dataTanamans?.length || 0;
-                 const selisih = realisasi - targetPerPu;
-                 const isPoligon = pu.status === 'Selesai';
-                 const isTanaman = realisasi > 0;
-                 return (
-                 <tr key={pu.num} className="hover:bg-slate-50 transition-colors">
-                   <td className="py-3 px-3 text-left">{pu.num}</td>
-                   <td className="py-3 px-3 text-left font-bold text-slate-900">PU-{pu.num.toString().padStart(2, '0')}</td>
-                   <td className="py-3 px-3">{pu.luas}</td>
-                   <td className="py-3 px-3">{targetPerPu}</td>
-                   <td className="py-3 px-3 font-bold text-slate-900">{realisasi}</td>
-                   <td className={`py-3 px-3 font-bold ${selisih >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{selisih > 0 ? `+${selisih}` : selisih}</td>
-                   <td className="py-3 px-3">
-                     <div className="flex items-center justify-center gap-2">
-                       <span className={`flex items-center gap-1 text-[9px] font-bold ${isPoligon ? 'text-emerald-700' : 'text-slate-400'}`}><HiCheckCircle className={`w-3.5 h-3.5 ${isPoligon ? 'text-emerald-500' : 'text-slate-300'}`}/> Poligon</span>
-                       <span className={`flex items-center gap-1 text-[9px] font-bold ${isTanaman ? 'text-emerald-700' : 'text-slate-400'}`}><HiCheckCircle className={`w-3.5 h-3.5 ${isTanaman ? 'text-emerald-500' : 'text-slate-300'}`}/> Tanaman</span>
-                     </div>
-                   </td>
-                   <td className="py-3 px-3">
-                     <button className="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors mx-auto block"><HiOutlineEye className="w-4 h-4"/></button>
-                   </td>
-                 </tr>
-                 );
-               })}
-             </tbody>
-           </table>
-           <div className="flex justify-center mt-4 pb-2">
-             <div className="flex items-center gap-2 text-xs">
-               <button
-                 onClick={() => setPuTablePage(p => Math.max(1, p - 1))}
-                 disabled={safePuPage <= 1}
-                 className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:text-slate-300 disabled:cursor-not-allowed"
-               >
-                 <HiChevronLeft className="w-3.5 h-3.5" />
-               </button>
-               {Array.from({ length: totalPuPages }, (_, i) => i + 1).map(pageNum => (
-                 <button
-                   key={pageNum}
-                   onClick={() => setPuTablePage(pageNum)}
-                   className={`px-2.5 py-1 rounded-md font-bold ${
-                     pageNum === safePuPage
-                       ? 'bg-[#008A4B] text-white'
-                       : 'bg-white text-slate-600 hover:bg-slate-50 border border-transparent'
-                   }`}
-                 >
-                   {pageNum}
-                 </button>
-               ))}
-               <button
-                 onClick={() => setPuTablePage(p => Math.min(totalPuPages, p + 1))}
-                 disabled={safePuPage >= totalPuPages}
-                 className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:text-slate-300 disabled:cursor-not-allowed"
-               >
-                 <HiChevronRight className="w-3.5 h-3.5" />
-               </button>
-             </div>
-           </div>
-         </div>
-      </div>
+        {/* Tabel Daftar PU */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+            <h3 className="text-sm font-bold text-slate-900">Daftar PU dan Rekap Realisasi</h3>
+          </div>
+          <div className="overflow-x-auto p-4">
+            <table className="w-full text-center text-[11px]">
+              <thead className="bg-[#DCECE0] text-[#3A4D3F] text-xs uppercase tracking-wider font-bold">
+                <tr>
+                  <th className="py-3 px-3 text-left">No.</th>
+                  <th className="py-3 px-3 text-left">Kode PU</th>
+                  <th className="py-3 px-3">Luas (Ha)</th>
+                  <th className="py-3 px-3">Target (tanaman)</th>
+                  <th className="py-3 px-3">Realisasi (tanaman)</th>
+                  <th className="py-3 px-3">Selisih</th>
+                  <th className="py-3 px-3">Status Kelengkapan</th>
+                  <th className="py-3 px-3">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                {paginatedPuList.map((pu, _idx) => {
+                  const realisasi = pu.dataTanamans?.length || 0;
+                  const selisih = realisasi - targetPerPu;
+                  const isPoligon = pu.status === 'Selesai';
+                  const isTanaman = realisasi > 0;
+                  return (
+                    <tr key={pu.num} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-3 text-left">{pu.num}</td>
+                      <td className="py-3 px-3 text-left font-bold text-slate-900">PU-{pu.num.toString().padStart(2, '0')}</td>
+                      <td className="py-3 px-3">{pu.luas}</td>
+                      <td className="py-3 px-3">{targetPerPu}</td>
+                      <td className="py-3 px-3 font-bold text-slate-900">{realisasi}</td>
+                      <td className={`py-3 px-3 font-bold ${selisih >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{selisih > 0 ? `+${selisih}` : selisih}</td>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className={`flex items-center gap-1 text-[9px] font-bold ${isPoligon ? 'text-emerald-700' : 'text-slate-400'}`}><HiCheckCircle className={`w-3.5 h-3.5 ${isPoligon ? 'text-emerald-500' : 'text-slate-300'}`} /> Poligon</span>
+                          <span className={`flex items-center gap-1 text-[9px] font-bold ${isTanaman ? 'text-emerald-700' : 'text-slate-400'}`}><HiCheckCircle className={`w-3.5 h-3.5 ${isTanaman ? 'text-emerald-500' : 'text-slate-300'}`} /> Tanaman</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <button className="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors mx-auto block"><HiOutlineEye className="w-4 h-4" /></button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="flex justify-center mt-4 pb-2">
+              <div className="flex items-center gap-2 text-xs">
+                <button
+                  onClick={() => setPuTablePage(p => Math.max(1, p - 1))}
+                  disabled={safePuPage <= 1}
+                  className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:text-slate-300 disabled:cursor-not-allowed"
+                >
+                  <HiChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                {Array.from({ length: totalPuPages }, (_, i) => i + 1).map(pageNum => (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPuTablePage(pageNum)}
+                    className={`px-2.5 py-1 rounded-md font-bold ${pageNum === safePuPage
+                      ? 'bg-[#008A4B] text-white'
+                      : 'bg-white text-slate-600 hover:bg-slate-50 border border-transparent'
+                      }`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPuTablePage(p => Math.min(totalPuPages, p + 1))}
+                  disabled={safePuPage >= totalPuPages}
+                  className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:text-slate-300 disabled:cursor-not-allowed"
+                >
+                  <HiChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Confirmation Checkbox */}
-      <div className="bg-[#F0FDF4] rounded-xl border border-[#BBF7D0] p-5 mb-2">
-         <label className="flex items-start gap-4 cursor-pointer">
+        {/* Confirmation Checkbox */}
+        <div className="bg-[#F0FDF4] rounded-xl border border-[#BBF7D0] p-5 mb-2">
+          <label className="flex items-start gap-4 cursor-pointer">
             <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 mt-0.5 border-2 transition-colors ${isAgreed ? 'bg-[#008A4B] border-[#008A4B]' : 'bg-white border-emerald-300'}`}>
-               {isAgreed && <HiCheck className="w-4 h-4 text-white" />}
+              {isAgreed && <HiCheck className="w-4 h-4 text-white" />}
             </div>
             <input type="checkbox" className="hidden" checked={isAgreed} onChange={() => setIsAgreed(!isAgreed)} />
             <p className="text-sm text-[#166534] font-medium leading-relaxed">
               Saya memastikan data pelaksanaan telah sesuai dengan kondisi lapangan dan siap dikirim untuk dilakukan pemeriksaan oleh Staff PDAS.
             </p>
-         </label>
-      </div>
+          </label>
+        </div>
 
-    </div>
+      </div>
     );
   };
 
   return (
     <div className="w-full bg-[#F8FAFC] min-h-screen font-sans text-slate-800 pb-24">
       <div className="max-w-350 mx-auto">
-        
+
         <div className="mb-6 flex items-center gap-3">
-           <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center border border-emerald-100">
-             <PiPlant className="w-5 h-5 text-[#008A4B]" />
-           </div>
-           <div>
-             <h1 className="text-2xl font-bold text-slate-900 mb-0.5">
-               {currentStep === 2 && 'Pembentukan Area Penanaman (PU)'}
-               {currentStep === 3 && 'Input Data Tanaman'}
-               {currentStep === 4 && 'Dokumentasi Kegiatan'}
-               {currentStep === 5 && 'Review & Kirim Hasil Pelaksanaan'}
-             </h1>
-             <p className="text-xs text-slate-500">
-               {currentStep === 2 && 'Bagi lokasi kegiatan menjadi beberapa Petak Ukur (PU) sesuai jumlah yang telah ditentukan.'}
-               {currentStep === 3 && 'Input data setiap tanaman yang telah ditanam pada PU terpilih.'}
-               {currentStep === 4 && 'Upload dokumentasi kegiatan penanaman sebagai bukti pelaksanaan di lapangan.'}
-               {currentStep === 5 && 'Periksa kembali kelengkapan data sebelum mengirim hasil pelaksanaan kegiatan kepada Staff PDAS.'}
-             </p>
-           </div>
+          <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center border border-emerald-100">
+            <PiPlant className="w-5 h-5 text-[#008A4B]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-0.5">
+              {currentStep === 2 && 'Pembentukan Area Penanaman (PU)'}
+              {currentStep === 3 && 'Input Data Tanaman'}
+              {currentStep === 4 && 'Dokumentasi Kegiatan'}
+              {currentStep === 5 && 'Review & Kirim Hasil Pelaksanaan'}
+            </h1>
+            <p className="text-xs text-slate-500">
+              {currentStep === 2 && 'Bagi lokasi kegiatan menjadi beberapa Petak Ukur (PU) sesuai jumlah yang telah ditentukan.'}
+              {currentStep === 3 && 'Input data setiap tanaman yang telah ditanam pada PU terpilih.'}
+              {currentStep === 4 && 'Upload dokumentasi kegiatan penanaman sebagai bukti pelaksanaan di lapangan.'}
+              {currentStep === 5 && 'Periksa kembali kelengkapan data sebelum mengirim hasil pelaksanaan kegiatan kepada Staff PDAS.'}
+            </p>
+          </div>
         </div>
 
         {renderStepper()}
@@ -1440,35 +1366,32 @@ const PelaksanaanWizard: React.FC = () => {
 
       {/* BOTTOM ACTION BAR (Sticky) */}
       <div className="flex justify-between items-center z-40">
-         <button onClick={prevStep} className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-50 rounded-full flex items-center gap-2 shadow-sm transition-colors">
-           <HiOutlineArrowLeft className="w-4 h-4" /> {currentStep === 5 ? 'Kembali Periksa' : 'Kembali'}
-         </button>
-         
-         <div className="flex items-center gap-3">
-            <button className="px-6 py-2.5 border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-50 rounded-full flex items-center gap-2 shadow-sm transition-colors bg-white">
-              <HiOutlineDocumentArrowDown className="w-4 h-4" /> Simpan Draft
+        <button onClick={prevStep} className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-50 rounded-full flex items-center gap-2 shadow-sm transition-colors">
+          <HiOutlineArrowLeft className="w-4 h-4" /> {currentStep === 5 ? 'Kembali Periksa' : 'Kembali'}
+        </button>
+
+        <div className="flex items-center gap-3">
+
+          {currentStep < 5 ? (
+            <button
+              onClick={nextStep}
+              className="px-6 py-2.5 bg-[#008A4B] text-white font-bold text-sm hover:bg-emerald-800 rounded-full flex items-center gap-2 shadow-sm transition-colors"
+            >
+              {currentStep === 2 && 'Lanjutkan ke Input Tanaman'}
+              {currentStep === 3 && 'Lanjut ke Dokumentasi Kegiatan'}
+              {currentStep === 4 && 'Lanjut ke Review & Kirim'}
+              <HiOutlineArrowRight className="w-4 h-4 stroke-2" />
             </button>
-            
-            {currentStep < 5 ? (
-              <button 
-                onClick={nextStep} 
-                className="px-6 py-2.5 bg-[#008A4B] text-white font-bold text-sm hover:bg-emerald-800 rounded-full flex items-center gap-2 shadow-sm transition-colors"
-              >
-                {currentStep === 2 && 'Lanjutkan ke Input Tanaman'}
-                {currentStep === 3 && 'Lanjut ke Dokumentasi Kegiatan'}
-                {currentStep === 4 && 'Lanjut ke Review & Kirim'}
-                <HiOutlineArrowRight className="w-4 h-4 stroke-2" />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmitPenugasan} 
-                disabled={!isAgreed}
-                className={`px-8 py-2.5 font-bold text-sm rounded-full flex items-center gap-2 shadow-sm transition-colors ${isAgreed ? 'bg-[#008A4B] text-white hover:bg-emerald-800' : 'bg-emerald-200 text-emerald-50 cursor-not-allowed'}`}
-              >
-                Kirim Hasil Pelaksanaan <HiOutlineArrowRight className="w-4 h-4 stroke-2" />
-              </button>
-            )}
-         </div>
+          ) : (
+            <button
+              onClick={handleSubmitPenugasan}
+              disabled={!isAgreed}
+              className={`px-8 py-2.5 font-bold text-sm rounded-full flex items-center gap-2 shadow-sm transition-colors ${isAgreed ? 'bg-[#008A4B] text-white hover:bg-emerald-800' : 'bg-emerald-200 text-emerald-50 cursor-not-allowed'}`}
+            >
+              Kirim Hasil Pelaksanaan <HiOutlineArrowRight className="w-4 h-4 stroke-2" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

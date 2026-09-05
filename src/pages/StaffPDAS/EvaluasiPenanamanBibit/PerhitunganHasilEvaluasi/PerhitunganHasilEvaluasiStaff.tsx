@@ -1,44 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineMagnifyingGlass, HiOutlineEye } from 'react-icons/hi2';
+import { getDaftarPerhitunganEvaluasi } from '@/services/penugasanEvaluasi.service'; // <-- Import API Service
 
 const PerhitunganHasilEvaluasiStaff: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [dataPerhitungan, setDataPerhitungan] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const mockData = [
-    {
-      id: 'EVAL-001',
-      proyek: 'Rehabilitasi Lahan Kompensasi PT. Jawa Satu Power',
-      noSurat: 'ST.76/TKTRH/DAS.04/2026',
-      lokasi: 'Hutan Lindung Desa Sudalarang, Kab. Garut',
-      periode: 'Pemeliharaan II (P2)',
-      peran: 'Ketua Tim',
-      status: 'SIAP DIHITUNG',
-    },
-    {
-      id: 'EVAL-002',
-      proyek: 'Rehabilitasi DAS PT Pertamina EP',
-      noSurat: 'ST.12/TKTRH/DAS.04/2026',
-      lokasi: 'Desa Karangsong, Kab. Indramayu',
-      periode: 'Pemeliharaan I (P1)', 
-      peran: 'Anggota',
-      status: 'HASIL TERVALIDASI',
-    },
-    {
-      id: 'EVAL-003',
-      proyek: 'Rehabilitasi DAS PT Pertamina EP',
-      noSurat: 'ST.09/TKTRH/DAS.04/2025',
-      lokasi: 'Desa Karangsong, Kab. Indramayu',
-      periode: 'Penanaman Awal (P0)', 
-      peran: 'Anggota',
-      status: 'HASIL TERVALIDASI',
-    }
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await getDaftarPerhitunganEvaluasi();
+        setDataPerhitungan(res.data || []);
+      } catch (error) {
+        console.error("Gagal mengambil data perhitungan:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const filteredData = mockData.filter((item) =>
-    item.proyek.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.periode.toLowerCase().includes(searchTerm.toLowerCase())
+    fetchData();
+  }, []);
+
+  const filteredData = dataPerhitungan.filter((item) =>
+    (item.proyek || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.periode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.noSurat || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -74,51 +63,57 @@ const PerhitunganHasilEvaluasiStaff: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredData.length > 0 ? filteredData.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/80 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-gray-800 mb-1">{item.proyek}</div>
-                    <div className="text-xs font-semibold text-gray-500">{item.noSurat}</div>
-                  </td>
-                  
-                  <td className="px-6 py-4">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EBF8F1] border border-[#C6EBD6] text-[#185325]">
-                      <span className="text-xs font-bold">{item.periode}</span>
-                    </div>
-                  </td>
-                  
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
-                      <span className="truncate max-w-50">{item.lokasi}</span>
-                    </div>
-                  </td>
-                  
-                  <td className="px-6 py-4 text-center">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      item.status === 'SIAP DIHITUNG' 
-                        ? 'bg-[#FEF3C7] text-yellow-800 border border-yellow-200' 
-                        : 'bg-emerald-50 text-[#185325] border border-emerald-200'
-                    }`}>
-                      {item.status}
-                    </span>
-                  </td>
-                  
-                  <td className="px-6 py-4 flex justify-center">
-                    <button 
-                      onClick={() => navigate(`/admin/staff/evaluasi/hasil/detail/${item.id}`)}
-                      className={`flex items-center justify-center gap-2 px-2 py-2 text-xs font-bold text-[#185325] border border-[#185325] hover:bg-[#185325] hover:text-white transition-all shadow-sm active:scale-95 ${
-                        item.status === 'SIAP DIHITUNG' ? 'rounded-full' : 'rounded-full min-w-9'
-                      }`}
-                    >
-                      {item.status === 'SIAP DIHITUNG' ? (
-                        'Mulai Hitung'
-                      ) : (
-                        <HiOutlineEye className="w-4 h-4 stroke-2" />
-                      )}
-                    </button>
-                  </td>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">Memuat data perhitungan...</td>
                 </tr>
-              )) : (
+              ) : filteredData.length > 0 ? (
+                filteredData.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50/80 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-gray-800 mb-1">{item.proyek}</div>
+                      <div className="text-xs font-semibold text-gray-500">{item.noSurat}</div>
+                    </td>
+                    
+                    <td className="px-6 py-4">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EBF8F1] border border-[#C6EBD6] text-[#185325]">
+                        <span className="text-xs font-bold">{item.periode}</span>
+                      </div>
+                    </td>
+                    
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
+                        <span className="truncate max-w-50">{item.lokasi}</span>
+                      </div>
+                    </td>
+                    
+                    <td className="px-6 py-4 text-center">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        item.status === 'SIAP DIHITUNG' 
+                          ? 'bg-[#FEF3C7] text-yellow-800 border border-yellow-200' 
+                          : 'bg-emerald-50 text-[#185325] border border-emerald-200'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    
+                    <td className="px-6 py-4 flex justify-center">
+                      <button 
+                        onClick={() => navigate(`/admin/staff/evaluasi/hasil/detail/${item.id}`)}
+                        className={`flex items-center justify-center gap-2 px-2 py-2 text-xs font-bold text-[#185325] border border-[#185325] hover:bg-[#185325] hover:text-white transition-all shadow-sm active:scale-95 cursor-pointer ${
+                          item.status === 'SIAP DIHITUNG' ? 'rounded-full' : 'rounded-full min-w-9'
+                        }`}
+                      >
+                        {item.status === 'SIAP DIHITUNG' ? (
+                          'Mulai Hitung'
+                        ) : (
+                          <HiOutlineEye className="w-4 h-4 stroke-2" />
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                     Tidak ada penugasan evaluasi ditemukan.

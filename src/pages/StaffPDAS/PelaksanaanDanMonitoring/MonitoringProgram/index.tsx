@@ -64,6 +64,8 @@ const MonitoringProgram: React.FC = () => {
     try {
       const res = await getAllPenugasanAPI();
       setPenugasans(res.data || []);
+      console.log(res);
+      
     } catch (error) {
       console.error('Gagal mengambil data penugasan', error);
       toast.error('Gagal memuat data Monitoring Program Rehabilitasi dari server.');
@@ -182,43 +184,43 @@ const MonitoringProgram: React.FC = () => {
       case 'Siap Monitoring':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>{status}
+            {status}
           </span>
         );
       case 'Berjalan':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>{status}
+            {status}
           </span>
         );
       case 'Menunggu Evaluasi':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-orange-50 text-orange-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>{status}
+            {status}
           </span>
         );
       case 'Tindak Lanjut':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>{status}
+            {status}
           </span>
         );
       case 'Selesai':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{status}
+            {status}
           </span>
         );
       case 'Dihentikan':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>{status}
+            {status}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>{status}
+            {status}
           </span>
         );
     }
