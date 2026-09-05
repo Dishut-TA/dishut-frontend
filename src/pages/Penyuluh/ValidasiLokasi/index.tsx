@@ -116,37 +116,59 @@ const SummaryCards = ({ data }: { data: TugasValidasi[] }) => {
   );
 };
 
-const FilterSection = () => (
+const FilterSection = ({
+  searchQuery,
+  setSearchQuery,
+  statusFilter,
+  setStatusFilter,
+  dateFilter,
+  setDateFilter
+}: {
+  searchQuery: string;
+  setSearchQuery: (val: string) => void;
+  statusFilter: string;
+  setStatusFilter: (val: string) => void;
+  dateFilter: string;
+  setDateFilter: (val: string) => void;
+}) => (
   <div className="flex flex-col md:flex-row gap-4 mb-6 mt-2">
     <div className="relative flex-1">
       <input 
         type="text" 
         placeholder="Cari ID penugasan, lokasi, desa, CDK..." 
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
         className="w-full pl-4 pr-10 py-2.5 text-sm font-medium border border-slate-200 rounded-full focus:outline-none focus:border-[#008A4B]" 
       />
       <HiOutlineMagnifyingGlass className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
     </div>
 
     <div className="relative w-full md:w-56">
-      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500">Status</div>
-      <select className="w-full pl-14 pr-8 py-2.5 text-sm font-semibold border border-slate-200 rounded-full appearance-none bg-white focus:outline-none focus:border-[#008A4B]">
-        <option>Semua</option>
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500 z-10">Status</div>
+      <select 
+        value={statusFilter}
+        onChange={(e) => setStatusFilter(e.target.value)}
+        className="w-full pl-14 pr-8 py-2.5 text-sm font-semibold border border-slate-200 rounded-full appearance-none bg-white focus:outline-none focus:border-[#008A4B] relative z-0"
+      >
+        <option value="Semua">Semua</option>
+        <option value="Menunggu">Menunggu</option>
+        <option value="Ditugaskan">Ditugaskan</option>
+        <option value="Berjalan">Berjalan</option>
+        <option value="Selesai">Selesai</option>
       </select>
-      <HiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+      <HiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
     </div>
 
     <div className="relative w-full md:w-64">
-      <div className="absolute left-10 top-1.5 text-[10px] font-medium text-slate-400">Periode Penugasan</div>
-      <HiOutlineCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-      <select className="w-full pl-10 pr-8 pt-4 pb-1 text-sm font-semibold border border-slate-200 rounded-full appearance-none bg-white focus:outline-none focus:border-[#008A4B]">
-        <option>Semua Periode</option>
-      </select>
-      <HiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+      <div className="absolute left-10 top-1.5 text-[10px] font-medium text-slate-400 z-10">Periode Penugasan</div>
+      <HiOutlineCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
+      <input 
+        type="date"
+        value={dateFilter}
+        onChange={(e) => setDateFilter(e.target.value)}
+        className="w-full pl-10 pr-4 pt-4 pb-1 text-sm font-semibold border border-slate-200 rounded-full bg-white focus:outline-none focus:border-[#008A4B] relative z-0"
+      />
     </div>
-
-    <button className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#008A4B] text-white text-sm font-semibold rounded-full hover:bg-emerald-800 transition-colors shadow-sm">
-      <HiOutlineFunnel className="w-4 h-4" /> Filter
-    </button>
   </div>
 );
 
@@ -221,6 +243,10 @@ const ValidasiLokasi: React.FC = () => {
   const [data, setData] = useState<TugasValidasi[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Semua');
+  const [dateFilter, setDateFilter] = useState('');
+
   React.useEffect(() => {
     const fetchData = async () => {
       try {
@@ -255,14 +281,30 @@ const ValidasiLokasi: React.FC = () => {
     fetchData();
   }, []);
 
+  const filteredData = data.filter(item => {
+    const matchSearch = item.displayId.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                        item.lokasi.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchStatus = statusFilter === 'Semua' ? true : item.status === statusFilter;
+    const matchDate = dateFilter ? item.raw_data.batas_waktu && item.raw_data.batas_waktu.startsWith(dateFilter) : true;
+    
+    return matchSearch && matchStatus && matchDate;
+  });
+
   return (
     <div className="w-full mx-auto pb-12 bg-[#F8FAFC] min-h-screen font-sans">
       <Header />
       
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col p-4">
-        <FilterSection />
+        <FilterSection 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+        />
         <div className="border border-slate-200 rounded-lg overflow-hidden mt-2">
-          <ValidasiTable data={data} navigate={navigate} />
+          <ValidasiTable data={filteredData} navigate={navigate} />
           <Pagination />
         </div>
       </div>

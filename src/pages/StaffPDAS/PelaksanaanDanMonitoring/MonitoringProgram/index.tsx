@@ -64,6 +64,8 @@ const MonitoringProgram: React.FC = () => {
     try {
       const res = await getAllPenugasanAPI();
       setPenugasans(res.data || []);
+      console.log(res);
+      
     } catch (error) {
       console.error('Gagal mengambil data penugasan', error);
       toast.error('Gagal memuat data Monitoring Program Rehabilitasi dari server.');

@@ -2,22 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { HiOutlineChevronLeft, HiOutlineDocumentArrowDown, HiOutlineCheckBadge, HiOutlineMapPin } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
-import { getStoredPenugasanDetail, type PenugasanItem } from './dummyData';
+import { getPenugasanEvaluasiDetail } from '@/services/penugasanEvaluasi.service';
 
 const DetailInisiasiPenugasan: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [detailData, setDetailData] = useState<PenugasanItem | null>(null);
+  const [detailData, setDetailData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDetail = () => {
+    const fetchDetail = async () => {
       setIsLoading(true);
       try {
         if (id) {
-          const item = getStoredPenugasanDetail(id);
-          if (item) {
-            setDetailData(item);
+          const res = await getPenugasanEvaluasiDetail(id);
+          if (res.data) {
+            setDetailData(res.data);
           } else {
             toast.error('Data penugasan tidak ditemukan.');
           }
@@ -34,10 +34,10 @@ const DetailInisiasiPenugasan: React.FC = () => {
 
   const handleDownloadSurat = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (detailData?.file_surat_url && detailData.file_surat_url !== '#') {
-      window.open(detailData.file_surat_url, '_blank');
+    if (detailData?.file_surat_tugas) {
+      window.open(detailData.file_surat_tugas, '_blank');
     } else {
-      toast.success('Mengunduh Surat Tugas Resmi Tim Penilai...');
+      toast.success('File surat tugas tidak tersedia.');
     }
   };
 
@@ -83,7 +83,7 @@ const DetailInisiasiPenugasan: React.FC = () => {
                 ? 'bg-emerald-50 text-[#185325] border border-emerald-200' 
                 : 'bg-amber-50 text-amber-800 border border-amber-200'
             }`}>
-              <HiOutlineCheckBadge className="w-4 h-4" /> {detailData.status_surat || 'TELAH DITUGASKAN'}
+              <HiOutlineCheckBadge className="w-4 h-4" /> {detailData.status || detailData.status_surat || 'TELAH DITUGASKAN'}
             </span>
           </div>
           <div className="text-left md:text-right bg-gray-50 md:bg-transparent p-3 md:p-0 rounded-xl">
@@ -97,20 +97,20 @@ const DetailInisiasiPenugasan: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 bg-gray-50/80 border border-gray-100 rounded-2xl p-6">
             <div>
               <p className="text-xs text-gray-500 font-medium mb-1">Nomor Surat Tugas</p>
-              <p className="text-sm font-bold font-mono text-gray-800">{detailData.nomor_surat || detailData.noSurat || '-'}</p>
+              <p className="text-sm font-bold font-mono text-gray-800">{detailData.nomor_surat || '-'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium mb-1">Tanggal Surat</p>
-              <p className="text-sm font-bold text-gray-800">{detailData.tanggal_surat || detailData.tanggalSurat || '-'}</p>
+              <p className="text-sm font-bold text-gray-800">{detailData.tanggal_surat || '-'}</p>
             </div>
             <div className="md:col-span-2 border-t border-gray-200/80 pt-4">
               <p className="text-xs text-gray-500 font-medium mb-1">Program Rehabilitasi</p>
-              <p className="text-base font-bold text-gray-800">{detailData.nama_proyek || detailData.proyek}</p>
+              <p className="text-base font-bold text-gray-800">{detailData.nama_proyek_lokasi?.split(' - ')[0] || '-'}</p>
               <div className="flex items-center gap-1.5 text-sm text-gray-600 mt-1">
                 <HiOutlineMapPin className="w-4 h-4 text-[#185325] shrink-0" />
-                <span>{detailData.lokasi}</span>
+                <span>{detailData.nama_proyek_lokasi?.split(' - ')[1] || '-'}</span>
                 <span className="text-gray-300">•</span>
-                <span className="font-semibold text-gray-700">{detailData.luas_ha || detailData.luas} Hektar</span>
+                <span className="font-semibold text-gray-700">{detailData.luas} Hektar</span>
                 <span className="text-gray-300">•</span>
                 <span className={`px-2 py-0.5 rounded text-xs font-bold ${
                   detailData.jenis_program === 'APBD' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
@@ -121,7 +121,7 @@ const DetailInisiasiPenugasan: React.FC = () => {
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium mb-1">Tahap / Periode Evaluasi</p>
-              <p className="text-sm font-bold text-gray-800">{detailData.periode_evaluasi || detailData.periode || detailData.status_program}</p>
+              <p className="text-sm font-bold text-gray-800">{detailData.periode_evaluasi || '-'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium mb-1">Dokumen Surat Tugas</p>
@@ -132,14 +132,6 @@ const DetailInisiasiPenugasan: React.FC = () => {
               >
                 <HiOutlineDocumentArrowDown className="w-4 h-4" /> Lihat & Unduh Surat Tugas (PDF)
               </button>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium mb-1">Periode Pelaksanaan Evaluasi Mulai</p>
-              <p className="text-sm font-bold text-gray-800">{detailData.tanggal_mulai || detailData.tanggal_awal || '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium mb-1">Periode Pelaksanaan Evaluasi Selesai</p>
-              <p className="text-sm font-bold text-gray-800">{detailData.tanggal_selesai || detailData.tanggal_akhir || '-'}</p>
             </div>
           </div>
         </div>
@@ -156,15 +148,16 @@ const DetailInisiasiPenugasan: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {detailData.tim_penilai && detailData.tim_penilai.length > 0 ? (
-                  detailData.tim_penilai.map((anggota: any, idx: number) => {
+                {detailData.tim && detailData.tim.length > 0 ? (
+                  detailData.tim.map((anggota: any, idx: number) => {
                     const isKetua = anggota.peran === 'Ketua Tim';
                     const isSekretaris = anggota.peran === 'Sekretaris Tim';
+                    const user = anggota.user;
 
                     return (
                       <tr key={idx} className="hover:bg-gray-50/70 transition-colors">
-                        <td className="px-6 py-4 font-bold text-gray-800">{anggota.nama}</td>
-                        <td className="px-6 py-4 text-gray-600 font-mono text-xs">{anggota.email}</td>
+                        <td className="px-6 py-4 font-bold text-gray-800">{user?.pegawai?.nama_pegawai || user?.name || user?.username || '-'}</td>
+                        <td className="px-6 py-4 text-gray-600 font-mono text-xs">{user?.email || '-'}</td>
                         <td className="px-6 py-4 text-center">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                             isKetua 

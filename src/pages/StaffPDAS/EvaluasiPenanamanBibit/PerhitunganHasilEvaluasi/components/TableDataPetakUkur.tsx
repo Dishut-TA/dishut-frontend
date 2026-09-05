@@ -81,7 +81,7 @@ const TableDataPetakUkur: React.FC<TableDataPetakUkurProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 mt-10">
         <h3 className="text-sm font-bold text-[#185325] uppercase tracking-wider flex items-center gap-2">
           <HiOutlineDocumentText className="w-5 h-5 text-[#185325]" />
-          {mockStatus === 'HASIL TERVALIDASI' ? 'Lampiran 2: Data Faktual Evaluasi' : '2. Hasil Modul Evaluasi Lapangan (Faktual)'}
+          {mockStatus === 'HASIL TERVALIDASI' ? 'Lampiran 2: Data Evaluasi' : '2. Hasil Modul Evaluasi Lapangan (Faktual)'}
         </h3>
         {!hasCalculated && (
           <span className="text-[11px] font-semibold text-orange-600 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-full flex items-center gap-1.5">

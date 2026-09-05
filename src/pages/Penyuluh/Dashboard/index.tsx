@@ -12,7 +12,6 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import { getMyPenugasanAPI } from '@/services/penugasan.service';
 import AgendaTerdekat from './components/AgendaTerdekat';
-import ProgressKegiatan from './components/ProgressKegiatan';
 import PembaruanTerbaru from './components/PembaruanTerbaru';
 
 let DefaultIcon = L.icon({
@@ -286,7 +285,6 @@ const DashboardPenyuluh: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <AgendaTerdekat penugasans={penugasans} />
         <PembaruanTerbaru penugasans={penugasans} />
-        <ProgressKegiatan penugasans={penugasans} />
       </div>
     </div>
     

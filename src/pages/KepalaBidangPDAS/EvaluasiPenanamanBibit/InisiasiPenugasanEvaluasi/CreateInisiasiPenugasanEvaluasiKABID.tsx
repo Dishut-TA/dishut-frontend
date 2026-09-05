@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { HiOutlineChevronLeft, HiOutlineUserPlus, HiOutlineTrash, HiOutlineDocumentText } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import * as pdfjsLib from 'pdfjs-dist';
-import { DUMMY_PROGRAMS_READY, DUMMY_STAFF_LIST, saveNewPenugasan, type PenugasanItem } from './dummyData';
+import { getProgramsReadyForEvaluasi, createPenugasanEvaluasi } from '@/services/penugasanEvaluasi.service';
+import { getAllUsers } from '@/services/authService';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -13,43 +14,65 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 const CreateInisiasiPenugasan: React.FC = () => {
   const navigate = useNavigate();
   const [programsReady, setProgramsReady] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
+  
   const [fileSurat, setFileSurat] = useState<File | null>(null);
   const [nomorSurat, setNomorSurat] = useState('');
   const [tanggalSurat, setTanggalSurat] = useState(new Date().toISOString().split('T')[0]);
-  const [idProgram, setIdProgram] = useState('');
+  
+  // PERBAIKAN 1: Gunakan Key Gabungan (Type + ID) agar tidak tabrakan
+  const [selectedProgramKey, setSelectedProgramKey] = useState('');
   const [periodeEvaluasi, setPeriodeEvaluasi] = useState('P0');
-  const [jenisProgram, setJenisProgram] = useState('APBD');
+  const [jenisProgram, setJenisProgram] = useState('');
+  
   const [tanggalMulai, setTanggalMulai] = useState('');
   const [tanggalAkhir, setTanggalAkhir] = useState('');
-  const [anggotaTim, setAnggotaTim] = useState([
-    { id: 1, id_user: 'user-srie', peran: 'Ketua Tim' },
-    { id: 2, id_user: 'user-caskadi', peran: 'Sekretaris Tim' },
-  ]);
+  const [anggotaTim, setAnggotaTim] = useState<any[]>([]);
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Load programs list from dummy data
-    setProgramsReady(DUMMY_PROGRAMS_READY);
+    const fetchData = async () => {
+      try {
+        const [programsRes, usersRes] = await Promise.all([
+          getProgramsReadyForEvaluasi(),
+          getAllUsers()
+        ]);
+        setProgramsReady(programsRes.data || []);
+        
+        const staff = (usersRes || []).filter((u: any) => {
+          if (Array.isArray(u.peran)) {
+            return u.peran.some((role: any) => role.nama === 'Staff PDAS');
+          }
+          return u.peran === 'Staff PDAS' || u.peran?.nama === 'Staff PDAS' || u.peran?.role_name === 'Staff PDAS';
+        });
+        setStaffList(staff);
+        if (staff.length > 0) {
+          setAnggotaTim([{ id: Date.now(), id_user: staff[0].id, peran: 'Ketua Tim' }]);
+        }
+      } catch (err) {
+        console.error('Error fetching data for create:', err);
+        toast.error('Gagal mengambil data referensi dari server');
+      }
+    };
+    fetchData();
   }, []);
 
-  const handleProgramChange = (progId: string) => {
-    setIdProgram(progId);
-    const prog = DUMMY_PROGRAMS_READY.find(p => p.id_program === progId);
+  const handleProgramChange = (progKey: string) => {
+    setSelectedProgramKey(progKey);
+    // Cari program berdasarkan kombinasi type dan ID
+    const prog = programsReady.find(p => `${p.evaluable_type}|${p.evaluable_id}` === progKey);
     if (prog) {
       setJenisProgram(prog.jenis_program);
     }
   };
 
   const handleAddAnggota = () => {
-    // Pick an unused staff if possible
     const usedIds = anggotaTim.map(a => a.id_user);
-    const nextStaff = DUMMY_STAFF_LIST.find(s => !usedIds.includes(s.id_user)) || DUMMY_STAFF_LIST[0];
+    const nextStaff = staffList.find(s => !usedIds.includes(s.id)) || staffList[0];
+    if (!nextStaff) return toast.error('Tidak ada staff tersedia untuk ditambahkan');
     
-    setAnggotaTim([
-      ...anggotaTim, 
-      { id: Date.now(), id_user: nextStaff.id_user, peran: 'Anggota Tim' }
-    ]);
+    setAnggotaTim([...anggotaTim, { id: Date.now(), id_user: nextStaff.id, peran: 'Anggota Tim' }]);
   };
 
   const handleRemoveAnggota = (id: number) => {
@@ -84,7 +107,6 @@ const CreateInisiasiPenugasan: React.FC = () => {
         setNomorSurat(match[1]);
         toast.success(`Nomor surat terdeteksi otomatis: ${match[1]}`, { id: toastId });
       } else {
-        // Generate a standard dummy surat number if not matched in PDF
         const autoNo = `ST.${Math.floor(100 + Math.random() * 900)}/DISHUT-PDAS/EV/VIII/2026`;
         setNomorSurat(autoNo);
         toast.success(`Dokumen PDF terbaca. Nomor surat otomatis: ${autoNo}`, { id: toastId });
@@ -102,7 +124,7 @@ const CreateInisiasiPenugasan: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!idProgram) {
+    if (!selectedProgramKey) {
       return toast.error('Silakan pilih Program / Lokasi Rehabilitasi.');
     }
     if (!tanggalMulai || !tanggalAkhir) {
@@ -113,57 +135,32 @@ const CreateInisiasiPenugasan: React.FC = () => {
     const loadingToast = toast.loading('Menerbitkan penugasan Tim Penilai...');
 
     try {
-      // Simulate network latency for defense presentation realism
-      await new Promise(resolve => setTimeout(resolve, 600));
+      const selectedProgram = programsReady.find(p => `${p.evaluable_type}|${p.evaluable_id}` === selectedProgramKey);
+      if (!selectedProgram) throw new Error('Program tidak ditemukan');
 
-      const selectedProgram = DUMMY_PROGRAMS_READY.find(p => p.id_program === idProgram);
-      const idNew = `TUGAS-EV-00${Math.floor(5 + Math.random() * 20)}`;
-      const finalNomorSurat = nomorSurat || `ST.${Math.floor(120 + Math.random() * 800)}/DISHUT-PDAS/EV/VIII/2026`;
+      const formData = new FormData();
+      formData.append('nomor_surat', nomorSurat);
+      formData.append('tanggal_surat', tanggalSurat);
+      formData.append('evaluable_type', selectedProgram.evaluable_type);
+      formData.append('evaluable_id', String(selectedProgram.evaluable_id));
+      formData.append('periode_evaluasi', periodeEvaluasi === 'P0' ? 'Penanaman Awal (P0)' : periodeEvaluasi === 'P1' ? 'Pemeliharaan I (P1)' : 'Pemeliharaan II (P2)');
+      
+      // PERBAIKAN 2: Jika backend di masa depan butuh tanggalMulai & tanggalAkhir, kita append di sini.
+      // Jika error 500 karena backend menolak input ini, kamu bisa menghapus 2 baris ini.
+      formData.append('tanggal_mulai', tanggalMulai);
+      formData.append('batas_waktu', tanggalAkhir);
+      
+      const timPenilaiJson = anggotaTim.map(a => ({
+        user_id: a.id_user,
+        peran: a.peran
+      }));
+      formData.append('tim_penilai', JSON.stringify(timPenilaiJson));
+      
+      if (fileSurat) {
+        formData.append('file_surat_tugas', fileSurat);
+      }
 
-      const formattedTim = anggotaTim.map(a => {
-        const staff = DUMMY_STAFF_LIST.find(s => s.id_user === a.id_user);
-        return {
-          id_user: a.id_user,
-          nama: staff?.nama || a.id_user,
-          email: staff?.email || 'staff@dishut.jabarprov.go.id',
-          peran: a.peran,
-        };
-      });
-
-      const periodeText = 
-        periodeEvaluasi === 'P0' 
-          ? 'Penanaman Awal (P0)' 
-          : periodeEvaluasi === 'P1' 
-          ? 'Pemeliharaan I (P1)' 
-          : 'Pemeliharaan II (P2)';
-
-      const newPenugasan: PenugasanItem = {
-        id_penugasan: idNew,
-        id: idNew,
-        nomor_surat: finalNomorSurat,
-        noSurat: finalNomorSurat,
-        tanggal_surat: tanggalSurat,
-        tanggalSurat: tanggalSurat,
-        id_program: idProgram,
-        nama_proyek: selectedProgram?.nama_program || 'Program Rehabilitasi Lahan',
-        proyek: selectedProgram?.nama_program || 'Program Rehabilitasi Lahan',
-        lokasi: selectedProgram?.lokasi || 'Jawa Barat',
-        luas_ha: selectedProgram?.luas_ha || 25,
-        luas: selectedProgram?.luas_ha || 25,
-        jenis_program: jenisProgram || selectedProgram?.jenis_program || 'APBD',
-        periode_evaluasi: periodeText,
-        periode: periodeText,
-        status_program: `Tahap ${periodeText}`,
-        status_surat: 'TELAH DITUGASKAN',
-        tanggal_mulai: tanggalMulai,
-        tanggal_awal: tanggalMulai,
-        tanggal_selesai: tanggalAkhir,
-        tanggal_akhir: tanggalAkhir,
-        file_surat_url: fileSurat ? URL.createObjectURL(fileSurat) : 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-        tim_penilai: formattedTim,
-      };
-
-      saveNewPenugasan(newPenugasan);
+      await createPenugasanEvaluasi(formData);
 
       toast.success('Surat Tugas berhasil diterbitkan! Notifikasi terkirim ke Tim Penilai.', { id: loadingToast });
       navigate('/admin/kabid/evaluasi/penugasan');
@@ -244,14 +241,14 @@ const CreateInisiasiPenugasan: React.FC = () => {
                 </label>
                 <select 
                   required 
-                  value={idProgram} 
+                  value={selectedProgramKey} 
                   onChange={(e) => handleProgramChange(e.target.value)} 
                   className="w-full px-4 py-3 border border-gray-300 rounded-full text-sm focus:ring-1 focus:ring-[#185325] bg-white outline-none"
                 >
                   <option value="" disabled>-- Pilih Program dari Modul Pelaksanaan --</option>
                   {programsReady.map((prog: any) => (
-                    <option key={prog.id_program} value={prog.id_program}>
-                      {prog.nama_program} - {prog.lokasi} ({prog.jenis_program}, {prog.luas_ha} Ha)
+                    <option key={`${prog.evaluable_type}|${prog.evaluable_id}`} value={`${prog.evaluable_type}|${prog.evaluable_id}`}>
+                      {prog.label}
                     </option>
                   ))}
                 </select>
@@ -275,17 +272,16 @@ const CreateInisiasiPenugasan: React.FC = () => {
               
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                  Jenis Program <span className="text-red-500">*</span>
+                  Jenis Program
                 </label>
-                <select 
-                  required 
+                {/* PERBAIKAN 3: Dibuat Read-Only (disabled) karena sistem mendeteksinya otomatis */}
+                <input 
+                  type="text" 
                   value={jenisProgram} 
-                  onChange={(e) => setJenisProgram(e.target.value)} 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-full text-sm focus:ring-1 focus:ring-[#185325] bg-white outline-none"
-                >
-                  <option value="APBD">APBD</option>
-                  <option value="CSR">CSR</option>
-                </select>
+                  disabled
+                  placeholder="Terisi otomatis"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-full text-sm bg-gray-50 text-gray-500 cursor-not-allowed outline-none"
+                />
               </div>
             </div>
             
@@ -344,9 +340,9 @@ const CreateInisiasiPenugasan: React.FC = () => {
                       }}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-full text-sm focus:ring-1 focus:ring-[#185325] bg-white outline-none"
                     >
-                      {DUMMY_STAFF_LIST.map((staff) => (
-                        <option key={staff.id_user} value={staff.id_user}>
-                          {staff.nama} ({staff.email})
+                      {staffList.map((staff) => (
+                        <option key={staff.id} value={staff.id}>
+                          {staff.nama_pengguna || staff.username || staff.name || staff.nama} ({staff.email})
                         </option>
                       ))}
                     </select>

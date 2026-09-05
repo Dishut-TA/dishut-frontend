@@ -1,58 +1,70 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { HiOutlineChevronLeft, HiOutlineMapPin, HiOutlineCheckCircle, HiOutlineDocumentText } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
-import type { PetakUkur } from './types';
+import { simpanDataFaktualLapangan } from '@/services/penugasanEvaluasi.service';
 
 const EditDataLapanganEvaluasi: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const location = useLocation();
-  const stateData = location.state?.dataPetakUkur as PetakUkur[];
+  const stateData = location.state?.dataPetakUkur as any[];
   
-  const [dataPetakUkur, setDataPetakUkur] = useState<PetakUkur[]>(stateData || []);
+  const [dataPetakUkur, setDataPetakUkur] = useState<any[]>(stateData || []);
   const [isSaving, setIsSaving] = useState(false);
 
-  // If no data is passed, handle gracefully
   if (!dataPetakUkur || dataPetakUkur.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
         <p className="text-gray-500 mb-4">Tidak ada data untuk diedit.</p>
-        <button onClick={() => navigate(-1)} className="text-[#185325] underline font-medium">Kembali</button>
+        <button onClick={() => navigate(-1)} className="text-[#185325] underline font-medium cursor-pointer">Kembali</button>
       </div>
     );
   }
 
-  const handleEdit = <K extends keyof PetakUkur>(index: number, field: K, value: PetakUkur[K]) => {
+  const handleEdit = (index: number, field: string, value: any) => {
     const newData = [...dataPetakUkur];
     newData[index][field] = value;
     setDataPetakUkur(newData);
   };
 
   const handleGetLocation = (idx: number) => {
-    const loadingToast = toast.loading('Sedang mencari titik koordinat...');
-    setTimeout(() => {
-        handleEdit(idx, 'koordinat', `-6.25, 106.86`);
-        toast.success('Titik koordinat berhasil diperbarui!', { id: loadingToast });
-    }, 1000);
+    const loadingToast = toast.loading('Mencari koordinat GPS...');
+    navigator.geolocation.getCurrentPosition((pos) => {
+      handleEdit(idx, 'koordinat', `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
+      toast.success('Koordinat GPS ditemukan!', { id: loadingToast });
+    }, () => {
+      handleEdit(idx, 'koordinat', `-7.1234, 107.5432`);
+      toast.success('Gagal deteksi GPS, menggunakan fallback koordinat!', { id: loadingToast });
+    });
   };
 
-
-
-  const handleSave = () => {
+  const handleSave = async () => {
       setIsSaving(true);
-      const loadingToast = toast.loading('Menyimpan Data Faktual Lapangan...');
-      setTimeout(() => {
-          setIsSaving(false);
-          toast.success('Data Faktual Lapangan berhasil disimpan!', { id: loadingToast });
-          // Note: Hardcoded ID 1 for now due to mock data
-          navigate('/admin/staff/evaluasi/hasil/detail/1', { 
-              state: { 
-                  updatedData: dataPetakUkur,
-                  isDataFilled: true 
-              },
-              replace: true
-          });
-      }, 1500);
+      const loadingToast = toast.loading('Menyimpan Data Faktual ke Server...');
+      
+      try {
+        const payload = {
+          petak_ukurs: dataPetakUkur.map(pu => ({
+            id: pu.id_pu,
+            tumbuh: pu.tumbuh,
+            tinggi: pu.tinggi,
+            kondisiLahan: pu.kondisiLahan,
+            koordinat: pu.koordinat
+          }))
+        };
+        
+        await simpanDataFaktualLapangan(id!, payload);
+        toast.success('Data Faktual berhasil disimpan!', { id: loadingToast });
+        
+        navigate(`/admin/staff/evaluasi/hasil/detail/${id}`, { 
+          state: { updatedData: dataPetakUkur, isDataFilled: true }, replace: true 
+        });
+      } catch (error) {
+        toast.error('Gagal menyimpan data ke server.', { id: loadingToast });
+      } finally {
+        setIsSaving(false);
+      }
   }
 
   return (
@@ -64,14 +76,13 @@ const EditDataLapanganEvaluasi: React.FC = () => {
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10">
         <div className="mb-8">
             <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Form Evaluasi Faktual Lapangan</h1>
-            <p className="text-sm text-gray-500">Sesuaikan data realisasi lapangan (tumbuh, tinggi, kondisi lahan) dengan keadaan faktual dari hasil evaluasi terbaru.</p>
+            <p className="text-sm text-gray-500">Sesuaikan data realisasi lapangan dengan keadaan faktual dari hasil evaluasi terbaru.</p>
         </div>
         
-        {/* Tabel 1: Data Modul Pelaksanaan & Monitoring (Read-Only) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
                 <HiOutlineDocumentText className="w-5 h-5 text-gray-500" />
-                1. Referensi: Data Modul Pelaksanaan & Monitoring
+                1. Referensi: Data Dasar (Rencana Awal)
             </h3>
         </div>
         <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm mb-10">
@@ -79,10 +90,9 @@ const EditDataLapanganEvaluasi: React.FC = () => {
                 <thead className="bg-[#DCECE0] text-[#3A4D3F] font-bold border-b border-gray-200">
                     <tr>
                         <th className="px-4 py-3 text-center border-r border-gray-200">Periode & PU</th>
+                        <th className="px-4 py-3 text-center">Jenis Tanaman</th>
                         <th className="px-4 py-3 text-center">Rencana (Target Tanam)</th>
-                        <th className="px-4 py-3 text-center border-x border-gray-200">Realisasi Tumbuh (Monitoring)</th>
-                        <th className="px-4 py-3 text-center">Tinggi Rata-rata (Monitoring)</th>
-                        <th className="px-4 py-3 text-center border-l border-gray-200">Kondisi Lahan</th>
+                        <th className="px-4 py-3 text-center border-l border-gray-200">Kondisi Awal Lahan</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
@@ -96,25 +106,17 @@ const EditDataLapanganEvaluasi: React.FC = () => {
                                     <span className="text-xs text-gray-600 font-bold">{item.pu}</span>
                                 </div>
                             </td>
-                            <td className="px-4 py-3 text-center bg-[#EBF8F1]/20 font-semibold text-gray-800">
-                                {item.rencana} Pohon
+                            <td className="px-4 py-3 text-center font-semibold text-gray-800">
+                                <span className="text-xs">{item.jenisBibit}</span>
                             </td>
-                            <td className="px-4 py-3 text-center border-x border-gray-100 font-semibold text-gray-800 bg-[#EBF8F1]/20">
-                                {item.monitoringTumbuh || '-'} Pohon
-                            </td>
-                            <td className="px-4 py-3 text-center text-gray-800 font-medium bg-[#EBF8F1]/20">
-                                {item.rencanaTinggi} cm
-                            </td>
-                            <td className="px-4 py-3 text-center border-l border-gray-100 text-gray-700 bg-[#EBF8F1]/20">
-                                {item.kondisiLahan || '-'}
-                            </td>
+                            <td className="px-4 py-3 text-center font-semibold text-gray-800">{item.rencana} Pohon</td>
+                            <td className="px-4 py-3 text-center border-l border-gray-100 text-gray-700 bg-[#EBF8F1]/20">{item.kondisiLahan || '-'}</td>
                         </tr>
                     ))}
                 </tbody>
             </table>
         </div>
 
-        {/* Tabel 2: Form Evaluasi Faktual Lapangan */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <h3 className="text-sm font-bold text-[#185325] uppercase tracking-wider flex items-center gap-2">
                 <HiOutlineDocumentText className="w-5 h-5 text-[#185325]" />
@@ -125,7 +127,7 @@ const EditDataLapanganEvaluasi: React.FC = () => {
             <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="bg-[#DCECE0] text-[#3A4D3F] font-bold border-b border-gray-200">
                     <tr>
-                        <th className="px-4 py-3 text-center border-r border-gray-200">Periode & PU</th>
+                        <th className="px-4 py-3 text-center border-r border-gray-200">PU</th>
                         <th className="px-4 py-3 text-center">Tanaman Hidup (Faktual) <span className="text-red-500">*</span></th>
                         <th className="px-4 py-3 text-center border-x border-gray-200">Tinggi Rata-rata (Faktual) <span className="text-red-500">*</span></th>
                         <th className="px-4 py-3">Kondisi Lahan <span className="text-red-500">*</span></th> 
@@ -135,19 +137,14 @@ const EditDataLapanganEvaluasi: React.FC = () => {
                 <tbody className="divide-y divide-gray-100 bg-white">
                     {dataPetakUkur.map((item, idx) => (
                         <tr key={`eval-${idx}`} className="hover:bg-[#EBF8F1]/20 transition-colors">
-                            <td className="px-4 py-3 text-center align-middle border-r border-gray-200 bg-gray-50/30">
-                                <div className="flex flex-col items-center justify-center gap-1.5">
-                                    <span className="bg-[#EBF8F1] text-[#185325] border border-[#C6EBD6] px-3 py-1 rounded-lg text-xs font-bold uppercase shadow-sm">
-                                        {item.periode}
-                                    </span>
-                                    <span className="text-xs text-gray-600 font-bold">{item.pu}</span>
-                                </div>
+                            <td className="px-4 py-3 text-center align-middle border-r border-gray-200 bg-gray-50/30 font-bold text-gray-700">
+                                {item.pu}
                             </td>
                             
                             <td className="px-4 py-2 text-center bg-[#EBF8F1]/10">
                                 <input 
                                     type="number" 
-                                    value={item.tumbuh}
+                                    value={item.tumbuh === 0 ? '' : item.tumbuh}
                                     onChange={(e) => handleEdit(idx, 'tumbuh', Number(e.target.value))}
                                     className="w-24 text-center py-2 px-3 border border-gray-300 rounded-lg font-semibold focus:ring-2 focus:ring-[#185325]/20 focus:border-[#185325] focus:outline-none transition-colors"
                                     placeholder="Jml"
@@ -156,9 +153,8 @@ const EditDataLapanganEvaluasi: React.FC = () => {
                             
                             <td className="px-4 py-2 text-center border-x border-gray-100 bg-[#EBF8F1]/10">
                                 <input 
-                                    type="number"
-                                    step="0.1"
-                                    value={item.tinggi}
+                                    type="number" step="0.1"
+                                    value={item.tinggi === 0 ? '' : item.tinggi}
                                     onChange={(e) => handleEdit(idx, 'tinggi', Number(e.target.value))}
                                     className="w-24 text-center py-2 px-3 border border-gray-300 rounded-lg font-semibold focus:ring-2 focus:ring-[#185325]/20 focus:border-[#185325] focus:outline-none transition-colors"
                                     placeholder="cm"
@@ -169,7 +165,7 @@ const EditDataLapanganEvaluasi: React.FC = () => {
                                 <select
                                     value={item.kondisiLahan}
                                     onChange={(e) => handleEdit(idx, 'kondisiLahan', e.target.value)}
-                                    className="w-48 py-2 px-3 border border-gray-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-[#185325]/20 focus:border-[#185325] focus:outline-none transition-colors text-gray-700"
+                                    className="w-48 py-2 px-3 border border-gray-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-[#185325]/20 focus:border-[#185325] focus:outline-none transition-colors text-gray-700 cursor-pointer"
                                 >
                                     <option value="Baik / Normal">Baik / Normal</option>
                                     <option value="Banyak Gulma">Banyak Gulma</option>
@@ -183,20 +179,11 @@ const EditDataLapanganEvaluasi: React.FC = () => {
                             <td className="px-4 py-2 bg-[#EBF8F1]/10">
                                 <div className="flex items-center gap-2">
                                     <input 
-                                        type="text"
-                                        value={item.koordinat}
-                                        onChange={(e) => handleEdit(idx, 'koordinat', e.target.value)}
+                                        type="text" value={item.koordinat} onChange={(e) => handleEdit(idx, 'koordinat', e.target.value)}
                                         placeholder="-6.123, 106.123"
                                         className="w-40 py-2 px-3 border border-gray-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-[#185325]/20 focus:border-[#185325] focus:outline-none transition-colors text-gray-700"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => handleGetLocation(idx)}
-                                        className="p-2 bg-[#185325] text-white rounded-lg hover:bg-[#123d1c] transition-colors active:scale-95"
-                                        title="Dapatkan Lokasi Saat Ini"
-                                    >
-                                        <HiOutlineMapPin className="w-5 h-5" />
-                                    </button>
+                                    <button type="button" onClick={() => handleGetLocation(idx)} className="p-2 bg-[#185325] text-white rounded-lg hover:bg-[#123d1c] transition-colors active:scale-95 cursor-pointer" title="Dapatkan Lokasi GPS"><HiOutlineMapPin className="w-5 h-5" /></button>
                                 </div>
                             </td>
                         </tr>
@@ -206,24 +193,12 @@ const EditDataLapanganEvaluasi: React.FC = () => {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-gray-100">
-            <button 
-                onClick={handleSave} 
-                disabled={isSaving} 
-                className="px-10 py-3.5 bg-[#185325] hover:bg-[#123d1c] text-white text-sm font-bold rounded-full transition-colors shadow-md flex items-center gap-2 disabled:opacity-75"
-            >
-                {isSaving ? (
-                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                ) : (
-                    <>
-                        <HiOutlineCheckCircle className="w-5 h-5" />
-                        Simpan Data Faktual
-                    </>
-                )}
+            <button onClick={handleSave} disabled={isSaving} className="px-10 py-3.5 bg-[#185325] hover:bg-[#123d1c] text-white text-sm font-bold rounded-full transition-colors shadow-md flex items-center gap-2 disabled:opacity-75 cursor-pointer">
+                {isSaving ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> : <><HiOutlineCheckCircle className="w-5 h-5" /> Simpan Data Faktual</>}
             </button>
         </div>
       </div>
     </div>
   );
 };
-
 export default EditDataLapanganEvaluasi;

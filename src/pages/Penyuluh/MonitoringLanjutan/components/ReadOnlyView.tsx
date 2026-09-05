@@ -79,7 +79,7 @@ export const ReadOnlyView: React.FC<ReadOnlyViewProps> = ({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <div className="lg:col-span-8 space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col lg:flex-row gap-6">
             <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4">
@@ -204,69 +204,7 @@ export const ReadOnlyView: React.FC<ReadOnlyViewProps> = ({
           </div>
         </div>
 
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center text-center">
-            <h3 className="text-sm font-bold text-slate-500 mb-5 text-left border-b border-slate-100 pb-3 w-full">Status Program</h3>
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center shrink-0 mb-4 ${programStatus === 'Selesai' ? 'bg-emerald-50' : 'bg-orange-50'}`}>
-               <HiOutlineClock className={`w-8 h-8 ${programStatus === 'Selesai' ? 'text-emerald-500' : 'text-orange-500'}`} />
-            </div>
-            <h2 className={`text-xl font-bold mb-3 leading-none ${programStatus === 'Selesai' ? 'text-emerald-600' : 'text-orange-600'}`}>{programStatus}</h2>
-            <p className="text-[11px] text-slate-500 leading-relaxed px-2">
-              {programStatus === 'Selesai'
-                ? 'Hasil monitoring telah dievaluasi dan program dinyatakan selesai untuk periode ini.'
-                : 'Hasil monitoring telah dikirim dan sedang menunggu proses evaluasi oleh Tim Evaluasi.'}
-            </p>
-          </div>
 
-          <div className="bg-[#F0F6FF] rounded-xl shadow-sm border border-[#BFDBFE] p-5">
-             <div className="flex items-start gap-3">
-               <HiOutlineUserPlus className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-               <div>
-                 <h3 className="text-sm font-bold text-blue-900 mb-1.5">Informasi Lanjutan</h3>
-                 <p className="text-[11px] text-blue-800 leading-relaxed font-medium">
-                   Tindak lanjut program akan ditentukan pada modul evaluasi oleh Staff PDAS Tim Evaluasi.
-                 </p>
-               </div>
-             </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-800">Ringkasan Status</h3>
-            </div>
-            <div className="p-5 space-y-4 text-xs">
-              <div className="grid grid-cols-[100px_10px_1fr] items-start"><span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineCalendar className="w-4 h-4"/> Periode</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{activeProgram.periode || '-'}</span></div>
-              <div className="grid grid-cols-[100px_10px_1fr] items-start"><span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineUserPlus className="w-4 h-4"/> KTH</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{namaKth}</span></div>
-              <div className="grid grid-cols-[100px_10px_1fr] items-start"><span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineUserPlus className="w-4 h-4"/> Ketua KTH</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{ketuaKth}</span></div>
-              <div className="grid grid-cols-[100px_10px_1fr] items-start"><span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineUserPlus className="w-4 h-4"/> Penyuluh</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{penyuluhName}</span></div>
-              <div className="grid grid-cols-[100px_10px_1fr] items-start"><span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineMapPin className="w-4 h-4"/> Lokasi</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{activeProgram.lokasi || '-'}</span></div>
-              <div className="grid grid-cols-[100px_10px_1fr] items-start"><span className="text-slate-500 font-medium flex items-center gap-2"><HiOutlineMapPin className="w-4 h-4"/> Luas Area</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{luasArea > 0 ? `${luasArea.toLocaleString('id-ID')} Ha` : 'Belum tersedia'}</span></div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-800">Timeline Program</h3>
-            </div>
-            <div className="p-5 space-y-6">
-              <div className="flex gap-4 relative">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 shadow-sm ${programStatus === 'Selesai' ? 'bg-emerald-500' : 'bg-orange-500'}`}>
-                  {programStatus === 'Selesai'
-                    ? <HiOutlineArrowLeft className="w-4 h-4 text-white rotate-180 stroke-2" />
-                    : <HiOutlineClock className="w-4 h-4 text-white stroke-2" />}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-0.5">
-                    <p className="text-[11px] font-bold text-slate-900">{activeProgram.periode || '-'} - Monitoring</p>
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded border whitespace-nowrap ${programStatus === 'Selesai' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-orange-700 bg-orange-50 border-orange-200'}`}>{programStatus}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-500">{formatTanggal(tanggalMonitoring)}</p>
-                </div>
-              </div>
-              <p className="text-[10px] text-slate-400 pl-10">Riwayat timeline periode lain (sebelum/sesudah {activeProgram.periode || 'periode ini'}) belum tersedia karena sistem belum mencatat histori per periode secara lengkap.</p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

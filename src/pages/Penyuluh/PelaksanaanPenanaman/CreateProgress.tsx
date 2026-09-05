@@ -257,38 +257,6 @@ const InputProgresPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Lokasi di Peta */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h2 className="text-sm font-bold text-emerald-800 flex items-center gap-2 mb-4">
-                <HiOutlineMapPin className="w-5 h-5 text-[#008A4B]" /> Lokasi di Peta
-              </h2>
-              <div className="w-full h-56 bg-slate-100 rounded-xl overflow-hidden relative border border-slate-200">
-                <img src="/api/placeholder/800/300" alt="Map View" className="w-full h-full object-cover" />
-
-                {/* Mock Map Controls */}
-                <div className="absolute right-4 top-4 flex flex-col gap-2">
-                  <div className="bg-white rounded shadow-sm flex flex-col overflow-hidden">
-                    <button className="p-2 border-b border-gray-100 hover:bg-gray-50 text-gray-700 font-bold">+</button>
-                    <button className="p-2 hover:bg-gray-50 text-gray-700 font-bold">-</button>
-                  </div>
-                  <button className="bg-white p-2 rounded shadow-sm hover:bg-gray-50">
-                    <TargetIcon className="w-4 h-4 text-gray-700" />
-                  </button>
-                </div>
-
-                {/* Mock Polygon & Pin */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                  {/* Placeholder hexagon polygon */}
-                  <svg width="120" height="80" viewBox="0 0 120 80" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-60">
-                    <polygon points="20,10 100,10 110,40 90,70 30,70 10,40" fill="#008A4B" stroke="#ffffff" strokeWidth="2" strokeDasharray="4" />
-                  </svg>
-                  <div className="w-8 h-8 bg-emerald-500 rounded-full border-4 border-white shadow-lg flex items-center justify-center relative z-10 -mt-4">
-                    <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
           </div>
         </div>
       </div>

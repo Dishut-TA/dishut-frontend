@@ -315,7 +315,7 @@ function App() {
                   <Route path="evaluasi/penugasan/detail/:id" element={<DetailPenugasanEvaluasiStaff />} />
                   <Route path="evaluasi/hasil" element={<PerhitunganHasilEvaluasiStaff />} />
                   <Route path="evaluasi/hasil/detail/:id" element={<DetailPerhitunganHasilEvaluasiStaff />} />
-                  <Route path="evaluasi/hasil/form-lapangan" element={<EditDataLapanganEvaluasi />} />
+                  <Route path="evaluasi/hasil/form-lapangan/:id" element={<EditDataLapanganEvaluasi />} />
                   <Route path="evaluasi/data/create/:id" element={<InputEvaluasi />} />
                   <Route path="evaluasi/laporan" element={<LaporanEvaluasiStaffPDAS />} />
                   <Route path="evaluasi/laporan/create/:id" element={<CreateLaporanEvaluasiStaffPDAS />} />
