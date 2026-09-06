@@ -4,6 +4,7 @@ export interface RegisterPayload {
   nip: string;
   kata_sandi: string;
   peran: string;
+  kth_id?: number;
 }
 
 export interface LoginPayload {
@@ -17,6 +18,7 @@ export interface UpdateUserPayload {
   nip: string;
   kata_sandi?: string; 
   peran: string;
+  kth_id?: number;
 }
 
 export interface PermissionType {
@@ -47,6 +49,14 @@ export interface ProfilDetail {
 
 export interface UserProfile {
   id: number;
+  kth_id: number
+  kth: {
+    nama: string;
+    nama_ketua: string;
+    desa_kelurahan: string;
+    kecamatan?: string;
+    kabupaten_kota?: string;
+  }
   nama_pengguna: string;
   email: string;
   nip: string | null;
@@ -272,3 +282,4 @@ export interface CreateProgramInvestasiPayload {
     file_url: string;
   }[];
 }
+

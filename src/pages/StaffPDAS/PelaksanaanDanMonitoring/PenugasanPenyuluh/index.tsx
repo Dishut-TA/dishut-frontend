@@ -3,22 +3,31 @@ import {
   HiOutlineEye,
   HiOutlineMagnifyingGlass,
   HiOutlineMapPin,
-  HiOutlineArrowPath,
-  HiOutlineFunnel,
   HiOutlineUserPlus,
   HiChevronLeft,
   HiChevronRight,
   HiOutlineCheckCircle,
+  HiOutlineClock,
+  HiOutlineDocumentCheck,
+  HiOutlineCalendar,
+  HiOutlineClipboardDocumentCheck,
+  HiOutlineClipboardDocumentList,
+  HiOutlineFolder,
+  HiOutlineSparkles,
+  HiOutlineCheck,
 } from 'react-icons/hi2';
 import ModalBuatPenugasan from './components/CreatePenugasanModal';
 import TugaskanModal from './components/TugaskanModal';
 import { useNavigate } from 'react-router-dom';
 
 type JenisKegiatan = 'Validasi Lokasi' | 'Pelaksanaan Penanaman';
-type StatusPenugasan = 'Menunggu Penugasan' | 'Ditugaskan' | 'Berjalan' | 'Menunggu Verifikasi' | 'Selesai' | 'Menunggu Evaluasi' | 'Monitoring Selesai' | 'Tindak Lanjut';
-
-const normalizeStatus = (status: StatusPenugasan) =>
-  status === 'Menunggu Evaluasi' ? 'Selesai' : status;
+type StatusPenugasan =
+  | 'Semua'
+  | 'Menunggu Penugasan'
+  | 'Ditugaskan'
+  | 'Berjalan'
+  | 'Menunggu Verifikasi'
+  | 'Selesai';
 
 interface PenugasanData {
   id: string;
@@ -28,39 +37,118 @@ interface PenugasanData {
   wilayah: string;
   rencanaPeriode: string;
   penyuluh: string;
-  status: StatusPenugasan;
+  status: string;
   tanggalPenugasan: string;
-  source_type: string;
+  source_type?: string;
   penugasan_id?: string;
   created_at?: string;
 }
 
 const ITEMS_PER_PAGE = 5;
 
+// Custom Icon untuk Pelaksanaan Penanaman (Kecambah/Tanaman)
 const SproutIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 22V12M12 12C12 12 7 12 7 7C7 12 12 12 12 12ZM12 12C12 12 17 12 17 7C17 12 12 12 12 12Z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 22V12M12 12C12 12 7 12 7 7C7 12 12 12 12 12ZM12 12C12 12 17 12 17 7C17 12 12 12 12 12Z"
+    />
     <path strokeLinecap="round" strokeLinejoin="round" d="M8 22H16" />
   </svg>
 );
+
+// Helper Badge Jenis Kegiatan
+const renderJenisKegiatanBadge = (jenis: JenisKegiatan) => {
+  if (jenis === 'Validasi Lokasi') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+        <HiOutlineMapPin className="w-3.5 h-3.5 text-blue-600" />
+        Validasi Lokasi
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+      <SproutIcon className="w-3.5 h-3.5 text-emerald-600" />
+      Pelaksanaan Penanaman
+    </span>
+  );
+};
+
+// Helper Warna Khusus Badge Status di DALAM TABEL (Disesuaikan)
+const renderStatusBadge = (status: string) => {
+  switch (status) {
+    case 'Menunggu Penugasan':
+      return (
+        <span className="px-2.5 py-1 text-[11px] font-semibold rounded-full border text-emerald-700 bg-emerald-50 border-emerald-200">
+          Menunggu Penugasan
+        </span>
+      );
+    case 'Ditugaskan':
+      return (
+        <span className="px-2.5 py-1 text-[11px] font-semibold rounded-full border text-blue-700 bg-blue-50 border-blue-200">
+          Ditugaskan
+        </span>
+      );
+    case 'Berjalan':
+      return (
+        <span className="px-2.5 py-1 text-[11px] font-semibold rounded-full border text-sky-700 bg-sky-50 border-sky-200">
+          Berjalan
+        </span>
+      );
+    case 'Menunggu Verifikasi':
+      return (
+        <span className="px-2.5 py-1 text-[11px] font-semibold rounded-full border text-amber-700 bg-amber-50 border-amber-200">
+          Menunggu Verifikasi
+        </span>
+      );
+    case 'Selesai':
+    case 'Menunggu Evaluasi':
+    case 'Monitoring Selesai':
+      return (
+        <span className="px-2.5 py-1 text-[11px] font-semibold rounded-full border text-emerald-700 bg-emerald-50 border-emerald-200">
+          Selesai
+        </span>
+      );
+    default:
+      return (
+        <span className="px-2.5 py-1 text-[11px] font-semibold rounded-full border text-slate-700 bg-slate-50 border-slate-200">
+          {status}
+        </span>
+      );
+  }
+};
+
+// Helper Filter Jenis Program
+const filterByProgram = (itemProgram: string, selectedProgram: string): boolean => {
+  if (selectedProgram === 'Semua Program') return true;
+  return itemProgram.toLowerCase().trim() === selectedProgram.toLowerCase().trim();
+};
 
 const PenugasanPenyuluh: React.FC = () => {
   const [penugasanData, setPenugasanData] = useState<PenugasanData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [activeTab, setActiveTab] = useState('Semua');
+  // ==== FILTER STATE ====
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<StatusPenugasan>('Semua');
+  const [selectedJenisKegiatan, setSelectedJenisKegiatan] = useState<string>('Semua Jenis Kegiatan');
+  const [selectedProgram, setSelectedProgram] = useState<string>('Semua Program');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // ==== MODAL STATE ====
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTugaskanModalOpen, setIsTugaskanModalOpen] = useState(false);
   const [selectedPenugasan, setSelectedPenugasan] = useState<PenugasanData | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // ==== FILTER STATE ====
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterWilayah, setFilterWilayah] = useState('Semua Wilayah');
-  const [filterStatus, setFilterStatus] = useState('Semua Status');
-  const [filterPenyuluh, setFilterPenyuluh] = useState('Semua Penyuluh');
-  const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
 
+  // Fetch Data dari API
   useEffect(() => {
     const fetchPenugasan = async () => {
       setIsLoading(true);
@@ -68,14 +156,13 @@ const PenugasanPenyuluh: React.FC = () => {
         const token = localStorage.getItem('token');
         const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
         const res = await fetch(`${API_URL}/penugasan`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
-        
+
         const json = await res.json();
-        console.log('response api: ', json);
         setPenugasanData(json.data || []);
       } catch (e) {
-        console.error(e);
+        console.error('Error fetching penugasan:', e);
       } finally {
         setIsLoading(false);
       }
@@ -83,100 +170,77 @@ const PenugasanPenyuluh: React.FC = () => {
     fetchPenugasan();
   }, [refreshKey]);
 
-  const navigate = useNavigate();
-
-  const getStatusStyle = (status: StatusPenugasan) => {
-    switch (status) {
-      case 'Menunggu Penugasan': return 'bg-orange-50 text-orange-600 border-orange-100';
-      case 'Ditugaskan': return 'bg-blue-50 text-blue-600 border-blue-100';
-      case 'Berjalan': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'Menunggu Verifikasi': return 'bg-yellow-50 text-yellow-600 border-yellow-100';
-      case 'Selesai': return 'bg-green-50 text-green-600 border-green-100';
-      case 'Menunggu Evaluasi': return 'bg-amber-50 text-amber-600 border-amber-100';
-      case 'Monitoring Selesai': return 'bg-green-50 text-green-600 border-green-100';
-      case 'Tindak Lanjut': return 'bg-purple-50 text-purple-600 border-purple-100';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
+  // Handler Aksi
   const handleTugaskan = (item: PenugasanData) => {
     setSelectedPenugasan(item);
     setIsTugaskanModalOpen(true);
   };
 
-  // Hardcode di frontend: status Menunggu Evaluasi langsung dianggap selesai
-  const handleSelesaikanEvaluasi = async (item: PenugasanData) => {
-    const targetId = item.penugasan_id || item.id;
-    const confirmed = window.confirm('Tandai penugasan ini sebagai Selesai?');
-    if (!confirmed) return;
-
-    setPenugasanData(prev => prev.map(p =>
-      (p.penugasan_id || p.id) === targetId ? { ...p, status: 'Selesai' as StatusPenugasan } : p
-    ));
-  };
-
-  // Navigasi ke Halaman Detail sambil MENGIRIMKAN STATUS
   const handleBukaDetail = (item: PenugasanData) => {
     const targetId = item.penugasan_id || item.id;
     navigate(`/admin/staff/monitoring/penugasan-pelaksanaan/detail/${targetId}`, {
-      state: {
-        status: item.status,
-        jenisKegiatan: item.jenisKegiatan,
-        data: item
-      }
+      state: { status: item.status, jenisKegiatan: item.jenisKegiatan, data: item },
     });
   };
 
-  // ==== OPSI FILTER DINAMIS (diambil dari data API, bukan hardcode) ====
-  const wilayahOptions = useMemo(() => {
-    const set = new Set(penugasanData.map((d) => d.wilayah).filter((w) => w && w !== '-'));
-    return Array.from(set).sort();
-  }, [penugasanData]);
+  const handleVerifikasi = (item: PenugasanData) => {
+    const targetId = item.penugasan_id || item.id;
+    navigate(`/admin/staff/monitoring/penugasan-pelaksanaan/detail/${targetId}`, {
+      state: { status: item.status, jenisKegiatan: item.jenisKegiatan, data: item, modeVerifikasi: true },
+    });
+  };
 
-  const statusOptions = useMemo(() => {
-    const set = new Set(penugasanData.map((d) => normalizeStatus(d.status)).filter(Boolean));
-    return Array.from(set).sort();
-  }, [penugasanData]);
-
-  const penyuluhOptions = useMemo(() => {
-    const set = new Set(penugasanData.map((d) => d.penyuluh).filter((p) => p && p !== '-'));
-    return Array.from(set).sort();
-  }, [penugasanData]);
-
-  // ==== APPLY TAB + FILTER + SORT (terbaru dahulu) ====
+  // ==== LOGIKA FILTER & SEARCH ====
   const filteredData = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
 
-    let result = penugasanData.filter((item) => {
-      const resolvedStatus = normalizeStatus(item.status);
+    return penugasanData.filter((item) => {
+      // Hanya mengizinkan Validasi Lokasi & Pelaksanaan Penanaman
+      const isKegiatanValid =
+        item.jenisKegiatan === 'Validasi Lokasi' || item.jenisKegiatan === 'Pelaksanaan Penanaman';
 
-      if (activeTab !== 'Semua' && item.jenisKegiatan !== activeTab) return false;
-      if (filterWilayah !== 'Semua Wilayah' && item.wilayah !== filterWilayah) return false;
-      if (filterStatus !== 'Semua Status' && resolvedStatus !== filterStatus) return false;
-      if (filterPenyuluh !== 'Semua Penyuluh' && item.penyuluh !== filterPenyuluh) return false;
+      if (!isKegiatanValid) {
+        return false;
+      }
 
+      // Filter Status Pill
+      if (selectedStatus !== 'Semua') {
+        if (selectedStatus === 'Selesai') {
+          if (
+            item.status !== 'Selesai' &&
+            item.status !== 'Menunggu Evaluasi' &&
+            item.status !== 'Monitoring Selesai'
+          ) {
+            return false;
+          }
+        } else if (item.status !== selectedStatus) {
+          return false;
+        }
+      }
+
+      // Filter Jenis Kegiatan Dropdown
+      if (selectedJenisKegiatan !== 'Semua Jenis Kegiatan' && item.jenisKegiatan !== selectedJenisKegiatan) {
+        return false;
+      }
+
+      // Filter Jenis Program Dropdown
+      if (!filterByProgram(item.program, selectedProgram)) {
+        return false;
+      }
+
+      // Search Query
       if (q) {
-        const haystack = `${item.program} ${item.lokasi} ${item.penyuluh}`.toLowerCase();
+        const haystack = `${item.program} ${item.lokasi} ${item.penyuluh} ${item.id}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
 
       return true;
     });
+  }, [penugasanData, selectedStatus, selectedJenisKegiatan, selectedProgram, searchTerm]);
 
-    // Sort terbaru: pakai created_at bila ada, fallback ke tanggalPenugasan
-    result = result.slice().sort((a, b) => {
-      const dateA = a.created_at ? new Date(a.created_at).getTime() : (a.tanggalPenugasan && a.tanggalPenugasan !== '-' ? new Date(a.tanggalPenugasan).getTime() : 0);
-      const dateB = b.created_at ? new Date(b.created_at).getTime() : (b.tanggalPenugasan && b.tanggalPenugasan !== '-' ? new Date(b.tanggalPenugasan).getTime() : 0);
-      return dateB - dateA;
-    });
-
-    return result;
-  }, [penugasanData, activeTab, searchTerm, filterWilayah, filterStatus, filterPenyuluh]);
-
-  // Reset ke halaman 1 setiap kali filter/tab berubah
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, searchTerm, filterWilayah, filterStatus, filterPenyuluh]);
+  }, [selectedStatus, selectedJenisKegiatan, selectedProgram, searchTerm, startDate, endDate]);
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / ITEMS_PER_PAGE));
   const paginatedData = filteredData.slice(
@@ -184,227 +248,291 @@ const PenugasanPenyuluh: React.FC = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const handleReset = () => {
-    setSearchTerm('');
-    setFilterWilayah('Semua Wilayah');
-    setFilterStatus('Semua Status');
-    setFilterPenyuluh('Semua Penyuluh');
-    setCurrentPage(1);
-  };
-
   return (
-    <div className="flex flex-col gap-6 w-full mx-auto pb-8 bg-[#f8faf9] min-h-screen">
-
+    <div className="flex flex-col gap-6 w-full mx-auto pb-8 bg-[#f8faf9] min-h-screen font-sans">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Penugasan Kegiatan</h1>
-          <p className="text-sm text-gray-500">Kelola penugasan penyuluh untuk kegiatan validasi lokasi dan pelaksanaan penanaman.</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 mb-1">Penugasan Kegiatan</h1>
+        <p className="text-sm text-slate-500">
+          Kelola penugasan penyuluh untuk kegiatan validasi lokasi dan pelaksanaan penanaman.
+        </p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-
-        {/* TABS */}
-        <div className="flex gap-6 px-6 border-b border-gray-100 pt-4 overflow-x-auto whitespace-nowrap">
-          {['Semua', 'Validasi Lokasi', 'Pelaksanaan Penanaman'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-3 text-sm font-bold transition-colors border-b-2 cursor-pointer ${activeTab === tab ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            >
-              {tab}
+      {/* CONTAINER UTAMA */}
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 flex flex-col gap-5">
+        {/* BARIS SEARCH & DROPDOWN FILTER */}
+        <div className="flex flex-col xl:flex-row items-center gap-3">
+          {/* Input Cari */}
+          <div className="relative flex-1 w-full">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Cari ID penugasan, program, lokasi, KTH..."
+              className="w-full pl-4 pr-10 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 text-slate-700 placeholder:text-slate-400"
+            />
+            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <HiOutlineMagnifyingGlass className="w-4 h-4" />
             </button>
-          ))}
-        </div>
+          </div>
 
-        {/* FILTERS */}
-        <div className="p-5 flex flex-col xl:flex-row gap-4 border-b border-gray-100 items-center justify-between">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full xl:flex-1">
+          {/* Dropdown Jenis Program */}
+          <div className="w-full xl:w-56">
             <div className="relative">
-              <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Cari program, lokasi, atau penyuluh..."
-                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-500"
-              />
+              <select
+                value={selectedProgram}
+                onChange={(e) => setSelectedProgram(e.target.value)}
+                className="w-full pl-8 pr-8 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 text-slate-700 appearance-none cursor-pointer"
+              >
+                <option value="Semua Program">Semua Program</option>
+                <option value="Program Rehabilitasi">Program Rehabilitasi</option>
+                <option value="Program APBD">Program APBD</option>
+                <option value="Program CSR">Program CSR</option>
+              </select>
+              <HiOutlineFolder className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-3.5 h-3.5" />
             </div>
-            <select
-              value={filterWilayah}
-              onChange={(e) => setFilterWilayah(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-500 bg-white appearance-none cursor-pointer"
-            >
-              <option>Semua Wilayah</option>
-              {wilayahOptions.map((w) => (
-                <option key={w} value={w}>{w}</option>
-              ))}
-            </select>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-500 bg-white appearance-none cursor-pointer"
-            >
-              <option>Semua Status</option>
-              {statusOptions.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-            <select
-              value={filterPenyuluh}
-              onChange={(e) => setFilterPenyuluh(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-500 bg-white appearance-none cursor-pointer"
-            >
-              <option>Semua Penyuluh</option>
-              {penyuluhOptions.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
           </div>
 
-          <div className="flex items-center gap-3 w-full xl:w-auto shrink-0 justify-end">
-            <button
-              onClick={handleReset}
-              className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 cursor-pointer"
-            >
-              <HiOutlineArrowPath className="w-4 h-4" /> Reset
-            </button>
-            <button
-              onClick={() => setCurrentPage(1)}
-              className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 cursor-pointer"
-            >
-              <HiOutlineFunnel className="w-4 h-4" /> Filter
-            </button>
+          {/* Dropdown Jenis Kegiatan */}
+          <div className="w-full xl:w-56">
+            <div className="relative">
+              <select
+                value={selectedJenisKegiatan}
+                onChange={(e) => setSelectedJenisKegiatan(e.target.value)}
+                className="w-full pl-8 pr-8 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 text-slate-700 appearance-none cursor-pointer"
+              >
+                <option value="Semua Jenis Kegiatan">Semua Jenis Kegiatan</option>
+                <option value="Validasi Lokasi">Validasi Lokasi</option>
+                <option value="Pelaksanaan Penanaman">Pelaksanaan Penanaman</option>
+              </select>
+              {selectedJenisKegiatan === 'Validasi Lokasi' ? (
+                <HiOutlineMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500 pointer-events-none w-3.5 h-3.5" />
+              ) : selectedJenisKegiatan === 'Pelaksanaan Penanaman' ? (
+                <SproutIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none w-3.5 h-3.5" />
+              ) : (
+                <HiOutlineClipboardDocumentList className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-3.5 h-3.5" />
+              )}
+            </div>
+          </div>
+
+          {/* Date Picker Range */}
+          <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-3 py-1.5 bg-white w-full xl:w-auto shrink-0 text-xs text-slate-500">
+            <HiOutlineCalendar className="w-4 h-4 text-slate-400" />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="focus:outline-none bg-transparent cursor-pointer text-slate-600"
+            />
+            <span>-</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="focus:outline-none bg-transparent cursor-pointer text-slate-600"
+            />
           </div>
         </div>
 
-        {/* TABLE */}
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-left text-sm text-gray-600 min-w-250 xl:min-w-full">
-            <thead className="bg-[#DCECE0] text-[#3A4D3F] text-xs uppercase tracking-wider font-bold">
-              <tr>
-                <th className="px-4 py-4 whitespace-nowrap">No</th>
-                <th className="px-4 py-4 whitespace-nowrap">Program</th>
-                <th className="px-4 py-4 whitespace-nowrap">Lokasi</th>
-                <th className="px-4 py-4 whitespace-nowrap">Jenis Kegiatan</th>
-                <th className="px-4 py-4 whitespace-nowrap">Wilayah</th>
-                <th className="px-4 py-4 whitespace-nowrap">Rencana/Periode</th>
-                <th className="px-4 py-4 whitespace-nowrap">Penyuluh</th>
-                <th className="px-4 py-4 whitespace-nowrap">Status</th>
-                <th className="px-4 py-4 whitespace-nowrap">Tanggal Penugasan</th>
-                <th className="px-4 py-4 whitespace-nowrap text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {isLoading ? (
+        {/* BUTTON PILL STATUS FILTER */}
+        <div className="flex items-center gap-2 flex-wrap border-b border-slate-100 pb-4">
+          <button
+            onClick={() => setSelectedStatus('Semua')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              selectedStatus === 'Semua'
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <HiOutlineSparkles className="w-3.5 h-3.5 text-slate-400" />
+            Semua
+          </button>
+
+          {/* Menunggu Penugasan (Ikon & Teks Warna Hijau) */}
+          <button
+            onClick={() => setSelectedStatus('Menunggu Penugasan')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              selectedStatus === 'Menunggu Penugasan'
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <HiOutlineUserPlus className="w-3.5 h-3.5 text-emerald-600" />
+            Menunggu Penugasan
+          </button>
+
+          <button
+            onClick={() => setSelectedStatus('Ditugaskan')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              selectedStatus === 'Ditugaskan'
+                ? 'bg-blue-50 text-blue-700 border border-blue-300 shadow-2xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <HiOutlineCheck className="w-3.5 h-3.5 text-blue-600" />
+            Ditugaskan
+          </button>
+
+          <button
+            onClick={() => setSelectedStatus('Berjalan')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              selectedStatus === 'Berjalan'
+                ? 'bg-sky-50 text-sky-700 border border-sky-300 shadow-2xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <HiOutlineClock className="w-3.5 h-3.5 text-sky-600" />
+            Berjalan
+          </button>
+
+          {/* Menunggu Verifikasi (Ikon & Teks Warna Oranye) */}
+          <button
+            onClick={() => setSelectedStatus('Menunggu Verifikasi')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              selectedStatus === 'Menunggu Verifikasi'
+                ? 'bg-amber-50 text-amber-700 border border-amber-300 shadow-2xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <HiOutlineDocumentCheck className="w-3.5 h-3.5 text-amber-600" />
+            Menunggu Verifikasi
+          </button>
+
+          <button
+            onClick={() => setSelectedStatus('Selesai')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              selectedStatus === 'Selesai'
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <HiOutlineCheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+            Selesai
+          </button>
+        </div>
+
+        {/* TABEL DATA */}
+        <div className="border border-slate-200/80 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-600 whitespace-nowrap">
+              <thead className="text-[11px] text-[#3A4D3F] bg-[#EAF2EC] font-bold tracking-wider uppercase">
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-gray-500">Memuat data...</td>
+                  <th className="px-4 py-3.5 text-center font-bold">NO</th>
+                  <th className="px-4 py-3.5 font-bold">PROGRAM</th>
+                  <th className="px-4 py-3.5 font-bold">LOKASI</th>
+                  <th className="px-4 py-3.5 font-bold">JENIS KEGIATAN</th>
+                  <th className="px-4 py-3.5 font-bold">WILAYAH</th>
+                  <th className="px-4 py-3.5 font-bold">PENYULUH</th>
+                  <th className="px-4 py-3.5 font-bold">STATUS</th>
+                  <th className="px-4 py-3.5 font-bold text-center">AKSI</th>
                 </tr>
-              ) : paginatedData.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-gray-500">Tidak ada data yang cocok dengan filter.</td>
-                </tr>
-              ) : paginatedData.map((item, index) => {
-                const resolvedStatus = normalizeStatus(item.status);
-
-                return (
-                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-4 py-4 text-xs">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
-                    <td className="px-4 py-4 text-gray-900 font-medium min-w-45 leading-snug">{item.program}</td>
-                    <td className="px-4 py-4 text-xs min-w-40 leading-snug text-gray-600">{item.lokasi}</td>
-                    <td className="px-4 py-4">
-                      {item.jenisKegiatan === 'Validasi Lokasi' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 whitespace-nowrap">
-                          <HiOutlineMapPin className="w-3.5 h-3.5" /> Validasi Lokasi
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
-                          <SproutIcon className="w-3.5 h-3.5" /> Pelaksanaan Penanaman
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-xs whitespace-nowrap">{item.wilayah}</td>
-                    <td className="px-4 py-4 text-xs whitespace-pre-line text-gray-500 leading-snug min-w-30">{item.rencanaPeriode}</td>
-                    <td className="px-4 py-4 text-xs font-medium text-gray-700 whitespace-nowrap">{item.penyuluh}</td>
-                    <td className="px-4 py-4">
-                      <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${getStatusStyle(resolvedStatus)}`}>
-                        {resolvedStatus}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-xs text-gray-500 whitespace-nowrap">{item.tanggalPenugasan}</td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center justify-end gap-3 whitespace-nowrap">
-                        {item.status === 'Menunggu Penugasan' && (
-                          <button
-                            onClick={() => handleTugaskan(item)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#008A4B] hover:bg-emerald-800 text-white text-[11px] font-bold rounded-full transition-colors shadow-sm cursor-pointer"
-                          >
-                            <HiOutlineUserPlus className="w-3.5 h-3.5" /> Tugaskan
-                          </button>
-                        )}
-
-                        {(item.status === 'Berjalan' || item.status === 'Menunggu Verifikasi' || resolvedStatus === 'Selesai' || item.status === 'Ditugaskan') && (
-                          <button
-                            onClick={() => handleBukaDetail(item)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-[11px] font-bold rounded-full transition-colors shadow-sm cursor-pointer"
-                          >
-                            <HiOutlineEye className="w-3.5 h-3.5" /> Detail
-                          </button>
-                        )}
-
-                        {(item.status === 'Monitoring Selesai' || item.status === 'Tindak Lanjut') && (
-                          <button
-                            onClick={() => handleBukaDetail(item)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-[11px] font-bold rounded-full transition-colors shadow-sm cursor-pointer"
-                          >
-                            <HiOutlineEye className="w-3.5 h-3.5" /> Detail
-                          </button>
-                        )}
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                      Memuat data...
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                ) : paginatedData.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                      Tidak ada data yang cocok dengan filter.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedData.map((item, index) => (
+                    <tr key={item.id || index} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="px-4 py-3.5 text-center font-medium text-slate-700">
+                        {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                      </td>
+                      <td className="px-4 py-3.5 font-bold text-slate-900">{item.program}</td>
+                      <td className="px-4 py-3.5 text-slate-600">{item.lokasi}</td>
+                      
+                      {/* BADGE JENIS KEGIATAN */}
+                      <td className="px-4 py-3.5">
+                        {renderJenisKegiatanBadge(item.jenisKegiatan)}
+                      </td>
 
-        {/* PAGINATION - maks 5 data teratas (terbaru) per halaman */}
-        <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white text-sm text-gray-500">
-          <span>
-            {filteredData.length === 0
-              ? 'Menampilkan 0 dari 0 data'
-              : `Menampilkan ${(currentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, filteredData.length)} dari ${filteredData.length} data`}
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <HiChevronLeft className="w-4 h-4" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <td className="px-4 py-3.5 text-slate-600">{item.wilayah}</td>
+                      <td className="px-4 py-3.5 font-medium text-slate-700">{item.penyuluh || '-'}</td>
+                      
+                      {/* BADGE STATUS KHUSUS TABEL */}
+                      <td className="px-4 py-3.5">
+                        {renderStatusBadge(item.status)}
+                      </td>
+
+                      <td className="px-4 py-3.5 text-center">
+                        {item.status === 'Menunggu Penugasan' ? (
+                          <button
+                            onClick={() => handleTugaskan(item)}
+                            className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 cursor-pointer"
+                          >
+                            <HiOutlineUserPlus className="w-3.5 h-3.5" />
+                            Tugaskan
+                          </button>
+                        ) : item.status === 'Menunggu Verifikasi' ? (
+                          <button
+                            onClick={() => handleVerifikasi(item)}
+                            className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500 text-white rounded-lg text-xs font-semibold hover:bg-amber-600 shadow-2xs cursor-pointer"
+                          >
+                            <HiOutlineClipboardDocumentCheck className="w-3.5 h-3.5" />
+                            Verifikasi
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleBukaDetail(item)}
+                            className="inline-flex items-center gap-1 px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+                          >
+                            <HiOutlineEye className="w-3.5 h-3.5" />
+                            Detail
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* PAGINATION */}
+          <div className="flex items-center justify-between text-xs text-slate-500 px-4 py-3 border-t border-slate-100 bg-white">
+            <span>
+              Menampilkan {filteredData.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} -{' '}
+              {Math.min(currentPage * ITEMS_PER_PAGE, filteredData.length)} dari {filteredData.length} data
+            </span>
+            <div className="flex items-center gap-1">
               <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-colors ${
-                  page === currentPage
-                    ? 'bg-[#008A4B] text-white shadow-sm'
-                    : 'border border-gray-200 text-gray-500 hover:bg-gray-50'
-                }`}
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
               >
-                {page}
+                <HiChevronLeft className="w-4 h-4" />
               </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <HiChevronRight className="w-4 h-4" />
-            </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-7 h-7 rounded-md text-xs font-semibold flex items-center justify-center cursor-pointer ${
+                    currentPage === page
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-500'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className="p-1.5 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+              >
+                <HiChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -416,10 +544,9 @@ const PenugasanPenyuluh: React.FC = () => {
         data={selectedPenugasan}
         onSuccess={() => {
           setIsTugaskanModalOpen(false);
-          setRefreshKey(prev => prev + 1);
+          setRefreshKey((prev) => prev + 1);
         }}
       />
-
     </div>
   );
 };

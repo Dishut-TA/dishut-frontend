@@ -14,6 +14,7 @@ import type { RoleType, UpdateUserPayload, UserProfile } from "@/utils/interface
 import ConfirmAlert from "@/components/ConfirmAlert";
 import { ToastError, ToastLoading, ToastSuccess } from "@/utils/toastHelper";
 import { updatePegawaiFormData } from "@/services/pegawai/pegawai.service";
+import { getKthsAPI } from "@/services/kth.service";
 
 interface EditAkunModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ const EditAkunModal: React.FC<EditAkunModalProps> = ({
   });
   
   const [roles, setRoles] = useState<RoleType[]>([]);
+  const [kths, setKths] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -69,18 +71,21 @@ const EditAkunModal: React.FC<EditAkunModalProps> = ({
   // ==========================================
   useEffect(() => {
     if (isOpen) {
-      const fetchRoles = async () => {
+      const fetchRolesAndKths = async () => {
         setIsLoadingRoles(true);
         try {
           const data = await getAllRoles();
           setRoles(data);
+          
+          const kthData = await getKthsAPI();
+          setKths(kthData || []);
         } catch (err) {
           console.error(err);
         } finally {
           setIsLoadingRoles(false);
         }
       };
-      fetchRoles();
+      fetchRolesAndKths();
     }
   }, [isOpen]);
 
@@ -91,7 +96,8 @@ const EditAkunModal: React.FC<EditAkunModalProps> = ({
         email: userData.email,
         nip: userData.nip || "",
         kata_sandi: "",
-        peran: userData.peran && userData.peran.length > 0 ? userData.peran[0].nama : "" 
+        peran: userData.peran && userData.peran.length > 0 ? userData.peran[0].nama : "",
+        kth_id: userData.kth_id || undefined
       });
       
       // Mengambil foto dari object profil bersarang (fallback ke properti luar jika ada)
@@ -348,16 +354,28 @@ const EditAkunModal: React.FC<EditAkunModalProps> = ({
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">NIP</label>
-              <input
-                type="text"
-                name="nip"
-                value={formData.nip}
-                onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
-            </div>
+            {formData.peran === "Kelompok Tani Hutan (KTH)" ? (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kelompok Tani Hutan (KTH) <span className="text-red-500">*</span></label>
+                <select name="kth_id" value={formData.kth_id || ""} onChange={handleChange} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#185325]/20 focus:border-[#185325] cursor-pointer">
+                  <option value="" disabled>Pilih KTH...</option>
+                  {kths.map((k) => (
+                    <option key={k.id} value={k.id}>{k.nama} - {k.desa_kelurahan}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">NIP</label>
+                <input
+                  type="text"
+                  name="nip"
+                  value={formData.nip || ""}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Peran (Role)</label>

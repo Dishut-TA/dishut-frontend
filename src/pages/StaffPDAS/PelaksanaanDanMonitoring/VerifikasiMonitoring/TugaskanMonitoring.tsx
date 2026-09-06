@@ -194,14 +194,7 @@ const TugaskanMonitoring: React.FC = () => {
               </div>
             </div>
 
-            <div className="w-full md:hidden lg:block lg:w-64 h-28 shrink-0 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400')] bg-cover bg-center border border-slate-200">
-              <HiOutlineMapPin className="w-7 h-7 text-red-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow-md" />
-              <div className="absolute bottom-2 left-2">
-                <button className="text-[11px] font-bold text-blue-600 bg-white/90 px-2 py-1 rounded shadow-sm flex items-center gap-1">
-                  Lihat di Peta <HiOutlineMapPin className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
+            
           </div>
         </div>
 
@@ -323,39 +316,6 @@ const TugaskanMonitoring: React.FC = () => {
                   ></textarea>
                 </div>
 
-                {/* Row 5: Lampiran */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Lampiran (Opsional)</label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-22.5">
-                      <div className="flex items-center gap-3">
-                        <HiOutlineCloudArrowUp className="w-8 h-8 text-slate-500" />
-                        <div className="text-left">
-                          <p className="text-xs font-medium text-slate-700">Drag & drop file di sini atau klik untuk unggah</p>
-                          <p className="text-[10px] text-slate-500">PDF, JPG, PNG (Maks. 5MB)</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Mock Uploaded File */}
-                    {uploadedFile && (
-                      <div className="border border-slate-200 rounded-lg p-4 flex items-center justify-between min-h-22.5 bg-white">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-red-50 text-red-600 flex items-center justify-center rounded-lg font-bold text-[10px]">
-                            PDF
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-700">{uploadedFile.name}</p>
-                            <p className="text-[10px] text-slate-500">{uploadedFile.size}</p>
-                          </div>
-                        </div>
-                        <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                          <HiOutlineTrash className="w-5 h-5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
 

@@ -22,6 +22,7 @@ const CreateProgramAPBD: React.FC = () => {
     ketuaKth: '',
     namaProgram: '',
     jumlah_bibit: '',
+    jenis_tanaman: '',
     anggaran: '',
     deskripsi: ''
   });
@@ -64,12 +65,13 @@ const CreateProgramAPBD: React.FC = () => {
         kth_id: foundZone.kth_id || '1', 
         namaProgram: foundZone.result?.project?.nama_project ? `Rehabilitasi Lahan Kritis - ${foundZone.result?.project?.nama_project}` : `Program APBD - ${lokasi}`,
         jumlah_bibit: '',
+        jenis_tanaman: '',
       }));
     } else {
       setLokasiWilayah('');
       setForm(prev => ({
         ...prev,
-        rekomendasi: '', luasLahan: '', namaKth: '', ketuaKth: '', kth_id: '', namaProgram: '', jumlah_bibit: ''
+        rekomendasi: '', luasLahan: '', namaKth: '', ketuaKth: '', kth_id: '', namaProgram: '', jumlah_bibit: '', jenis_tanaman: ''
       }));
     }
   };
@@ -89,12 +91,13 @@ const CreateProgramAPBD: React.FC = () => {
     const payload = {
       kth_id: form.kth_id,
       nama_program: form.namaProgram,
-      jumlah_bibit: form.jumlah_bibit, // Fix: use jumlah_bibit
+      jumlah_bibit: form.jumlah_bibit,
+      jenis_tanaman: form.jenis_tanaman,
       deskripsi_rencana: form.deskripsi,
       anggaran: form.anggaran,
       target_luas_lahan: form.luasLahan,
       pilihan_intervensi: form.rekomendasi,
-      analysis_result_zone_id: selectedProjectId // Keep track of the selected zone
+      analysis_result_zone_id: selectedProjectId
     };
 
     try {
@@ -239,6 +242,23 @@ const CreateProgramAPBD: React.FC = () => {
                 className="w-full bg-white border border-gray-400 rounded-full px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#185325] focus:border-[#185325] transition-all shadow-sm appearance-none"
               />
             </div>
+          </div>
+
+          {/* Jenis Tanaman */}
+          <div>
+            <label className="block text-xs font-bold text-gray-800 mb-2">
+              Jenis Tanaman <span className="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              name="jenis_tanaman"
+              required
+              value={form.jenis_tanaman}
+              onChange={handleInputChange}
+              placeholder="Contoh: Rhizophora, Avicennia, Sonneratia"
+              className="w-full bg-white border border-gray-400 rounded-full px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#185325] focus:border-[#185325] transition-all shadow-sm"
+            />
+            <p className="text-[11px] text-gray-400 mt-1.5 ml-2">Pisahkan beberapa jenis tanaman dengan koma.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-1 gap-6">

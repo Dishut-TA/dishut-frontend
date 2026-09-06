@@ -38,8 +38,11 @@ const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onC
   if (!isOpen) return null;
 
   const targetKegiatan = data?.source_type === 'App\\Models\\DonationProgram'
-    ? (data?.detail?.total_seeds_bast || 0)
-    : (data?.detail?.total_seeds_collected || data?.detail?.jumlah_bibit || data?.detail?.target_amount || 0);
+    ? (data?.detail?.total_seeds_collected || data?.detail?.total_seeds_bast ||
+        (Array.isArray(data?.detail?.allocations)
+          ? data.detail.allocations.reduce((sum: number, a: any) => sum + (Number(a.jumlah) || 0), 0)
+          : 0))
+    : (data?.detail?.jumlah_bibit || data?.detail?.total_seeds_collected || data?.detail?.target_amount || 0);
   const tahunProgram = data?.detail?.start_date ? new Date(data.detail.start_date).getFullYear()
     : data?.detail?.tanggal_mulai ? new Date(data.detail.tanggal_mulai).getFullYear()
       : data?.detail?.created_at ? new Date(data.detail.created_at).getFullYear() : '-';
@@ -49,17 +52,28 @@ const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onC
   const targetLuasLahan = data?.detail?.analysis_result_zone?.luas_ha || data?.detail?.analysisResultZone?.luas_ha || data?.detail?.target_luas_lahan || 0;
   const totalPu = data?.detail?.analysis_result_zone?.jumlah_pu || data?.detail?.analysisResultZone?.jumlah_pu || (targetLuasLahan ? Math.ceil(targetLuasLahan * 1) : '-');
 
-  // Format tanggal pelaksanaan
+  // Format tanggal penugasan dari staff
   const formatTgl = (tgl: string) => {
-    if (!tgl) return '-';
-    return new Date(tgl).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!tgl) return null;
+    const dateObj = new Date(tgl);
+    if (isNaN(dateObj.getTime())) return tgl; // jika sudah string terformat, langsung kembalikan
+    return dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
   };
-  const tglMulai = data?.detail?.start_date || data?.detail?.tanggal_mulai;
-  const tglSelesai = data?.detail?.end_date || data?.detail?.tanggal_selesai;
+
+  // Mengambil tanggal penugasan yang diinput/ditugaskan oleh Staff
+  const tglMulai = data?.tanggal_penugasan || data?.start_date || data?.detail?.start_date || data?.detail?.tanggal_mulai;
+  const tglSelesai = data?.tanggal_selesai || data?.end_date || data?.detail?.end_date || data?.detail?.tanggal_selesai;
+  
+  // Tampilan teks periode pelaksanaan
+  const periodePelaksanaanFormatted = tglMulai && tglSelesai 
+    ? `${formatTgl(tglMulai)} s/d ${formatTgl(tglSelesai)}`
+    : tglMulai 
+      ? formatTgl(tglMulai) 
+      : (data?.rencanaPeriode || data?.periode || '-');
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
-      <div className="bg-[#f8faf9] rounded-2xl shadow-xl w-full max-w-275 max-h-[95vh] overflow-y-auto flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[#f8faf9] rounded-2xl shadow-xl w-full max-w-5xl max-h-[95vh] overflow-y-auto flex flex-col animate-in fade-in zoom-in-95 duration-200">
 
         {/* HEADER */}
         <div className="px-6 py-5 bg-white border-b border-gray-100 flex items-center justify-between sticky top-0 z-10 rounded-t-2xl">
@@ -82,28 +96,26 @@ const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onC
 
         {/* BODY */}
         <div className="p-6 space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6">
 
-            {/* KARTU INFO UTAMA */}
-            <div className="lg:col-span-2 bg-white rounded-xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
+            {/* KARTU INFO UTAMA (Dibuat pas seluas container) */}
+            <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -mr-8 -mt-8 z-0"></div>
-              <div className="relative z-10 flex items-center gap-2 mb-4 pb-3 border-b border-gray-50">
+              <div className="relative z-10 flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
                 <div className="w-2 h-6 bg-emerald-500 rounded-full"></div>
                 <h3 className="text-sm font-bold text-emerald-800">Informasi Program</h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 text-sm text-gray-700">
-                <div className="flex"><span className="w-32 text-gray-500">ID Program</span><span className="font-semibold">: {data.id}</span></div>
-                <div className="flex"><span className="w-32 text-gray-500">Jenis Kegiatan</span><span className="font-semibold">: Penanaman</span></div>
-                <div className="flex"><span className="w-32 text-gray-500">Nama Program</span><span className="font-semibold">: {data?.program || '-'}</span></div>
-                <div className="flex"><span className="w-32 text-gray-500">Target Kegiatan</span><span className="font-semibold">: {targetKegiatan} tanaman</span></div>
-                <div className="flex"><span className="w-32 text-gray-500">Lokasi Program</span><span className="font-semibold pr-4 leading-relaxed whitespace-pre-line">: {data?.lokasi?.replace('\n', ' ') || '-'}</span></div>
-                <div className="flex"><span className="w-32 text-gray-500">Tahun Program</span><span className="font-semibold">: {tahunProgram}</span></div>
-                <div className="flex"><span className="w-32 text-gray-500">Wilayah</span><span className="font-semibold">: {data?.wilayah !== '-' ? data?.wilayah : (data?.lokasi?.split(',')[1]?.trim() || '-')}</span></div>
-                <div className="flex"><span className="w-32 text-gray-500">Deskripsi</span><span className="font-semibold pr-4 leading-relaxed">: {data?.detail?.description || data?.detail?.deskripsi_rencana || '-'}</span></div>
-                <div className="flex"><span className="w-32 text-gray-500">Sumber Dana</span><span className="font-semibold">: {sumberDana}</span></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12 text-sm text-gray-700 relative z-10">
+                <div className="flex"><span className="w-36 shrink-0 text-gray-500">ID Program</span><span className="font-semibold">: {data?.id || '-'}</span></div>
+                <div className="flex"><span className="w-36 shrink-0 text-gray-500">Tahun Program</span><span className="font-semibold">: {tahunProgram}</span></div>
+                <div className="flex"><span className="w-36 shrink-0 text-gray-500">Jenis Kegiatan</span><span className="font-semibold">: Penanaman</span></div>
+                <div className="flex"><span className="w-36 shrink-0 text-gray-500">Wilayah</span><span className="font-semibold">: {data?.wilayah && data?.wilayah !== '-' ? data?.wilayah : (data?.lokasi?.split(',')[1]?.trim() || '-')}</span></div>
+                <div className="flex"><span className="w-36 shrink-0 text-gray-500">Nama Program</span><span className="font-semibold">: {data?.program || '-'}</span></div>
+                <div className="flex"><span className="w-36 shrink-0 text-gray-500">Sumber Dana</span><span className="font-semibold">: {sumberDana}</span></div>
+                <div className="flex"><span className="w-36 shrink-0 text-gray-500">Lokasi Program</span><span className="font-semibold pr-4 leading-relaxed whitespace-pre-line">: {data?.lokasi?.replace('\n', ' ') || '-'}</span></div>
+                <div className="flex md:col-span-2"><span className="w-36 shrink-0 text-gray-500">Deskripsi</span><span className="font-semibold pr-4 leading-relaxed">: {data?.detail?.description || data?.detail?.deskripsi_rencana || '-'}</span></div>
               </div>
             </div>
-
 
           </div>
 
@@ -122,7 +134,8 @@ const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onC
               <div className="p-4 border border-gray-100 rounded-xl bg-gray-50/50 flex flex-col justify-center">
                 <p className="text-xs text-gray-500 mb-2 font-medium">Periode Pelaksanaan</p>
                 <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                  <HiOutlineCalendar className="w-4 h-4 text-emerald-600" /> {formatTgl(tglMulai)} s/d {formatTgl(tglSelesai)}
+                  <HiOutlineCalendar className="w-4 h-4 text-emerald-600 shrink-0" /> 
+                  <span>{periodePelaksanaanFormatted}</span>
                 </p>
               </div>
               <div className="p-4 border border-gray-100 rounded-xl bg-gray-50/50 flex items-center gap-4">
@@ -145,30 +158,46 @@ const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onC
             </div>
 
             <h4 className="text-xs font-bold text-gray-800 mb-3">Ringkasan Target & Volume</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="p-4 border border-gray-100 rounded-xl flex items-center gap-3 shadow-sm">
-                <SproutIcon className="w-8 h-8 text-emerald-600 opacity-80" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
+              <div className="p-4 border border-gray-100 rounded-xl flex items-center gap-3 shadow-xs">
+                <SproutIcon className="w-8 h-8 text-emerald-600 opacity-80 shrink-0" />
                 <div>
                   <p className="text-xl font-bold text-gray-900 leading-none">{targetKegiatan}</p>
                   <p className="text-[10px] text-gray-500 mt-1">Total Target Tanaman</p>
                 </div>
               </div>
-              <div className="p-4 border border-gray-100 rounded-xl flex items-center gap-3 shadow-sm">
-                <HiOutlineMap className="w-8 h-8 text-emerald-600 opacity-80" />
+              <div className="p-4 border border-gray-100 rounded-xl flex items-center gap-3 shadow-xs">
+                <HiOutlineMap className="w-8 h-8 text-emerald-600 opacity-80 shrink-0" />
                 <div>
                   <p className="text-xl font-bold text-gray-900 leading-none">{targetLuasLahan || '-'} <span className="text-sm font-medium">Ha</span></p>
                   <p className="text-[10px] text-gray-500 mt-1">Luas Area Penanaman</p>
                 </div>
               </div>
-              <div className="p-4 border border-gray-100 rounded-xl flex items-center gap-3 shadow-sm">
-                <LeafIcon className="w-8 h-8 text-emerald-600 opacity-80" />
+              <div className="p-4 border border-gray-100 rounded-xl flex items-center gap-3 shadow-xs">
+                <LeafIcon className="w-8 h-8 text-emerald-600 opacity-80 shrink-0" />
                 <div>
-                  <p className="text-xl font-bold text-gray-900 leading-none">{data?.source_type === 'App\\Models\\DonationProgram' ? (data?.detail?.allocations_bast?.length || '-') : (data?.detail?.seeds?.length || '-')}</p>
-                  <p className="text-[10px] text-gray-500 mt-1">Jenis Tanaman</p>
+                  {data?.source_type === 'App\\Models\\DonationProgram' ? (
+                    <>
+                      <p className="text-xl font-bold text-gray-900 leading-none">
+                        {data?.detail?.jenis_bibit?.length || data?.detail?.allocations_bast?.length || '-'}
+                      </p>
+                      {Array.isArray(data?.detail?.jenis_bibit) && data.detail.jenis_bibit.length > 0 && (
+                        <p className="text-[10px] text-gray-400 mt-1 leading-snug">
+                          {data.detail.jenis_bibit.map((b: any) => b.nama || b.name).join(', ')}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-gray-500 mt-0.5">Jenis Tanaman</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-bold text-gray-900 leading-snug">{data?.detail?.jenis_tanaman || '-'}</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Jenis Tanaman</p>
+                    </>
+                  )}
                 </div>
               </div>
-              <div className="p-4 border border-gray-100 rounded-xl flex items-center gap-3 shadow-sm">
-                <UsersIcon className="w-8 h-8 text-emerald-600 opacity-80" />
+              <div className="p-4 border border-gray-100 rounded-xl flex items-center gap-3 shadow-xs">
+                <UsersIcon className="w-8 h-8 text-emerald-600 opacity-80 shrink-0" />
                 <div>
                   <p className="text-xl font-bold text-gray-900 leading-none">{data?.detail?.kth_id || data?.detail?.kth ? '1' : '0'}</p>
                   <p className="text-[10px] text-gray-500 mt-1">KTH Terlibat</p>
@@ -187,7 +216,7 @@ const DetailRencanaPOModal: React.FC<DetailRencanaPOModalProps> = ({ isOpen, onC
               <p className="text-[11px] text-emerald-800 mt-0.5">Rencana Penanaman P0 digunakan sebagai data pembanding untuk monitoring periode berikutnya.</p>
             </div>
           </div>
-          <button onClick={onClose} className="px-6 py-2 border border-gray-300 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors">
+          <button onClick={onClose} className="px-6 py-2 border border-gray-300 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
             Tutup
           </button>
         </div>

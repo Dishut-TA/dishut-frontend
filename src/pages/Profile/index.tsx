@@ -4,6 +4,7 @@ import {
   HiOutlineUser, 
   HiOutlineIdentification, 
   HiOutlineCalendarDays,
+  HiOutlineMapPin,
 } from 'react-icons/hi2';
 import { MdOutlineMail } from "react-icons/md";
 import type { UserProfile } from '@/utils/interface';
@@ -107,17 +108,44 @@ const Profile: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 border border-gray-100">
-              <div className="p-2 bg-white rounded-md shadow-sm text-[#185325]">
-                <HiOutlineIdentification className="w-5 h-5" />
+            {profileData.kth ? (
+              <>
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 border border-gray-100">
+                  <div className="p-2 bg-white rounded-md shadow-sm text-[#185325]">
+                    <HiOutlineIdentification className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">Kelompok Tani Hutan (KTH)</p>
+                    <p className="text-sm font-semibold text-gray-800 mt-0.5">
+                      {profileData.kth.nama}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 border border-gray-100">
+                  <div className="p-2 bg-white rounded-md shadow-sm text-[#185325]">
+                    <HiOutlineMapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">Lokasi KTH</p>
+                    <p className="text-sm font-semibold text-gray-800 mt-0.5">
+                      {profileData.kth.desa_kelurahan}, {profileData.kth.kecamatan}, {profileData.kth.kabupaten_kota}
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="p-2 bg-white rounded-md shadow-sm text-[#185325]">
+                  <HiOutlineIdentification className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500">NIP / Identitas</p>
+                  <p className="text-sm font-semibold text-gray-800 mt-0.5">
+                    {nip ? nip : <span className="text-gray-400 italic">Belum diatur</span>}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-medium text-gray-500">NIP / Identitas</p>
-                <p className="text-sm font-semibold text-gray-800 mt-0.5">
-                  {nip ? nip : <span className="text-gray-400 italic">Belum diatur</span>}
-                </p>
-              </div>
-            </div>
+            )}
 
             <div className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 border border-gray-100">
               <div className="p-2 bg-white rounded-md shadow-sm text-[#185325]">

@@ -9,16 +9,22 @@ const MonitoringLanjutanIndex: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabStatus>('Semua Program');
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [programFilter, setProgramFilter] = useState('Semua');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   React.useEffect(() => {
     const fetchPenugasan = async () => {
       try {
         setIsLoading(true);
         const res = await getMyPenugasanAPI();
-        // Filter only monitoring
         console.log(res);
         
-        const monitoringData = res.data.filter((p: any) => p.jenis_kegiatan && p.jenis_kegiatan.toLowerCase().includes('monitoring'));
+        const monitoringData = res.data.filter((p: any) => p.jenis_kegiatan && (
+          p.jenis_kegiatan.toLowerCase().includes('monitoring') ||
+          p.jenis_kegiatan.toLowerCase() === 'tindak lanjut'
+        ));
         setData(monitoringData);
       } catch (error) {
         console.error(error);
@@ -31,14 +37,23 @@ const MonitoringLanjutanIndex: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f8faf9] pb-12 w-full font-sans">
-      <HeaderAndFilter />
+      <HeaderAndFilter 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        programFilter={programFilter}
+        setProgramFilter={setProgramFilter}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
+      />
 
       <div className="flex flex-nowrap overflow-x-auto gap-3 mb-6 pb-2 custom-scrollbar">
         {TABS.map((tab) => (
           <button 
             key={tab.label}
             onClick={() => setActiveTab(tab.label)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold border transition-colors shrink-0
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-colors shrink-0
               ${activeTab === tab.label 
                 ? tab.activeColor 
                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
@@ -53,7 +68,18 @@ const MonitoringLanjutanIndex: React.FC = () => {
         ))}
       </div>
 
-      <DataTable navigate={navigate} data={data} isLoading={isLoading} activeTab={activeTab} />
+      {/* 3. Teruskan state filter ke DataTable agar datanya benar-benar tersaring */}
+      <DataTable 
+        navigate={navigate} 
+        data={data} 
+        isLoading={isLoading} 
+        activeTab={activeTab}
+        searchQuery={searchQuery}
+        programFilter={programFilter}
+        startDate={startDate}
+        endDate={endDate}
+      />
+      
       <BottomBanner />
 
       <style dangerouslySetInnerHTML={{__html: `

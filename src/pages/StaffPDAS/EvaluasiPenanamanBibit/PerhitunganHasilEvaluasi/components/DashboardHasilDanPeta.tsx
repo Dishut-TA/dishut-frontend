@@ -109,7 +109,7 @@ const DashboardHasilDanPeta: React.FC<DashboardHasilDanPetaProps> = ({ mockStatu
             </span>
           </div>
 
-          <div className="bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden relative flex-1 min-h-[350px] shadow-inner z-0">
+          <div className="bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden relative flex-1 min-h-87.5 shadow-inner z-0">
             
             {/* OVERLAY: Jika tidak ada titik kritis yang ditemukan */}
             {mapMarkersData.length === 0 ? (

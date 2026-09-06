@@ -123,18 +123,6 @@ export const InputEditView: React.FC<InputEditViewProps> = ({
             </div>
           )}
         </div>
-        <div className="w-full lg:w-96 h-48 lg:h-auto bg-gray-200 relative shrink-0 p-4 flex items-center justify-center">
-          <div className="w-full h-full rounded-lg overflow-hidden relative shadow-sm border border-slate-300">
-            <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600" className="w-full h-full object-cover opacity-80" alt="Map" />
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-               <HiOutlineMapPin className="w-8 h-8 text-blue-500 drop-shadow-md" />
-            </div>
-            <div className="absolute right-2 top-2 flex flex-col gap-0.5 bg-white rounded shadow-sm overflow-hidden">
-               <button className="w-6 h-6 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-50 border-b border-gray-100">+</button>
-               <button className="w-6 h-6 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-50">-</button>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

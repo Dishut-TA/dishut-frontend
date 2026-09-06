@@ -1,14 +1,14 @@
 interface DonutChartProps {
   stats: any;
+  programs: any[];
 }
 
-export default function DonutChart({ stats }: DonutChartProps) {
-  const programs = stats?.programs || [];
-  const total = stats?.total_program || 0;
+export default function DonutChart({ stats, programs }: DonutChartProps) {
+  const total = stats?.total_program || programs?.length || 0;
   
-  const donasi = programs?.filter?.((p: any) => p.sumber_dana === 'Donasi')?.length || 0;
-  const apbd = programs?.filter?.((p: any) => p.sumber_dana === 'APBD')?.length || 0;
-  const csr = programs?.filter?.((p: any) => p.sumber_dana === 'CSR')?.length || 0;
+  const donasi = programs?.filter?.((p: any) => p.sumber_dana === 'Donasi' || p.penugasanable_type === 'App\\Models\\DonationProgram')?.length || 0;
+  const apbd = programs?.filter?.((p: any) => p.sumber_dana === 'APBD' || p.penugasanable_type === 'App\\Models\\ProgramApbd')?.length || 0;
+  const csr = programs?.filter?.((p: any) => p.sumber_dana === 'CSR' || p.penugasanable_type === 'App\\Models\\ProgramCsr')?.length || 0;
   const totalCalc = donasi + apbd + csr || 1;
   
   const donasiPct = ((donasi / totalCalc) * 100).toFixed(1);

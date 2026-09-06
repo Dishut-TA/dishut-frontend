@@ -11,6 +11,7 @@ import {
 import { registerAccount } from "@/services/authService";
 import { updatePegawaiFormData } from "@/services/pegawai/pegawai.service"; 
 import { getAllRoles } from "@/services/rbac.service";
+import { getKthsAPI } from "@/services/kth.service";
 
 import type { RegisterPayload, RoleType } from "@/utils/interface";
 import ConfirmAlert from "@/components/ConfirmAlert";
@@ -28,6 +29,7 @@ const AddAkunModal: React.FC<AddAkunModalProps> = ({ isOpen, onClose, onSuccess 
   });
   
   const [roles, setRoles] = useState<RoleType[]>([]);
+  const [kths, setKths] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -54,7 +56,7 @@ const AddAkunModal: React.FC<AddAkunModalProps> = ({ isOpen, onClose, onSuccess 
   };
 
   const resetForm = () => {
-    setFormData({ nama_pengguna: "", email: "", nip: "", kata_sandi: "", peran: "" });
+    setFormData({ nama_pengguna: "", email: "", nip: "", kata_sandi: "", peran: "", kth_id: undefined });
     handleClearPhoto();
   };
 
@@ -63,18 +65,21 @@ const AddAkunModal: React.FC<AddAkunModalProps> = ({ isOpen, onClose, onSuccess 
   // ==========================================
   useEffect(() => {
     if (isOpen) {
-      const fetchRoles = async () => {
+      const fetchRolesAndKths = async () => {
         setIsLoadingRoles(true);
         try {
           const data = await getAllRoles();
           setRoles(data);
+          
+          const kthData = await getKthsAPI();
+          setKths(kthData || []);
         } catch (err) {
           console.error(err);
         } finally {
           setIsLoadingRoles(false);
         }
       };
-      fetchRoles();
+      fetchRolesAndKths();
     } else {
       // Reset state saat modal ditutup
       resetForm();
@@ -271,10 +276,22 @@ const AddAkunModal: React.FC<AddAkunModalProps> = ({ isOpen, onClose, onSuccess 
               <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#185325]/20 focus:border-[#185325]" placeholder="budi.santoso@contoh.com" />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">NIP</label>
-              <input type="text" name="nip" value={formData.nip} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#185325]/20 focus:border-[#185325]" placeholder="198505152010011023" />
-            </div>
+            {formData.peran === "Kelompok Tani Hutan (KTH)" ? (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kelompok Tani Hutan (KTH) <span className="text-red-500">*</span></label>
+                <select name="kth_id" value={formData.kth_id || ""} onChange={handleChange} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#185325]/20 focus:border-[#185325] cursor-pointer">
+                  <option value="" disabled>Pilih KTH...</option>
+                  {kths.map((k) => (
+                    <option key={k.id} value={k.id}>{k.nama} - {k.desa_kelurahan}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">NIP</label>
+                <input type="text" name="nip" value={formData.nip || ""} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#185325]/20 focus:border-[#185325]" placeholder="198505152010011023" />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Peran (Role) <span className="text-red-500">*</span></label>

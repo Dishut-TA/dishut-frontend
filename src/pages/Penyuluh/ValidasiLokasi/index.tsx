@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  HiOutlineCheckCircle, 
+import {
+  HiOutlineCheckCircle,
   HiOutlineMagnifyingGlass,
   HiOutlineCalendar,
   HiOutlineEye,
-  HiChevronLeft,
   HiChevronRight,
+  HiChevronLeft,
   HiChevronDown,
-  HiOutlineClipboardDocumentList,
   HiOutlineClipboardDocumentCheck,
-  HiOutlineFunnel
+  HiOutlineDocumentCheck,
+  HiOutlineMapPin
 } from 'react-icons/hi2';
 import { getMyPenugasanAPI } from '../../../services/penugasan.service';
 
@@ -39,7 +39,7 @@ const calculateSisaHari = (batasWaktu: string) => {
   const sekarang = new Date();
   const selisihWaktu = batas.getTime() - sekarang.getTime();
   const selisihHari = Math.ceil(selisihWaktu / (1000 * 3600 * 24));
-  
+
   if (selisihHari < 0) return { text: '(Terlambat)', color: 'text-red-600' };
   if (selisihHari === 0) return { text: '(Hari ini)', color: 'text-orange-500' };
   if (selisihHari <= 3) return { text: `(${selisihHari} hari lagi)`, color: 'text-red-500' };
@@ -50,7 +50,7 @@ const calculateSisaHari = (batasWaktu: string) => {
 const getSumberName = (type: string) => {
   if (type.includes('AnalysisResultZone')) return 'Analisis CPI';
   if (type.includes('ProgramApbd')) return 'Program APBD';
-  if (type.includes('ProgramCsr')) return 'Program CSR';
+  if (type.includes('ProgramCsr')) return 'Proposal CSR';
   if (type.includes('DonationProgram')) return 'Program Donasi';
   return 'Lainnya';
 };
@@ -74,13 +74,12 @@ const SumberBadge = ({ text }: { text: string }) => {
 
 const StatusBadge = ({ status }: { status: string }) => {
   const styles: Record<string, string> = {
-    'Ditugaskan': 'bg-yellow-50 text-yellow-600',
-    'Berjalan': 'bg-yellow-50 text-yellow-600',
-    'Selesai': 'bg-emerald-50 text-emerald-600',
-    'Menunggu': 'bg-slate-50 text-slate-600',
+    'Ditugaskan': 'bg-yellow-50 text-yellow-600 border border-yellow-200',
+    'Selesai': 'bg-emerald-50 text-emerald-600 border border-emerald-200',
+    'Menunggu': 'bg-slate-50 text-slate-600 border border-slate-200',
   };
   return (
-    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${styles[status]}`}>
+    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${styles[status] || 'bg-gray-50 text-gray-600'}`}>
       {status}
     </span>
   );
@@ -95,84 +94,122 @@ const Header = () => (
   </div>
 );
 
-const SummaryCards = ({ data }: { data: TugasValidasi[] }) => {
-  const total = data.length;
-  const berjalan = data.filter(d => d.status === 'Berjalan' || d.status === 'Ditugaskan').length;
-  const selesai = data.filter(d => d.status === 'Selesai').length;
-
-  const SUMMARY_CARDS = [
-    { title: 'Total Penugasan', sub: 'Semua penugasan validasi', value: total.toString(), icon: <HiOutlineClipboardDocumentList className="w-8 h-8" />, bg: 'bg-blue-50', text: 'text-blue-600' },
-    { title: 'Ditugaskan', sub: 'Belum mulai dikerjakan', value: berjalan.toString(), icon: <HiOutlineClipboardDocumentCheck className="w-8 h-8" />, bg: 'bg-yellow-50', text: 'text-yellow-600' },
-    { title: 'Selesai', sub: 'Validasi telah diselesaikan', value: selesai.toString(), icon: <HiOutlineCheckCircle className="w-8 h-8" />, bg: 'bg-emerald-50', text: 'text-emerald-500' },
-  ];
-
-  return (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-    {SUMMARY_CARDS.map((card, idx) => (
-      <div key={idx} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-      </div>
-    ))}
-  </div>
-  );
-};
-
 const FilterSection = ({
   searchQuery,
   setSearchQuery,
   statusFilter,
   setStatusFilter,
-  dateFilter,
-  setDateFilter
+  sumberFilter,
+  setSumberFilter,
+  startDate,
+  setStartDate,
+  endDate,
+  setEndDate
 }: {
   searchQuery: string;
   setSearchQuery: (val: string) => void;
   statusFilter: string;
   setStatusFilter: (val: string) => void;
-  dateFilter: string;
-  setDateFilter: (val: string) => void;
-}) => (
-  <div className="flex flex-col md:flex-row gap-4 mb-6 mt-2">
-    <div className="relative flex-1">
-      <input 
-        type="text" 
-        placeholder="Cari ID penugasan, lokasi, desa, CDK..." 
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full pl-4 pr-10 py-2.5 text-sm font-medium border border-slate-200 rounded-full focus:outline-none focus:border-[#008A4B]" 
-      />
-      <HiOutlineMagnifyingGlass className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-    </div>
+  sumberFilter: string;
+  setSumberFilter: (val: string) => void;
+  startDate: string;
+  setStartDate: (val: string) => void;
+  endDate: string;
+  setEndDate: (val: string) => void;
+}) => {
+  const statusTabs = [
+    { id: 'Semua', label: 'Semua', icon: <HiOutlineDocumentCheck className="w-4 h-4" /> },
+    { id: 'Ditugaskan', label: 'Ditugaskan', icon: <HiOutlineClipboardDocumentCheck className="w-4 h-4 text-yellow-500" /> },
+    { id: 'Selesai', label: 'Selesai', icon: <HiOutlineCheckCircle className="w-4 h-4 text-emerald-500" /> },
+  ];
 
-    <div className="relative w-full md:w-56">
-      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500 z-10">Status</div>
-      <select 
-        value={statusFilter}
-        onChange={(e) => setStatusFilter(e.target.value)}
-        className="w-full pl-14 pr-8 py-2.5 text-sm font-semibold border border-slate-200 rounded-full appearance-none bg-white focus:outline-none focus:border-[#008A4B] relative z-0"
-      >
-        <option value="Semua">Semua</option>
-        <option value="Menunggu">Menunggu</option>
-        <option value="Ditugaskan">Ditugaskan</option>
-        <option value="Berjalan">Berjalan</option>
-        <option value="Selesai">Selesai</option>
-      </select>
-      <HiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
-    </div>
+  return (
+    <div className="flex flex-col gap-4 mb-6 mt-2">
+      {/* Top Controls: Search Bar, Sumber Lokasi, & Combined Date Range Field */}
+      <div className="flex flex-col xl:flex-row items-center gap-3 w-full">
+        {/* Search Input */}
+        <div className="relative flex-1 w-full">
+          <input
+            type="text"
+            placeholder="Cari ID penugasan, lokasi, desa, CDK..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-5 pr-11 py-2.5 text-sm bg-white border border-slate-200 rounded-full focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 placeholder:text-slate-400 text-slate-700 shadow-sm"
+          />
+          <HiOutlineMagnifyingGlass className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+        </div>
 
-    <div className="relative w-full md:w-64">
-      <div className="absolute left-10 top-1.5 text-[10px] font-medium text-slate-400 z-10">Periode Penugasan</div>
-      <HiOutlineCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
-      <input 
-        type="date"
-        value={dateFilter}
-        onChange={(e) => setDateFilter(e.target.value)}
-        className="w-full pl-10 pr-4 pt-4 pb-1 text-sm font-semibold border border-slate-200 rounded-full bg-white focus:outline-none focus:border-[#008A4B] relative z-0"
-      />
-    </div>
-  </div>
-);
+        {/* Filter Sumber Lokasi */}
+        <div className="relative w-full xl:w-48 shrink-0">
+          <div className="flex items-center px-4 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm focus-within:ring-1 focus-within:ring-emerald-500 focus-within:border-emerald-500">
+            <HiOutlineMapPin className="w-5 h-5 text-slate-400 shrink-0 mr-2" />
+            <div className="flex flex-col w-full">
+              <span className="text-[10px] text-slate-400 font-medium leading-none">Sumber Lokasi</span>
+              <select
+                value={sumberFilter}
+                onChange={(e) => setSumberFilter(e.target.value)}
+                className="w-full bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer appearance-none pr-4"
+              >
+                <option value="Semua">Semua Sumber</option>
+                <option value="Analisis CPI">Analisis CPI</option>
+                <option value="Proposal CSR">Proposal CSR</option>
+              </select>
+            </div>
+            <HiChevronDown className="w-4 h-4 text-slate-400 pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
+          </div>
+        </div>
 
-const ValidasiTable = ({ data, navigate }: { data: TugasValidasi[], navigate: any }) => (
+        {/* Combined Date Range Field */}
+        <div className="relative w-full xl:w-auto shrink-0">
+          <div className="flex items-center px-4 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm focus-within:ring-1 focus-within:ring-emerald-500">
+            <HiOutlineCalendar className="w-5 h-5 text-slate-400 shrink-0 mr-2" />
+            <div className="flex flex-col w-full">
+              <span className="text-[10px] text-slate-400 font-medium leading-none">Periode Penugasan</span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer p-0 border-none"
+                />
+                <span className="text-xs font-semibold text-slate-400">-</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer p-0 border-none"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Status Filter Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {statusTabs.map((tab) => {
+          const isActive = statusFilter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setStatusFilter(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-full transition-all whitespace-nowrap cursor-pointer ${
+                isActive
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-sm'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const ValidasiTable = ({ data, startIndex, navigate }: { data: TugasValidasi[], startIndex: number, navigate: any }) => (
   <div className="overflow-x-auto">
     <div className="px-4 py-3 border-b border-slate-100">
       <h3 className="text-sm font-bold text-slate-800">Daftar Validasi Lokasi</h3>
@@ -190,53 +227,107 @@ const ValidasiTable = ({ data, navigate }: { data: TugasValidasi[], navigate: an
         </tr>
       </thead>
       <tbody className="divide-y divide-slate-100">
-        {data.map((item, idx) => (
-          <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-            <td className="px-4 py-4">{idx + 1}</td>
-            <td className="px-4 py-4 font-semibold text-[#008A4B]">{item.displayId}</td>
-            <td className="px-4 py-4"><SumberBadge text={item.sumber} /></td>
-            <td className="px-4 py-4">
-              <div className="max-w-62.5 whitespace-normal font-medium text-slate-800 leading-relaxed">
-                {item.lokasi}
-              </div>
-            </td>
-            <td className="px-4 py-4">
-              <div className="font-medium text-slate-800">{item.batasWaktu}</div>
-              <div className={`text-xs font-semibold mt-0.5 ${item.sisaHariColor}`}>{item.sisaHari}</div>
-            </td>
-            <td className="px-4 py-4"><StatusBadge status={item.status} /></td>
-            <td className="px-4 py-4 text-center">
-              {(item.status === 'Ditugaskan' || item.status === 'Berjalan' || item.status === 'Menunggu') && (
-                <button 
-                  onClick={() => navigate(`/admin/penyuluh/validasi-lokasi/detail/${item.id}`, { state: { data: item, status: item.status } })}
-                  className="inline-flex items-center justify-between w-36 px-4 py-2 text-xs font-bold text-white bg-primary rounded-full hover:bg-emerald-800 transition-colors shadow-sm"
-                >
-                  Mulai Validasi <HiChevronRight className="w-4 h-4 stroke-2" />
-                </button>
-              )}
-              {item.status === 'Selesai' && (
-                <button 
-                  onClick={() => navigate(`/admin/penyuluh/validasi-lokasi/detail/${item.id}`, { state: { data: item, status: item.status } })}
-                  className="inline-flex items-center justify-center gap-1.5 w-36 px-4 py-2 text-xs font-bold text-[#008A4B] bg-white border border-[#008A4B] rounded-full hover:bg-emerald-50 transition-colors"
-                >
-                  <HiOutlineEye className="w-4 h-4 stroke-2" /> Lihat Detail
-                </button>
-              )}
+        {data.length === 0 ? (
+          <tr>
+            <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+              Tidak ada data penugasan validasi.
             </td>
           </tr>
-        ))}
+        ) : (
+          data.map((item, idx) => (
+            <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+              <td className="px-4 py-4 text-center font-medium">{startIndex + idx + 1}</td>
+              <td className="px-4 py-4 font-semibold text-[#008A4B]">{item.displayId}</td>
+              <td className="px-4 py-4"><SumberBadge text={item.sumber} /></td>
+              <td className="px-4 py-4">
+                <div className="max-w-xs whitespace-normal font-medium text-slate-800 leading-relaxed">
+                  {item.lokasi}
+                </div>
+              </td>
+              <td className="px-4 py-4">
+                <div className="font-medium text-slate-800">{item.batasWaktu}</div>
+                <div className={`text-xs font-semibold mt-0.5 ${item.sisaHariColor}`}>{item.sisaHari}</div>
+              </td>
+              <td className="px-4 py-4"><StatusBadge status={item.status} /></td>
+              <td className="px-4 py-4 text-center">
+                {(item.status === 'Ditugaskan' || item.status === 'Menunggu') && (
+                  <button
+                    onClick={() => navigate(`/admin/penyuluh/validasi-lokasi/detail/${item.id}`, { state: { data: item, status: item.status } })}
+                    className="inline-flex items-center justify-between w-36 px-4 py-2 text-xs font-bold text-white bg-[#008A4B] rounded-full hover:bg-emerald-800 transition-colors shadow-sm cursor-pointer"
+                  >
+                    Mulai Validasi <HiChevronRight className="w-4 h-4 stroke-2" />
+                  </button>
+                )}
+                {item.status === 'Selesai' && (
+                  <button
+                    onClick={() => navigate(`/admin/penyuluh/validasi-lokasi/detail/${item.id}`, { state: { data: item, status: item.status } })}
+                    className="inline-flex items-center justify-center gap-1.5 w-36 px-4 py-2 text-xs font-bold text-[#008A4B] bg-white border border-[#008A4B] rounded-full hover:bg-emerald-50 transition-colors cursor-pointer"
+                  >
+                    <HiOutlineEye className="w-4 h-4 stroke-2" /> Lihat Detail
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))
+        )}
       </tbody>
     </table>
   </div>
 );
 
-const Pagination = () => (
-  <div className="flex items-center justify-between text-xs text-slate-500 px-4 py-4 border-t border-slate-100">
-    <span className="font-medium"></span>
-    <div className="flex items-center gap-2">
+const Pagination = ({ 
+  totalData, 
+  currentPage, 
+  totalPages, 
+  onPageChange 
+}: { 
+  totalData: number; 
+  currentPage: number; 
+  totalPages: number; 
+  onPageChange: (page: number) => void;
+}) => {
+  const startItem = totalData === 0 ? 0 : (currentPage - 1) * 5 + 1;
+  const endItem = Math.min(currentPage * 5, totalData);
+
+  return (
+    <div className="flex items-center justify-between text-xs text-slate-500 px-4 py-4 border-t border-slate-100">
+      <span className="font-medium">
+        Menampilkan {startItem} - {endItem} dari {totalData} data
+      </span>
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="p-2 rounded-lg border border-slate-200 text-slate-500 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+        >
+          <HiChevronLeft className="w-4 h-4" />
+        </button>
+
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <button
+            key={page}
+            onClick={() => onPageChange(page)}
+            className={`w-8 h-8 rounded-lg text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer ${
+              currentPage === page
+                ? 'border border-emerald-500 bg-emerald-50 text-emerald-700'
+                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages || totalPages === 0}
+          className="p-2 rounded-lg border border-slate-200 text-slate-500 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+        >
+          <HiChevronRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const ValidasiLokasi: React.FC = () => {
   const navigate = useNavigate();
@@ -245,18 +336,25 @@ const ValidasiLokasi: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Semua');
-  const [dateFilter, setDateFilter] = useState('');
+  const [sumberFilter, setSumberFilter] = useState('Semua');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
-  React.useEffect(() => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await getMyPenugasanAPI();
         if (res.data) {
-          // Filter hanya yang Validasi Lokasi
           const validasi = res.data.filter((item: any) => item.jenis_kegiatan === 'Validasi Lokasi');
-          
+
           const mappedData: TugasValidasi[] = validasi.map((item: any) => {
             const sisa = calculateSisaHari(item.batas_waktu);
+
+            const status = item.status || 'Ditugaskan';
+
             return {
               id: item.id.toString(),
               displayId: 'TGS-' + String(item.id).padStart(3, '0'),
@@ -265,12 +363,14 @@ const ValidasiLokasi: React.FC = () => {
               batasWaktu: formatDate(item.batas_waktu),
               sisaHari: sisa.text,
               sisaHariColor: sisa.color,
-              status: item.status,
+              status: status,
               zone_id: item.penugasanable_id,
               raw_data: item
             };
           });
-          setData(mappedData);
+
+          // Mengurutkan tugas terbaru agar berada di paling atas
+          setData(mappedData.reverse());
         }
       } catch (error) {
         console.error("Failed to fetch penugasan", error);
@@ -281,31 +381,67 @@ const ValidasiLokasi: React.FC = () => {
     fetchData();
   }, []);
 
+  // Filter Logic
   const filteredData = data.filter(item => {
-    const matchSearch = item.displayId.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                        item.lokasi.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchSearch = item.displayId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.lokasi.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchStatus = statusFilter === 'Semua' ? true : item.status === statusFilter;
-    const matchDate = dateFilter ? item.raw_data.batas_waktu && item.raw_data.batas_waktu.startsWith(dateFilter) : true;
-    
-    return matchSearch && matchStatus && matchDate;
+
+    const matchSumber = sumberFilter === 'Semua' ? true : item.sumber === sumberFilter;
+
+    // Date Range Logic
+    let matchDate = true;
+    if (item.raw_data.batas_waktu) {
+      const itemDate = new Date(item.raw_data.batas_waktu).toISOString().split('T')[0];
+      if (startDate && itemDate < startDate) matchDate = false;
+      if (endDate && itemDate > endDate) matchDate = false;
+    }
+
+    return matchSearch && matchStatus && matchSumber && matchDate;
   });
+
+  // Reset ke halaman 1 ketika filter berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, sumberFilter, startDate, endDate]);
+
+  // Pagination Logic (Max 5 items per page)
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="w-full mx-auto pb-12 bg-[#F8FAFC] min-h-screen font-sans">
       <Header />
-      
+
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col p-4">
-        <FilterSection 
+        <FilterSection
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
-          dateFilter={dateFilter}
-          setDateFilter={setDateFilter}
+          sumberFilter={sumberFilter}
+          setSumberFilter={setSumberFilter}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
         />
         <div className="border border-slate-200 rounded-lg overflow-hidden mt-2">
-          <ValidasiTable data={filteredData} navigate={navigate} />
-          <Pagination />
+          {isLoading ? (
+            <div className="py-12 text-center text-slate-500 font-medium">Memuat data penugasan...</div>
+          ) : (
+            <>
+              <ValidasiTable data={paginatedData} startIndex={startIndex} navigate={navigate} />
+              <Pagination 
+                totalData={filteredData.length} 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                onPageChange={(page) => setCurrentPage(page)} 
+              />
+            </>
+          )}
         </div>
       </div>
     </div>
