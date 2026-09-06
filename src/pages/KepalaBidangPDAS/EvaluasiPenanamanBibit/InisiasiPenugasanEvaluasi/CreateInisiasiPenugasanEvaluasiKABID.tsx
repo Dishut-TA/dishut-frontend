@@ -38,7 +38,15 @@ const CreateInisiasiPenugasan: React.FC = () => {
           getProgramsReadyForEvaluasi(),
           getAllUsers()
         ]);
-        setProgramsReady(programsRes.data || []);
+        // BE sudah memfilter: hanya program dengan status 'Menunggu Evaluasi' yang dikembalikan.
+        // Program yang sudah pernah dievaluasi (status berubah ke Selesai/Tindak Lanjut) tidak akan muncul.
+        // Urutkan dari yang terbaru diterima untuk memudahkan pemilihan.
+        const sorted = (programsRes.data || []).sort((a: any, b: any) => {
+          const ta = a.program_detail?.created_at ? new Date(a.program_detail.created_at).getTime() : 0;
+          const tb = b.program_detail?.created_at ? new Date(b.program_detail.created_at).getTime() : 0;
+          return tb - ta;
+        });
+        setProgramsReady(sorted);
         
         const staff = (usersRes || []).filter((u: any) => {
           if (Array.isArray(u.peran)) {

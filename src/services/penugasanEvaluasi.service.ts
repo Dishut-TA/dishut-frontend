@@ -60,3 +60,18 @@ export const buatArahanTindakLanjut = async (id: string | number, payload: any) 
   const res = await axios.post(`${API_URL}/penugasan-evaluasi/${id}/tindak-lanjut`, payload, { headers: getHeaders() });
   return res.data;
 };
+
+export const getLaporanEvaluasiKabidList = async () => {
+  const res = await axios.get(`${API_URL}/penugasan-evaluasi-laporan-kabid`, { headers: getHeaders() });
+  return res.data;
+};
+
+export const sahkanLaporanEvaluasi = async (id: string | number, payload?: any) => {
+  const res = await axios.put(`${API_URL}/penugasan-evaluasi/${id}/sahkan`, payload || {}, { headers: getHeaders() });
+  return res.data;
+};
+
+export const revisiLaporanEvaluasi = async (id: string | number, payload?: any) => {
+  const res = await axios.put(`${API_URL}/penugasan-evaluasi/${id}/revisi`, payload || {}, { headers: getHeaders() });
+  return res.data;
+};

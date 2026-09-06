@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { 
+import {
   HiOutlineXMark,
   HiOutlineMapPin,
   HiOutlineListBullet,
@@ -20,7 +20,7 @@ const SproutIcon = ({ className }: { className?: string }) => (
 interface TugaskanModalProps {
   isOpen: boolean;
   onClose: () => void;
-  data: any | null; 
+  data: any | null;
   onSuccess?: () => void;
 }
 
@@ -90,7 +90,7 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
           const json = await res.json();
           // Assuming user roles can be checked or just listing all users for now
           if (json.payload) {
-            setPenyuluhList(json.payload.filter((u: any) => 
+            setPenyuluhList(json.payload.filter((u: any) =>
               u.peran && u.peran.some((r: any) => r.nama.toLowerCase() === 'penyuluh')
             ));
           }
@@ -114,7 +114,7 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
     try {
       const token = localStorage.getItem('token');
       const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
-      
+
       const payload = {
         penyuluh_id: parseInt(formData.penyuluh, 10),
         source_type: data.source_type || 'App\\Models\\AnalysisResultZone',
@@ -135,13 +135,13 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
         },
         body: JSON.stringify(payload)
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         console.error('API Error Response:', errorData);
         throw new Error('Gagal menyimpan penugasan');
       }
-      
+
       if (onSuccess) onSuccess();
       else onClose();
     } catch (error: any) {
@@ -156,7 +156,7 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto flex flex-col animate-in fade-in zoom-in-95 duration-200">
-          
+
           {/* HEADER */}
           <div className="px-6 py-5 flex items-start justify-between sticky top-0 bg-white z-10">
             <div className="flex gap-4 items-center">
@@ -178,7 +178,7 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
           </div>
 
           <form onSubmit={handleSimpan} className="px-6 pb-6 space-y-6">
-            
+
             {/* SECTION: RINGKASAN */}
             <div className="border border-emerald-100 rounded-xl overflow-hidden">
               <div className="px-5 py-3 flex items-center gap-2 border-b border-emerald-100 bg-emerald-50/30">
@@ -204,7 +204,6 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
                     <div className="flex items-start"><span className="w-32 text-gray-500 shrink-0">Nama Program</span><span className="font-bold text-gray-900">: {data.program}</span></div>
                     <div className="flex items-start"><span className="w-32 text-gray-500 shrink-0">Lokasi Program</span><span className="font-bold text-gray-900">: {data.lokasi.replace('\n', ' ')}</span></div>
                     <div className="flex items-start"><span className="w-32 text-gray-500 shrink-0">Sumber Dana</span><span className="font-bold text-gray-900">: {data.source_type === 'App\\Models\\DonationProgram' ? 'Donasi' : data.source_type === 'App\\Models\\ProgramApbd' ? 'APBD' : 'CSR'}</span></div>
-                    <div className="flex items-start"><span className="w-32 text-gray-500 shrink-0">Target Kegiatan</span><span className="font-bold text-gray-900">: {data.source_type === 'App\\Models\\DonationProgram' ? data.detail?.total_seeds_bast : (data.detail?.total_seeds_collected || data.detail?.jumlah_bibit || '-')} Tanaman</span></div>
                   </>
                 )}
               </div>
@@ -220,9 +219,9 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
                 <div className="p-5 space-y-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">KTH Terlibat</label>
-                    <select 
+                    <select
                       disabled
-                      value="kth1" 
+                      value="kth1"
                       className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
                     >
                       <option value="kth1">{data.detail?.kth?.name || data.detail?.kth?.nama || 'KTH Tidak Ditemukan'} (Telah ditetapkan)</option>
@@ -237,8 +236,8 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
                         <p className="text-sm font-bold text-gray-900">P0 - Rencana Penanaman Awal</p>
                         <p className="text-[11px] text-gray-500 mt-1">Target: {data.source_type === 'App\\Models\\DonationProgram' ? data.detail?.total_seeds_bast : (data.detail?.total_seeds_collected || data.detail?.jumlah_bibit || '-')} tanaman | Periode Pelaksanaan: {data.detail?.start_date || data.detail?.tanggal_mulai || '-'} - {data.detail?.end_date || data.detail?.tanggal_selesai || '-'}</p>
                       </div>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setIsDetailPOOpen(true)}
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50 flex items-center gap-2 shadow-sm transition-colors shrink-0"
                       >
@@ -260,8 +259,8 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Penyuluh yang Ditugaskan</label>
-                    <select 
-                      value={formData.penyuluh} onChange={(e) => setFormData({...formData, penyuluh: e.target.value})}
+                    <select
+                      value={formData.penyuluh} onChange={(e) => setFormData({ ...formData, penyuluh: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-gray-700"
                       required
                     >
@@ -281,24 +280,24 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
                     <label className="block text-sm font-bold text-gray-700 mb-2">
                       {isValidasi ? 'Tanggal Validasi' : 'Tanggal Mulai Pelaksanaan'}
                     </label>
-                    <input 
-                      type="date" 
-                      value={formData.tanggal} onChange={(e) => setFormData({...formData, tanggal: e.target.value})}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-gray-700" 
+                    <input
+                      type="date"
+                      value={formData.tanggal} onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-gray-700"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
                       {isValidasi ? 'Batas Waktu Validasi' : 'Batas Waktu Pelaksanaan'}
                     </label>
-                    <input 
-                      type="date" 
-                      value={formData.batasWaktu} onChange={(e) => setFormData({...formData, batasWaktu: e.target.value})}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-gray-700" 
+                    <input
+                      type="date"
+                      value={formData.batasWaktu} onChange={(e) => setFormData({ ...formData, batasWaktu: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-gray-700"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                    <label className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-1.5">
                       Prioritas
                       {statusKekritisan && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
@@ -328,11 +327,11 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
                     )}
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Catatan Penugasan (Opsional)</label>
-                  <textarea 
-                    value={formData.catatan} onChange={(e) => setFormData({...formData, catatan: e.target.value})}
+                  <textarea
+                    value={formData.catatan} onChange={(e) => setFormData({ ...formData, catatan: e.target.value })}
                     placeholder={isValidasi ? "Contoh: Lakukan verifikasi koordinat, kondisi lahan, akses lokasi, dan dokumentasi lapangan." : "Contoh: Dampingi KTH dalam pelaksanaan penanaman sesuai target dan laporkan progres berkala."}
                     rows={3}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 resize-none text-gray-700"
@@ -343,7 +342,7 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
                 <div className="px-4 py-3 rounded-lg flex items-start gap-2 border bg-emerald-50/50 border-emerald-100 text-emerald-700">
                   <HiOutlineInformationCircle className="w-5 h-5 shrink-0" />
                   <p className="text-xs font-medium pt-0.5">
-                    {isValidasi 
+                    {isValidasi
                       ? 'Penugasan ini ditujukan untuk validasi lapangan sebelum lokasi ditetapkan.'
                       : 'Penyuluh bertugas mendampingi KTH dalam pelaksanaan penanaman sesuai rencana program.'}
                   </p>
@@ -367,8 +366,8 @@ const TugaskanModal: React.FC<TugaskanModalProps> = ({ isOpen, onClose, data, on
       </div>
 
       <DetailRencanaPOModal
-        isOpen={isDetailPOOpen} 
-        onClose={() => setIsDetailPOOpen(false)} 
+        isOpen={isDetailPOOpen}
+        onClose={() => setIsDetailPOOpen(false)}
         data={data}
       />
     </>

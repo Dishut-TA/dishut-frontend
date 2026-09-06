@@ -1,31 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineMagnifyingGlass, HiOutlineCheckBadge, HiOutlineEye } from 'react-icons/hi2';
+import { getLaporanEvaluasiKabidList } from '@/services/penugasanEvaluasi.service';
 
 const LaporanEvaluasiKABID: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [dataLaporan, setDataLaporan] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const mockData = [
-    {
-      id: 'EVAL-002',
-      proyek: 'Rehabilitasi DAS PT Pertamina EP',
-      periode: 'Penanaman Awal (P0)',
-      tim: 'Srie Resmita Dkk',
-      status: 'MENUNGGU PENGESAHAN',
-    },
-    {
-      id: 'EVAL-003',
-      proyek: 'Rehabilitasi Lahan Kritis PT. Telkom',
-      periode: 'Pemeliharaan I (P1)',
-      tim: 'Andi Mansur Dkk',
-      status: 'DISETUJUI',
+  const fetchLaporan = async () => {
+    try {
+      setIsLoading(true);
+      const res = await getLaporanEvaluasiKabidList();
+      setDataLaporan(res.data || []);
+    } catch (error) {
+      console.error('Gagal mengambil daftar laporan evaluasi Kabid:', error);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
 
-  const filteredData = mockData.filter((item) =>
-    item.proyek.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.periode.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    fetchLaporan();
+  }, []);
+
+  const filteredData = dataLaporan.filter((item) =>
+    (item.proyek || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.periode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.tim || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.lokasi || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -40,7 +44,7 @@ const LaporanEvaluasiKABID: React.FC = () => {
           <HiOutlineMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input 
             type="text" 
-            placeholder="Cari laporan atau periode..." 
+            placeholder="Cari program, tim, atau periode..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-full text-sm focus:ring-[#185325] outline-none shadow-sm" 
@@ -61,45 +65,69 @@ const LaporanEvaluasiKABID: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredData.map((item) => {
-                const isPending = item.status === 'MENUNGGU PENGESAHAN';
-                
-                return (
-                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-5 font-bold text-gray-800 whitespace-nowrap">{item.proyek}</td>
-                    <td className="px-6 py-5 text-center whitespace-nowrap">
-                      <span className="text-xs font-bold text-[#185325] bg-[#EBF8F1] border border-[#C6EBD6] px-3 py-1 rounded-full">
-                        {item.periode}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 text-center text-sm font-medium text-gray-600 whitespace-nowrap">{item.tim}</td>
-                    <td className="px-6 py-5 text-center whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        isPending ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-[#185325] border border-emerald-200'
-                      }`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 flex justify-center whitespace-nowrap">
-                      {isPending ? (
-                        <button 
-                          onClick={() => navigate(`/admin/kabid/evaluasi/laporan/pengesahan/${item.id}`)}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-[#185325] hover:bg-[#123d1c] text-white text-xs font-bold rounded-full transition-colors shadow-sm active:scale-95"
-                        >
-                          <HiOutlineCheckBadge className="w-4 h-4" /> Tinjau
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => navigate(`/admin/kabid/evaluasi/laporan/detail/${item.id}`)}
-                          className="flex items-center gap-1.5 px-2 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-[#185325] text-xs font-bold rounded-full transition-colors shadow-sm active:scale-95"
-                        >
-                          <HiOutlineEye className="w-4 h-4" />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    Memuat daftar laporan evaluasi...
+                  </td>
+                </tr>
+              ) : filteredData.length > 0 ? (
+                filteredData.map((item) => {
+                  const isPending = item.status === 'MENUNGGU PENGESAHAN';
+                  
+                  return (
+                    <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-5 whitespace-nowrap">
+                        <div className="font-bold text-gray-800">{item.proyek}</div>
+                        {item.lokasi && item.lokasi !== '-' && (
+                          <div className="text-xs text-gray-500 mt-0.5">{item.lokasi}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-5 text-center whitespace-nowrap">
+                        <span className="text-xs font-bold text-[#185325] bg-[#EBF8F1] border border-[#C6EBD6] px-3 py-1 rounded-full">
+                          {item.periode}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 text-center text-sm font-medium text-gray-600 whitespace-nowrap">
+                        {item.tim}
+                      </td>
+                      <td className="px-6 py-5 text-center whitespace-nowrap">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          isPending 
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                            : 'bg-emerald-50 text-[#185325] border border-emerald-200'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 flex justify-center whitespace-nowrap">
+                        {isPending ? (
+                          <button 
+                            onClick={() => navigate(`/admin/kabid/evaluasi/laporan/pengesahan/${item.id}`)}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-[#185325] hover:bg-[#123d1c] text-white text-xs font-bold rounded-full transition-colors shadow-sm active:scale-95 cursor-pointer"
+                          >
+                            <HiOutlineCheckBadge className="w-4 h-4" /> Tinjau
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => navigate(`/admin/kabid/evaluasi/laporan/detail/${item.id}`)}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-[#185325] text-xs font-bold rounded-full transition-colors shadow-sm active:scale-95 cursor-pointer"
+                            title="Lihat Detail & Dokumen"
+                          >
+                            <HiOutlineEye className="w-4 h-4" /> Detail
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    Tidak ada laporan evaluasi yang menunggu pengesahan atau telah selesai.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

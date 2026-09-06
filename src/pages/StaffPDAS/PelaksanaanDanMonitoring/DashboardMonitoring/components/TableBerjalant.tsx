@@ -21,7 +21,6 @@ export default function TableBerjalan({ programs }: TableBerjalanProps) {
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 overflow-hidden">
       <div className="flex justify-between items-center mb-4">
          <h3 className="font-bold text-gray-900 text-sm">Program Berjalan</h3>
-         <button className="text-xs font-bold text-green-700 hover:underline">Lihat Semua</button>
       </div>
       
       <div className="overflow-x-auto">

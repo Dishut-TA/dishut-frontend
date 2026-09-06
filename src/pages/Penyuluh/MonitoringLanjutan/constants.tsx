@@ -91,24 +91,32 @@ export const MOCK_DATA: ProgramMonitoring[] = [
 ];
 
 export const TABS: { label: TabStatus; icon: React.ReactNode; activeColor: string; inactiveIconColor: string }[] = [
-  { label: 'Semua Program', icon: <HiOutlineDocumentText className="w-4 h-4" />, activeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', inactiveIconColor: 'text-emerald-600' },
-  { label: 'Siap Monitoring', icon: <HiOutlinePlayCircle className="w-4 h-4" />, activeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', inactiveIconColor: 'text-emerald-500' },
-  { label: 'Dalam Monitoring', icon: <HiOutlinePlayCircle className="w-4 h-4" />, activeColor: 'bg-blue-50 text-blue-700 border-blue-200', inactiveIconColor: 'text-blue-500' },
-  { label: 'Menunggu Evaluasi', icon: <HiOutlineClock className="w-4 h-4" />, activeColor: 'bg-orange-50 text-orange-700 border-orange-200', inactiveIconColor: 'text-orange-500' },
-  { label: 'Tindak Lanjut', icon: <HiOutlineExclamationCircle className="w-4 h-4" />, activeColor: 'bg-purple-50 text-purple-700 border-purple-200', inactiveIconColor: 'text-purple-500' },
-  { label: 'Monitoring Selesai', icon: <HiOutlineCheckCircle className="w-4 h-4" />, activeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', inactiveIconColor: 'text-emerald-500' },
+  { label: 'Semua Program', icon: <HiOutlineDocumentText className="w-4 h-4" />, activeColor: 'bg-emerald-50 rounded-full text-emerald-700 border-emerald-200', inactiveIconColor: 'text-emerald-600' },
+  { label: 'Siap Monitoring', icon: <HiOutlinePlayCircle className="w-4 h-4" />, activeColor: 'bg-emerald-50 rounded-full text-emerald-700 border-emerald-200', inactiveIconColor: 'text-emerald-500' },
+  { label: 'Dalam Monitoring', icon: <HiOutlinePlayCircle className="w-4 h-4" />, activeColor: 'bg-blue-50 rounded-full text-blue-700 border-blue-200', inactiveIconColor: 'text-blue-500' },
+  { label: 'Menunggu Evaluasi', icon: <HiOutlineClock className="w-4 h-4" />, activeColor: 'bg-orange-50 rounded-full text-orange-700 border-orange-200', inactiveIconColor: 'text-orange-500' },
+  { label: 'Tindak Lanjut', icon: <HiOutlineExclamationCircle className="w-4 h-4" />, activeColor: 'bg-purple-50 rounded-full text-purple-700 border-purple-200', inactiveIconColor: 'text-purple-500' },
+  { label: 'Monitoring Selesai', icon: <HiOutlineCheckCircle className="w-4 h-4" />, activeColor: 'bg-emerald-50 rounded-full text-emerald-700 border-emerald-200', inactiveIconColor: 'text-emerald-500' },
   { label: 'Dihentikan', icon: <HiOutlineXCircle className="w-4 h-4" />, activeColor: 'bg-gray-100 text-gray-700 border-gray-300', inactiveIconColor: 'text-gray-500' },
 ];
 
 export const getStatusBadgeStyles = (colorKey: string) => {
   switch (colorKey) {
-    case 'blue': return 'text-blue-700 bg-blue-50 border border-blue-100';
-    case 'orange': return 'text-orange-700 bg-orange-50 border border-orange-100';
-    case 'purple': return 'text-purple-700 bg-purple-50 border border-purple-100';
-    case 'emerald': return 'text-emerald-700 bg-emerald-50 border border-emerald-100';
-    case 'green': return 'text-emerald-700 bg-emerald-50 border border-emerald-100';
-    case 'gray-dark': return 'text-gray-700 bg-gray-100 border border-gray-200';
-    case 'gray': default: return 'text-gray-600 bg-gray-50 border border-gray-200';
+    // Status badge colors
+    case 'berjalan': return 'text-blue-700 rounded-full bg-blue-50 border border-blue-100';       // Dalam Monitoring → biru
+    case 'tindaklanjut': return 'text-purple-700 rounded-full bg-purple-50 border border-purple-100'; // Tindak Lanjut → ungu
+    case 'evaluasi': return 'text-orange-700 rounded-full bg-orange-50 border border-orange-100'; // Menunggu Evaluasi → orange
+    case 'selesai': return 'text-emerald-700 rounded-full bg-emerald-50 border border-emerald-100'; // Monitoring Selesai → hijau
+    case 'siap': return 'text-emerald-700 rounded-full bg-emerald-50 border border-emerald-100';  // Siap Monitoring → hijau
+    case 'dihentikan': return 'text-red-700 rounded-full bg-red-50 border border-red-100';         // Dihentikan → merah
+    // Legacy keys
+    case 'blue': return 'text-blue-700 rounded-full bg-blue-50 border border-blue-100';
+    case 'orange': return 'text-orange-700 rounded-full bg-orange-50 border border-orange-100';
+    case 'purple': return 'text-purple-700 rounded-full bg-purple-50 border border-purple-100';
+    case 'emerald': return 'text-emerald-700 rounded-full bg-emerald-50 border border-emerald-100';
+    case 'green': return 'text-emerald-700 rounded-full bg-emerald-50 border border-emerald-100';
+    case 'gray-dark': return 'text-gray-700 rounded-full bg-gray-100 border border-gray-200';
+    case 'gray': default: return 'text-gray-600 rounded-full bg-gray-50 border border-gray-200';
   }
 };
 
@@ -119,5 +127,5 @@ export const getPeriodeBadge = (periode: string) => {
   if (periode === 'P2') bg = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
   if (periode === 'P3') bg = 'bg-purple-50 text-purple-600 border border-purple-100';
   if (periode === 'P4') bg = 'bg-emerald-50 text-emerald-600 border border-emerald-100'; 
-  return <span className={`px-2 py-1 text-[11px] font-bold rounded-md ${bg}`}>{periode}</span>;
+  return <span className={`px-2 py-1 text-[11px] font-bold rounded-full ${bg}`}>{periode}</span>;
 }

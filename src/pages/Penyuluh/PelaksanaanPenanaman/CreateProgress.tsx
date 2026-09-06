@@ -60,7 +60,10 @@ const InputProgresPage: React.FC = () => {
           programName = d.penugasanable?.name || '-';
           location = d.penugasanable?.location || '-';
           kth = d.penugasanable?.kth?.name || '-';
-          targetBibit = d.penugasanable?.target_amount || '0';
+          const allocSum = Array.isArray(d.penugasanable?.allocations)
+            ? d.penugasanable.allocations.reduce((s: number, a: any) => s + (Number(a.jumlah) || 0), 0)
+            : 0;
+          targetBibit = String(d.penugasanable?.total_seeds_collected || allocSum || 0);
           totalPu = (d.penugasanable?.analysis_result_zone || d.penugasanable?.analysisResultZone)?.jumlah_pu || '-';
           luasArea = (d.penugasanable?.analysis_result_zone || d.penugasanable?.analysisResultZone)?.luas_ha ? `${(d.penugasanable?.analysis_result_zone || d.penugasanable?.analysisResultZone)?.luas_ha} Ha` : '-';
         } else if (d.penugasanable_type === 'App\\Models\\ProgramApbd' || d.penugasanable_type === 'App\\Models\\ProgramCsr') {

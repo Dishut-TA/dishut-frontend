@@ -81,7 +81,8 @@ const PelaksanaanWizard: React.FC = () => {
     if (!item) return null;
 
     const seedId = item.id ?? item.seed_id ?? item.seedId ?? item.seed_specification_id ?? item.seedSpecificationId ?? index + 1;
-    const seedName = item.name ?? item.nama_bibit ?? item.bibit_nama ?? item.jenis_bibit ?? item.nama ?? item.seed_name ?? item.label;
+    // 'nama' untuk jenis_bibit Donasi, 'name' untuk seed_specifications, fallback ke field lain
+    const seedName = item.nama ?? item.name ?? item.bibit_nama ?? item.jenis_bibit ?? item.nama_bibit ?? item.seed_name ?? item.label;
 
     if (!seedName) return null;
 
@@ -93,8 +94,14 @@ const PelaksanaanWizard: React.FC = () => {
 
   const buildSeedOptionsFromProgram = (programData: any) => {
     const source = programData?.penugasanable || programData;
+
+    // Candidates diurutkan dari yang paling spesifik
+    // 'seeds' = relasi BelongsToMany DonationProgram (dari eager load raw model)
+    // 'jenis_bibit' = field dari DonationProgramResource (jika via resource)
+    // 'seed_specifications' = dari program Donasi lain
     const candidates = [
-      source?.jenis_bibit,
+      source?.seeds,          // relasi eager load raw DonationProgram
+      source?.jenis_bibit,    // field resource DonationProgram
       source?.jenisBibit,
       source?.seed_specifications,
       source?.seedSpecifications,
@@ -107,6 +114,15 @@ const PelaksanaanWizard: React.FC = () => {
         const normalized = list.map(normalizeSeedOption).filter(Boolean);
         if (normalized.length > 0) return normalized;
       }
+    }
+
+    // APBD / CSR: jenis_tanaman berupa string dipisah koma
+    const jenisTanamanStr = source?.jenis_tanaman || source?.jenisTanaman;
+    if (typeof jenisTanamanStr === 'string' && jenisTanamanStr.trim().length > 0) {
+      return jenisTanamanStr.split(',').map((nama: string) => ({
+        id: "nama:" + nama.trim(), // Gunakan prefix nama: agar dikenali sebagai input teks
+        name: nama.trim(),
+      })).filter((s: { id: string; name: string }) => s.name.length > 0);
     }
 
     return [];
@@ -165,7 +181,11 @@ const PelaksanaanWizard: React.FC = () => {
           programName = d.penugasanable?.name || '-';
           location = d.penugasanable?.location || '-';
           kth = d.penugasanable?.kth?.name || '-';
-          targetBibit = d.penugasanable?.target_amount || '0';
+          // total_seeds_collected dari resource, atau sum dari allocations jika tersedia
+          const allocSum = Array.isArray(d.penugasanable?.allocations)
+            ? d.penugasanable.allocations.reduce((s: number, a: any) => s + (Number(a.jumlah) || 0), 0)
+            : 0;
+          targetBibit = String(d.penugasanable?.total_seeds_collected || allocSum || 0);
           totalPu = (d.penugasanable?.analysis_result_zone || d.penugasanable?.analysisResultZone)?.jumlah_pu || '0';
         } else if (d.penugasanable_type === 'App\\Models\\ProgramApbd' || d.penugasanable_type === 'App\\Models\\ProgramCsr') {
           programName = d.penugasanable?.nama_program || '-';
@@ -370,7 +390,11 @@ const PelaksanaanWizard: React.FC = () => {
       if (isNewSeed) {
         formData.append('nama_tanaman', formTanaman.nama_tanaman);
       } else {
-        formData.append('seed_id', formTanaman.seed_id);
+        if (formTanaman.seed_id.startsWith('nama:')) {
+          formData.append('nama_tanaman', formTanaman.seed_id.replace('nama:', ''));
+        } else {
+          formData.append('seed_id', formTanaman.seed_id);
+        }
       }
 
       const res = await fetch(`${API_URL}/petak-ukur/${activePu.id}/tanaman`, {
@@ -574,7 +598,7 @@ const PelaksanaanWizard: React.FC = () => {
 
               {/* Tombol Aksi Poligon */}
               {polygonPoints.length > 0 && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[9999] bg-white p-2 rounded-xl shadow-lg border border-slate-200">
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-9999 bg-white p-2 rounded-xl shadow-lg border border-slate-200">
                   <button
                     onClick={handleClearPolygon}
                     className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition-colors"
@@ -592,7 +616,7 @@ const PelaksanaanWizard: React.FC = () => {
 
               {/* Info Mode */}
               {polygonPoints.length === 0 && (
-                <div className="absolute top-4 left-4 z-[9999]">
+                <div className="absolute top-4 left-4 z-9999">
                   <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-sm border border-slate-200 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
                     <span className="text-xs font-bold text-slate-700">Mode Gambar Aktif: PU {puSelesai + 1}</span>
@@ -910,7 +934,7 @@ const PelaksanaanWizard: React.FC = () => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-slate-900 truncate">{item.nama_tanaman || item.seed?.name || 'Tanaman'}</p>
+                  <p className="text-xs font-bold text-slate-900 truncate">{item.nama_tanaman || item.seed?.nama || item.seed?.name || 'Tanaman'}</p>
                   <p className="text-[9px] text-slate-500 flex items-center gap-1 mt-1"><PiLeaf className="w-3 h-3 text-[#008A4B]" /> {item.kondisi_tanaman}</p>
                   <p className="text-[9px] text-slate-500 truncate mt-0.5">{item.keterangan || '-'}</p>
                 </div>

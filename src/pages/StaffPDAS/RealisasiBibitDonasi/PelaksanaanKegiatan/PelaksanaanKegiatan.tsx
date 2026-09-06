@@ -31,8 +31,22 @@ export interface KegiatanData {
 const formatKegiatanData = (item: any): KegiatanData => {
   let rincianBibit: DetailBibitDana[] = [];
   let totalBibit = 0;
+  const hasBast = Boolean(item.bast_url || item.bast_path);
 
-  if (Array.isArray(item.seed_details)) {
+  // Jika BAST sudah diupload, ambil rincian dari bast_details/bast_seed_details (bibit yang benar-benar disalurkan)
+  const bastDetails = item.bast_details || item.bast_seed_details || item.bast_seeds;
+
+  if (hasBast && Array.isArray(bastDetails) && bastDetails.length > 0) {
+    rincianBibit = bastDetails.map((bibit: any) => {
+      const jumlah = Number(bibit.quantity || bibit.jumlah) || 0;
+      totalBibit += jumlah;
+      return {
+        nama: bibit.name || bibit.nama || bibit.seed_name || 'Bibit',
+        jumlah: jumlah,
+        hargaSatuan: Number(bibit.price || bibit.harga_satuan) || 0
+      };
+    });
+  } else if (Array.isArray(item.seed_details)) {
     rincianBibit = item.seed_details.map((bibit: any) => {
       const jumlah = Number(bibit.quantity) || 0;
       totalBibit += jumlah;
@@ -45,7 +59,6 @@ const formatKegiatanData = (item: any): KegiatanData => {
   }
 
   const seedStatus = item.seed_status; 
-  const hasBast = Boolean(item.bast_url || item.bast_path);
   const hasProof = Boolean(item.proof_url || item.proof_path);
 
   let status: StatusKegiatan = 'Terkumpul';
@@ -61,7 +74,6 @@ const formatKegiatanData = (item: any): KegiatanData => {
     namaDonatur: item.donor?.donor_name || 'Hamba Allah',
     jumlahBibit: totalBibit,
     status: status,
-    // storage url sementara local dulu yaw
     bastUrl: item.bast_url || (item.bast_path ? `http://127.0.0.1:8000/storage/${item.bast_path}` : null),
     buktiTanamUrl: item.proof_url || (item.proof_path ? `http://127.0.0.1:8000/storage/${item.proof_path}` : null),
     rincianBibit: rincianBibit.length > 0 ? rincianBibit : [{

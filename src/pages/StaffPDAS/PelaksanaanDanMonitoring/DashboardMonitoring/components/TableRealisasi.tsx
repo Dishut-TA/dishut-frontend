@@ -31,7 +31,6 @@ export default function TableRealisasi({ programs }: TableRealisasiProps) {
            <HiOutlineTrophy className="w-5 h-5 text-green-700" />
            Program dengan Realisasi Tertinggi
         </h3>
-        <button className="text-xs font-bold text-green-700 hover:underline">Lihat Semua</button>
       </div>
       
       <div className="overflow-x-auto">

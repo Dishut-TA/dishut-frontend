@@ -126,7 +126,9 @@ const DetailMonitoringPage: React.FC = () => {
             countDokumentasi
           },
           geotagList,
-          dokumentasiList: dokumentasiFromApi
+          dokumentasiList: dokumentasiFromApi,
+          pelaksanaan: penugasan.pelaksanaan_penanaman || null,
+          riwayatMonitoring: penugasan.riwayat_monitoring || []
         });
         setDokumentasiList(dokumentasiFromApi);
       } catch (error) {
@@ -168,16 +170,16 @@ const DetailMonitoringPage: React.FC = () => {
     let subtitle = '';
 
     if (currentStatus === 'Berjalan' || currentStatus === 'Menunggu' || currentStatus === 'Menunggu Penugasan') {
-      title = 'Tinjau Hasil Monitoring P2';
-      subtitle = 'Meninjau hasil monitoring periode P2 yang telah dilakukan oleh penyuluh.';
+      title = 'Tinjau Hasil Monitoring ';
+      subtitle = 'Meninjau hasil monitoring periode aktif yang telah dilakukan oleh penyuluh.';
     } else if (currentStatus === 'Menunggu Evaluasi') {
-      title = 'Detail Hasil Monitoring P2';
+      title = 'Detail Hasil Monitoring';
       subtitle = 'Halaman ini hanya menampilkan hasil monitoring. Proses evaluasi dilakukan oleh Tim Evaluasi pada modul evaluasi.';
     } else if (currentStatus === 'Selesai') {
       title = 'Hasil Monitoring P4 (Periode Akhir)';
       subtitle = 'Monitoring telah selesai untuk seluruh periode (P0 - P4). Berikut adalah ringkasan hasil akhir program.';
     } else if (currentStatus === 'Tindak Lanjut') {
-      title = 'Detail Tindak Lanjut Monitoring P2';
+      title = 'Detail Tindak Lanjut Monitoring';
       subtitle = 'Halaman ini menampilkan hasil evaluasi dan tindak lanjut program. Proses evaluasi dilakukan oleh Tim Evaluasi pada modul terpisah.';
     }
 
@@ -208,11 +210,6 @@ const DetailMonitoringPage: React.FC = () => {
               <button onClick={() => navigate(-1)} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer shadow-sm">
                 <HiOutlineArrowLeft className="w-4 h-4" /> Kembali
               </button>
-              {currentStatus !== 'Berjalan' && (
-                <button onClick={() => setIsDownloadModalOpen(true)} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer shadow-sm">
-                  <HiOutlinePrinter className="w-4 h-4" /> Cetak Ringkasan
-                </button>
-              )}
               {currentStatus === 'Siap Monitoring' && (
                 <button onClick={() => navigate(`/admin/staff/monitoring/verifikasi/tugaskan/${id || 'PRG-2026-0007'}`)} className="px-4 py-2 bg-[#008A4B] text-white text-sm font-semibold rounded-lg hover:bg-emerald-800 transition-colors flex items-center gap-2 shadow-sm cursor-pointer">
                   <HiOutlineUserPlus className="w-4 h-4 stroke-2" /> Tugaskan Monitoring
@@ -242,11 +239,6 @@ const DetailMonitoringPage: React.FC = () => {
             <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Luas Area</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{programData?.luas || '4,2 Ha'}</span></div>
             <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Jadwal Monitoring</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">10 Mei 2026 – 27 Mei 2026</span></div>
             <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Sumber Dana</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{programData?.sumberDana || 'APBD'}</span></div>
-            <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Target Monitoring</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">Monitoring tahap kedua</span></div>
-          </div>
-          <div className="w-full lg:w-64 h-28 shrink-0 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400')] bg-cover bg-center border border-slate-200">
-            <HiOutlineMapPin className="w-7 h-7 text-red-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow-md" />
-            <div className="absolute bottom-2 left-2"><button className="text-[11px] font-bold text-blue-600 bg-white/90 px-2 py-1 rounded shadow-sm flex items-center gap-1 cursor-pointer hover:bg-white transition-colors">Lihat di Peta</button></div>
           </div>
         </div>
       </div>
@@ -260,27 +252,27 @@ const DetailMonitoringPage: React.FC = () => {
             <div className="p-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <div className="flex flex-col gap-2">
                 <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100"><PiPlant className="w-5 h-5 text-emerald-600" /></div>
-                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Target Tanam</p><p className="text-base font-bold text-slate-900">2.500 <span className="text-[10px] font-normal text-slate-500">pohon</span></p></div>
+                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Target Tanam</p><p className="text-base font-bold text-slate-900">{programData?.stats?.targetTanam || 0} <span className="text-[10px] font-normal text-slate-500">pohon</span></p></div>
               </div>
               <div className="flex flex-col gap-2">
                 <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100"><HiOutlineCheckCircle className="w-5 h-5 text-emerald-600" /></div>
-                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Realisasi Tanam</p><p className="text-base font-bold text-slate-900">2.500 <span className="text-[10px] font-normal text-slate-500">pohon</span></p></div>
+                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Realisasi Tanam</p><p className="text-base font-bold text-slate-900">{programData?.stats?.targetTanam || 0} <span className="text-[10px] font-normal text-slate-500">pohon</span></p></div>
               </div>
               <div className="flex flex-col gap-2">
                 <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100"><PiLeaf className="w-5 h-5 text-emerald-600" /></div>
-                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Tanaman Hidup</p><p className="text-base font-bold text-slate-900">2.180</p></div>
+                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Tanaman Hidup</p><p className="text-base font-bold text-slate-900">{programData?.stats?.tanamanHidup || 0}</p></div>
               </div>
               <div className="flex flex-col gap-2">
                 <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center border border-orange-100"><PiTree className="w-5 h-5 text-orange-500" /></div>
-                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Tanaman Mati</p><p className="text-base font-bold text-slate-900">220</p></div>
+                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Tanaman Mati</p><p className="text-base font-bold text-slate-900">{programData?.stats?.tanamanMati || 0}</p></div>
               </div>
               <div className="flex flex-col gap-2">
                 <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center border border-purple-100"><HiOutlineMapPin className="w-5 h-5 text-purple-600" /></div>
-                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Titik Geotag</p><p className="text-base font-bold text-slate-900">18 <span className="text-[10px] font-normal text-slate-500">titik</span></p></div>
+                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Titik Geotag</p><p className="text-base font-bold text-slate-900">{programData?.stats?.countGeotag || 0} <span className="text-[10px] font-normal text-slate-500">titik</span></p></div>
               </div>
               <div className="flex flex-col gap-2">
                 <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center border border-amber-100"><HiOutlineDocumentText className="w-5 h-5 text-amber-600" /></div>
-                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Dokumentasi</p><p className="text-base font-bold text-slate-900">42 <span className="text-[10px] font-normal text-slate-500">foto</span></p></div>
+                <div><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Dokumentasi</p><p className="text-base font-bold text-slate-900">{programData?.stats?.countDokumentasi || 0} <span className="text-[10px] font-normal text-slate-500">foto</span></p></div>
               </div>
             </div>
           </div>
@@ -294,27 +286,27 @@ const DetailMonitoringPage: React.FC = () => {
                 <tbody className="divide-y divide-slate-100">
                   <tr>
                     <td className="p-4 font-semibold text-slate-500 w-1/4">Target Tanam</td>
-                    <td className="p-4 text-slate-900 w-1/4">2.500 pohon</td>
+                    <td className="p-4 text-slate-900 w-1/4">{programData?.stats?.targetTanam || 0} pohon</td>
                     <td className="p-4 font-semibold text-slate-500 w-1/4">Tanggal Pelaksanaan</td>
-                    <td className="p-4 text-slate-900 w-1/4">12 Juli 2026</td>
+                    <td className="p-4 text-slate-900 w-1/4">{programData?.pelaksanaan?.tanggal_mulai ? new Date(programData.pelaksanaan.tanggal_mulai).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : '-'}</td>
                   </tr>
                   <tr>
                     <td className="p-4 font-semibold text-slate-500">Realisasi Tanam</td>
-                    <td className="p-4 text-slate-900">2.500 pohon</td>
+                    <td className="p-4 text-slate-900">{programData?.stats?.targetTanam || 0} pohon</td>
                     <td className="p-4 font-semibold text-slate-500">Lokasi Penanaman</td>
-                    <td className="p-4 text-slate-900">Desa Karangsong, Kec. Indramayu,<br />Kab. Indramayu</td>
+                    <td className="p-4 text-slate-900 whitespace-pre-line">{programData?.lokasi || '-'}</td>
                   </tr>
                   <tr>
                     <td className="p-4 font-semibold text-slate-500">Persentase Hidup</td>
-                    <td className="p-4 text-slate-900">87,2%</td>
+                    <td className="p-4 text-slate-900">{programData?.stats?.persentaseHidup || 0}%</td>
                     <td className="p-4 font-semibold text-slate-500">Pelaksana</td>
-                    <td className="p-4 text-slate-900">KTH Karangsong Lestari</td>
+                    <td className="p-4 text-slate-900">{programData?.kth || '-'}</td>
                   </tr>
                   <tr>
                     <td className="p-4 font-semibold text-slate-500">Persentase Mati</td>
-                    <td className="p-4 text-slate-900">8,8%</td>
+                    <td className="p-4 text-slate-900">{((100 - parseFloat(programData?.stats?.persentaseHidup || 0)) || 0).toFixed(2)}%</td>
                     <td className="p-4 font-semibold text-slate-500">Catatan Singkat</td>
-                    <td className="p-4 text-slate-900">Penanaman berjalan lancar tanpa kendala berarti.</td>
+                    <td className="p-4 text-slate-900">{programData?.pelaksanaan?.arahan || programData?.pelaksanaan?.catatan || '-'}</td>
                   </tr>
                 </tbody>
               </table>
@@ -366,27 +358,33 @@ const DetailMonitoringPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  <tr>
-                    <td className="py-3 px-5 font-medium text-slate-900">P0</td>
-                    <td className="py-3 px-5 text-slate-600">10 Mar 2026</td>
-                    <td className="py-3 px-5 text-slate-600">Ahmad Fauzi</td>
-                    <td className="py-3 px-5"><span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Selesai</span></td>
-                    <td className="py-3 px-5 text-slate-600">Realisasi Penanaman</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 px-5 font-medium text-slate-900">P1</td>
-                    <td className="py-3 px-5 text-slate-600">27 Mar 2026</td>
-                    <td className="py-3 px-5 text-slate-600">Ahmad Fauzi</td>
-                    <td className="py-3 px-5"><span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Selesai</span></td>
-                    <td className="py-3 px-5 text-slate-600">Monitoring Tahap 1</td>
-                  </tr>
-                  <tr className="bg-[#F8FAFC]">
-                    <td className="py-3 px-5 font-bold text-[#008A4B]">P2</td>
-                    <td className="py-3 px-5 text-slate-600">-</td>
-                    <td className="py-3 px-5 text-slate-600">Ahmad Fauzi</td>
-                    <td className="py-3 px-5"><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Siap Monitoring</span></td>
-                    <td className="py-3 px-5 text-slate-600">Menunggu penugasan</td>
-                  </tr>
+                  {programData?.riwayatMonitoring?.length > 0 ? (
+                    programData.riwayatMonitoring.map((riwayat: any, idx: number) => {
+                      const persenTumbuh = riwayat.persentase_tumbuh || 0;
+                      let statusBadge = '';
+                      if (persenTumbuh >= 75) statusBadge = 'bg-emerald-50 text-emerald-700';
+                      else if (persenTumbuh >= 50) statusBadge = 'bg-yellow-50 text-yellow-700';
+                      else statusBadge = 'bg-red-50 text-red-700';
+
+                      return (
+                        <tr key={riwayat.id || idx} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-3 px-5 font-semibold text-slate-900">{riwayat.periode_monitoring || riwayat.jenis_kegiatan}</td>
+                          <td className="py-3 px-5 text-slate-600">{riwayat.tanggal_penugasan ? new Date(riwayat.tanggal_penugasan).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : '-'}</td>
+                          <td className="py-3 px-5 text-slate-600">{riwayat.penyuluh?.name || riwayat.penyuluh?.username || '-'}</td>
+                          <td className="py-3 px-5">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${getBadgeColor(riwayat.status)}`}>
+                              {riwayat.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-5 text-slate-600">{riwayat.arahan || riwayat.tujuan || '-'}</td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-500">Belum ada riwayat monitoring</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -411,29 +409,24 @@ const DetailMonitoringPage: React.FC = () => {
               <p className="text-xs font-bold text-slate-900 leading-relaxed">Desa Karangsong, Kec. Indramayu<br />Kabupaten Indramayu, Jawa Barat</p>
             </div>
             <div><p className="text-[10px] text-slate-500 font-semibold mb-1">Penyuluh Pendamping</p><p className="text-xs font-bold text-slate-900">Ahmad Fauzi, SP</p></div>
-            <div><p className="text-[10px] text-slate-500 font-semibold mb-1">Tanggal Monitoring P2</p><p className="text-xs font-bold text-slate-900">22 Mei 2026</p></div>
+            <div><p className="text-[10px] text-slate-500 font-semibold mb-1">Tanggal Monitoring </p><p className="text-xs font-bold text-slate-900">22 Mei 2026</p></div>
             <div className="col-span-2"><p className="text-[10px] text-slate-500 font-semibold mb-1">KTH Pelaksana</p><p className="text-xs font-bold text-slate-900">KTH Karangsong Lestari</p></div>
             <div>
               <p className="text-[10px] text-slate-500 font-semibold mb-1">Periode Aktif</p>
-              <p className="text-xs font-bold text-slate-900 flex items-center gap-2">P2 <span className="bg-blue-50 text-blue-600 text-[9px] px-2 py-0.5 rounded-full border border-blue-200">Dalam Monitoring</span></p>
+              <p className="text-xs font-bold text-slate-900">P2</p>
             </div>
-            <div><p className="text-[10px] text-slate-500 font-semibold mb-1">Periode P2</p><p className="text-xs font-bold text-slate-900">10 Mei 2026 – 27 Mei 2026</p></div>
-          </div>
-          <div className="w-full lg:w-72 shrink-0">
-            <p className="text-[10px] text-slate-500 font-semibold mb-2">Lokasi Program</p>
-            <div className="w-full h-32 bg-slate-100 rounded-lg bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400')] bg-cover bg-center border border-slate-200"></div>
+            <div><p className="text-[10px] text-slate-500 font-semibold mb-1">Periode</p><p className="text-xs font-bold text-slate-900">10 Mei 2026 – 27 Mei 2026</p></div>
           </div>
         </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="px-6 py-5 border-b border-slate-100">
-          <h3 className="text-base font-bold text-slate-900 mb-4">Hasil Monitoring P2 <span className="text-xs font-normal text-slate-500 ml-1">(22 Mei 2026)</span></h3>
+          <h3 className="text-base font-bold text-slate-900 mb-4">Hasil Monitoring <span className="text-xs font-normal text-slate-500 ml-1">(22 Mei 2026)</span></h3>
           <div className="flex gap-6 border-b border-slate-200 text-sm">
             <button className="pb-3 border-b-2 border-[#008A4B] text-[#008A4B] font-bold cursor-pointer">Ringkasan Hasil</button>
             <button className="pb-3 text-slate-500 font-medium hover:text-slate-700 cursor-pointer">Data Detail</button>
             <button className="pb-3 text-slate-500 font-medium hover:text-slate-700 cursor-pointer">Dokumentasi</button>
-            <button className="pb-3 text-slate-500 font-medium hover:text-slate-700 cursor-pointer">Catatan Penyuluh</button>
           </div>
         </div>
 
@@ -485,11 +478,6 @@ const DetailMonitoringPage: React.FC = () => {
               <tr><td className="py-3 px-4 font-bold text-slate-800">Dokumentasi</td><td className="py-3 px-4">48 Foto</td><td className="py-3 px-4">36 Foto</td><td className="py-3 px-4">-12</td><td className="py-3 px-4">75,00%</td><td className="py-3 px-4"><span className="text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded font-bold text-[10px]">Cukup</span></td></tr>
             </tbody>
           </table>
-
-          <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-3 flex gap-2 items-center">
-            <HiOutlineInformationCircle className="w-4 h-4 text-blue-600 shrink-0" />
-            <p className="text-[11px] text-blue-800">Penilaian kriteria berdasarkan capaian terhadap target P0 dan perubahan dari periode sebelumnya.</p>
-          </div>
         </div>
       </div>
     </div>
@@ -589,7 +577,7 @@ const DetailMonitoringPage: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
             <h3 className="text-sm font-bold text-gray-900 mb-3">Peta Lokasi Monitoring</h3>
             {geotagPreview.length > 0 ? (
-              <div className="h-40 rounded-lg overflow-hidden border border-slate-200 bg-gradient-to-br from-emerald-50 via-sky-50 to-slate-100 relative">
+              <div className="h-40 rounded-lg overflow-hidden border border-slate-200 bg-linear-to-br from-emerald-50 via-sky-50 to-slate-100 relative">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(34,197,94,0.2),transparent_30%),radial-gradient(circle_at_70%_35%,rgba(59,130,246,0.18),transparent_28%),linear-gradient(135deg,#effff5,#eef8ff,#f8fafc)]" />
                 {geotagPreview.map((point: any, index: number) => (
                   <div
@@ -715,7 +703,7 @@ const DetailMonitoringPage: React.FC = () => {
           </div>
           <div className="overflow-x-auto p-4">
             <table className="w-full text-left text-[11px]">
-              <thead className="bg-[#F8FAFC] text-slate-600 font-bold border-b border-slate-200">
+              <thead className="bg-[#DCECE0] text-[#3A4D3F] text-xs uppercase tracking-wider font-bold">
                 <tr><th className="py-2.5 px-3">Indikator</th><th className="py-2.5 px-3">Target</th><th className="py-2.5 px-3">Hasil Aktual</th><th className="py-2.5 px-3">Persentase</th><th className="py-2.5 px-3">Keterangan</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -790,45 +778,20 @@ const DetailMonitoringPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Informasi Tindak Lanjut Card */}
-      <div className="bg-[#F0FDF4] rounded-xl shadow-sm border border-[#BBF7D0] p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <HiOutlineDocumentText className="w-5 h-5 text-emerald-700" />
-          <h3 className="text-sm font-bold text-emerald-900">Informasi Tindak Lanjut</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-          <div className="space-y-4">
-            <div className="grid grid-cols-[140px_10px_1fr] items-start text-xs">
-              <span className="text-emerald-800 font-medium">Jenis Tindak Lanjut</span><span className="text-emerald-800">:</span><span className="text-emerald-900 font-bold">Penyulaman</span>
-            </div>
-            <div className="grid grid-cols-[140px_10px_1fr] items-start text-xs">
-              <span className="text-emerald-800 font-medium">Status Tindak Lanjut</span><span className="text-emerald-800">:</span><span className="text-orange-600 font-bold">Penyulaman Berjalan</span>
-            </div>
-            <div className="grid grid-cols-[140px_10px_1fr] items-start text-xs">
-              <span className="text-emerald-800 font-medium">Tanggal Penugasan</span><span className="text-emerald-800">:</span><span className="text-emerald-900 font-medium">{programData?.tanggal_penugasan ? new Date(programData.tanggal_penugasan).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</span>
-            </div>
-            <div className="grid grid-cols-[140px_10px_1fr] items-start text-xs">
-              <span className="text-emerald-800 font-medium">Target Penyelesaian</span><span className="text-emerald-800">:</span><span className="text-emerald-900 font-medium">{programData?.batas_waktu ? new Date(programData.batas_waktu).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</span>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-[150px_10px_1fr] items-start text-xs">
-              <span className="text-emerald-800 font-medium">Penyuluh Penanggung Jawab</span><span className="text-emerald-800">:</span><span className="text-emerald-900 font-medium">{programData?.penyuluh || '-'}</span>
-            </div>
-            <div className="grid grid-cols-[150px_10px_1fr] items-start text-xs">
-              <span className="text-emerald-800 font-medium">KTH Pelaksana</span><span className="text-emerald-800">:</span><span className="text-emerald-900 font-medium">{programData?.kth || '-'}</span>
-            </div>
-            <div className="grid grid-cols-[150px_10px_1fr] items-start text-xs">
-              <span className="text-emerald-800 font-medium">Jumlah Titik Geotag</span><span className="text-emerald-800">:</span><span className="text-emerald-900 font-medium">{programData?.stats?.countGeotag || 0} Titik</span>
-            </div>
-            <div className="grid grid-cols-[150px_10px_1fr] items-start text-xs">
-              <span className="text-emerald-800 font-medium">Catatan Sistem</span><span className="text-emerald-800">:</span><span className="text-emerald-900 font-medium leading-relaxed">Penugasan penyulaman telah dikirim otomatis berdasarkan hasil evaluasi.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <h3 className="text-sm font-bold text-slate-900 mb-4">Riwayat Monitoring</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[11px]">
+              <thead className="bg-[#DCECE0] text-[#3A4D3F] text-xs uppercase tracking-wider font-bold">
+                <tr><th className="py-2.5 px-3">Periode</th><th className="py-2.5 px-3">Tanggal</th><th className="py-2.5 px-3">Penyuluh</th><th className="py-2.5 px-3">Persentase Hidup</th><th className="py-2.5 px-3">Status</th></tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                <tr><td className="py-2.5 px-3 font-bold text-slate-800">{programData?.periode_monitoring || '-'}</td><td className="py-2.5 px-3">{programData?.tanggal_penugasan ? new Date(programData.tanggal_penugasan).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td><td className="py-2.5 px-3">{programData?.penyuluh || '-'}</td><td className="py-2.5 px-3">{programData?.stats?.persentaseHidup || 0}%</td><td className="py-2.5 px-3"><span className="text-orange-700 border border-orange-200 bg-orange-50 px-2 py-0.5 rounded font-bold text-[9px] leading-tight">Tindak Lanjut</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <h3 className="text-sm font-bold text-slate-900 mb-3">Dokumentasi Foto</h3>
           {dokumentasiPreview.length > 0 ? (
@@ -840,19 +803,6 @@ const DetailMonitoringPage: React.FC = () => {
           ) : (
             <div className="h-20 bg-slate-50 border border-dashed border-slate-200 rounded flex items-center justify-center text-xs text-slate-400">Belum ada dokumentasi</div>
           )}
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <h3 className="text-sm font-bold text-slate-900 mb-4">Riwayat Monitoring</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-[11px]">
-              <thead className="bg-[#F8FAFC] text-slate-600 font-bold border-b border-slate-200">
-                <tr><th className="py-2.5 px-3">Periode</th><th className="py-2.5 px-3">Tanggal</th><th className="py-2.5 px-3">Penyuluh</th><th className="py-2.5 px-3">Persentase Hidup</th><th className="py-2.5 px-3">Status</th></tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                <tr><td className="py-2.5 px-3 font-bold text-slate-800">{programData?.periode_monitoring || '-'}</td><td className="py-2.5 px-3">{programData?.tanggal_penugasan ? new Date(programData.tanggal_penugasan).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td><td className="py-2.5 px-3">{programData?.penyuluh || '-'}</td><td className="py-2.5 px-3">{programData?.stats?.persentaseHidup || 0}%</td><td className="py-2.5 px-3"><span className="text-orange-700 border border-orange-200 bg-orange-50 px-2 py-0.5 rounded font-bold text-[9px] leading-tight">Tindak Lanjut</span></td></tr>
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
 
