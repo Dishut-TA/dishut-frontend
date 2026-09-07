@@ -46,7 +46,7 @@ export default function DashboardPelaksanaanMonitoringKabid() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <TableRealisasi programs={dashboardData?.recent_programs} />
+                <TableRealisasi programs={dashboardData?.programs} />
                 <TableBerjalan programs={dashboardData?.recent_programs} />
               </div>
 

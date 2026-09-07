@@ -1,13 +1,8 @@
 import { HiOutlineClipboardDocumentCheck, HiOutlineDocumentChartBar } from 'react-icons/hi2';
 import { FiCheckCircle, FiUsers, FiFlag } from 'react-icons/fi';
 
-export const TABLE_REALISASI_DATA = [
-  { no: 1, program: 'Rehabilitasi Lahan Desa Mandalawangi', lokasi: 'Lembang', sumber: 'APBD', target: '12.000', realisasi: '11.480', persentase: '95,67%' },
-  { no: 2, program: 'Rehabilitasi Lahan Desa Sukamaju', lokasi: 'Cipatat', sumber: 'Donasi', target: '15.000', realisasi: '12.450', persentase: '83,00%' },
-  { no: 3, program: 'Rehabilitasi Lahan Rawa Ciberu', lokasi: 'Lembang', sumber: 'APBD', target: '12.000', realisasi: '9.860', persentase: '82,17%' },
-  { no: 4, program: 'Program Hijauan Citarum Hulu', lokasi: 'Cikalongwetan', sumber: 'CSR', target: '10.000', realisasi: '7.560', persentase: '75,60%' },
-  { no: 5, program: 'Rehabilitasi Lahan Desa Rahmat', lokasi: 'Cisarua', sumber: 'Donasi', target: '8.000', realisasi: '6.120', persentase: '76,50%' },
-];
+// TABLE_REALISASI_DATA dihapus: TableRealisasi kini memakai data dari
+// /api/penugasan/dashboard.
 
 export const TABLE_BERJALAN_DATA = [
   { no: 1, program: 'Rehabilitasi Lahan Desa Sukamaju', lokasi: 'Cipatat', sumber: 'Donasi', tahap: 'Pelaksanaan Penanaman', kategori: 'Pelaksanaan', progress: '83,00%', tanggal: '11 Mei 2025' },
