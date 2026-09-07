@@ -8,7 +8,11 @@ import {
 } from 'react-icons/hi2';
 import { FiChevronDown } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { getProgramCsrByIdAPI, updateProgramCsrStatusAPI } from '@/services/program-csr.service';
+import {
+  getProgramCsrByIdAPI,
+  updateProgramCsrStatusAPI,
+  catatPendanaanCsrAPI,
+} from '@/services/program-csr.service';
 
 type PaymentTab = 'QR' | 'VA';
 
@@ -70,9 +74,18 @@ const PendanaanProgram: React.FC = () => {
     const loadingToast = toast.loading('Memproses status pembayaran...');
 
     try {
+      // Catat pendanaan di transaksi_csrs dulu. Baris ini yang dipakai sebagai
+      // bukti kepemilikan program di Modul Investasi CSR, termasuk saat mitra
+      // ingin menghentikan pendanaan.
+      await catatPendanaanCsrAPI({
+        program_csr_id: id,
+        nominal: Number(programData?.anggaran || 0),
+        status: 'Dibayar',
+      });
+
       // PERBAIKAN ALUR: Setelah bayar lunas, barulah statusnya menjadi 'Selesai'
       await updateProgramCsrStatusAPI(id, { status: 'Selesai' });
-      
+
       toast.success('Pembayaran Berhasil! Pendanaan Selesai.', { id: loadingToast });
       navigate('/admin/csr/tinjau-proposal');
     } catch (error: any) {
