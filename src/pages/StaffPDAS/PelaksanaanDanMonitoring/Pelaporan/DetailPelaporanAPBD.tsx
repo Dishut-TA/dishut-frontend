@@ -1,5 +1,18 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
+import useDetailPenugasan from '@/hooks/useDetailPenugasan';
+import StatusMuat from '@/components/StatusMuat';
+import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
+
+const tanggalId = (nilai?: string | null) => {
+  if (!nilai) return '-';
+  const tanggal = new Date(nilai);
+  if (Number.isNaN(tanggal.getTime())) return '-';
+  return tanggal.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+const angkaId = (nilai?: number | null) =>
+  nilai === null || nilai === undefined ? '-' : Number(nilai).toLocaleString('id-ID');
 import { 
   HiOutlineMapPin,
   HiOutlineMap,
@@ -17,6 +30,13 @@ const DetailPelaporanAPBD: React.FC = () => {
   const status = location.state?.status || 'Draft'; 
   const isDisahkan = status === 'Disahkan';
 
+  const { id } = useParams();
+  const { data, isLoading, error } = useDetailPenugasan(id);
+
+  const target = data?.stats.targetTanam ?? 0;
+  const realisasi = data?.stats.tanamanHidup ?? 0;
+  const persentase = target > 0 ? (realisasi / target) * 100 : 0;
+
   // HELPER COMPONENTS
   const DataRow = ({ label, value }: { label: string; value: string }) => (
     <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 text-2.75 sm:text-xs">
@@ -29,6 +49,13 @@ const DetailPelaporanAPBD: React.FC = () => {
   );
 
   return (
+    <StatusMuat
+      isLoading={isLoading}
+      error={error}
+      data={data}
+      loadingText="Memuat data laporan APBD..."
+      emptyText="Data laporan APBD tidak ditemukan."
+    >
     <div className="flex flex-col gap-6 w-full max-w-screen-2xl mx-auto pb-28 animate-in fade-in duration-300">
       
       {/* 1. HEADER PAGE */}
@@ -73,29 +100,25 @@ const DetailPelaporanAPBD: React.FC = () => {
                 <div className="w-12 h-12 rounded-full bg-[#EBF8F1] text-[#185325] flex items-center justify-center shrink-0"><PiPlant className="w-6 h-6" /></div>
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 min-w-0">
                   <div className="space-y-3">
-                    <DataRow label="ID Program" value="PRG-2026-0007" />
-                    <DataRow label="Nama Program" value="Rehabilitasi Mangrove Karangsong" />
-                    <DataRow label="Jenis Program" value="Mangrove" />
-                    <DataRow label="Sumber Dana" value="APBD" />
-                    <DataRow label="Lokasi" value="Desa Karangsong, Kec. Indramayu, Kab. Indramayu" />
-                    <DataRow label="Luas Area" value="4,2 Ha" />
+                    <DataRow label="ID Program" value={String(data?.id ?? '-')} />
+                    <DataRow label="Nama Program" value={data?.programName || '-'} />
+                    <DataRow label="Jenis Program" value={data?.raw?.penugasanable?.jenis_tanaman || '-'} />
+                    <DataRow label="Sumber Dana" value={data?.sumberDana || '-'} />
+                    <DataRow label="Lokasi" value={data?.lokasi || '-'} />
+                    <DataRow label="Luas Area" value={data?.luas || '-'} />
                   </div>
                   <div className="space-y-3">
-                    <DataRow label="Tanggal Pelaksanaan" value="12 Juli 2026" />
-                    <DataRow label="Tanggal Selesai" value="15 September 2026" />
-                    <DataRow label="Target Tanam" value="2.500 Pohon" />
-                    <DataRow label="Realisasi Tanam" value="2.480 Pohon (99,2%)" />
-                    <DataRow label="Penyuluh" value="Ahmad Fauzi" />
-                    <DataRow label="KTH" value="KTH Karangsong Lestari" />
+                    <DataRow label="Tanggal Pelaksanaan" value={tanggalId(data?.tanggal_penugasan)} />
+                    <DataRow label="Tanggal Selesai" value={tanggalId(data?.batas_waktu)} />
+                    <DataRow label="Target Tanam" value={`${angkaId(target)} Pohon`} />
+                    <DataRow label="Realisasi Tanam" value={`${angkaId(realisasi)} Pohon (${persentase.toFixed(1).replace('.', ',')}%)`} />
+                    <DataRow label="Penyuluh" value={data?.penyuluh || '-'} />
+                    <DataRow label="KTH" value={data?.kth || '-'} />
                   </div>
                 </div>
               </div>
-              <div className="w-full lg:w-55 h-40 bg-[#EBF3FA] rounded-xl border border-gray-200 overflow-hidden relative flex flex-col shrink-0">
-                <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=400&q=80" alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                <HiOutlineMapPin className="w-8 h-8 text-red-500 drop-shadow-md relative z-10 m-auto" />
-                <a href="#" className="absolute bottom-0 inset-x-0 bg-white p-2.5 text-blue-600 text-xs font-bold flex items-center justify-center gap-1.5 border-t border-gray-100 hover:bg-gray-50 transition-colors">
-                  <HiOutlineMap className="w-3.5 h-3.5"/> Lihat di Peta
-                </a>
+              <div className="w-full lg:w-55 h-40 rounded-xl border border-gray-200 overflow-hidden shrink-0">
+                <PetaPetakUkur petakUkurs={data?.petakUkurs} emptyMessage="Batas petak ukur belum digambar." />
               </div>
             </div>
           </div>
@@ -364,6 +387,7 @@ const DetailPelaporanAPBD: React.FC = () => {
       </div>
 
     </div>
+    </StatusMuat>
   );
 };
 
