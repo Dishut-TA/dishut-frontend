@@ -6,6 +6,8 @@ export interface StepData {
   title: string;
   status: 'Selesai' | 'Belum Mulai' | 'Proses';
   description: string;
+  photoUrl?: string;
+  date?: string;
 }
 
 interface TimelineStepProps {
@@ -43,7 +45,14 @@ const TimelineStep: React.FC<TimelineStepProps> = ({ step, isLast }) => {
         </div>
 
         <div className="flex flex-col gap-3">
-          <div className="w-20 h-16 bg-gray-200 rounded-md"></div>
+          {step.photoUrl ? (
+            <div className="relative">
+              <img src={step.photoUrl} alt={step.title} className="w-32 h-24 object-cover rounded-md border border-slate-200" />
+              {step.date && <p className="text-[10px] text-slate-500 mt-1">{step.date}</p>}
+            </div>
+          ) : (
+            <div className="w-20 h-16 bg-gray-200 rounded-md flex items-center justify-center text-[10px] text-gray-400">Tidak ada foto</div>
+          )}
           <p className="text-xs text-gray-400 font-medium">
             {step.description || "Deskripsi Kegiatan"}
           </p>

@@ -36,6 +36,8 @@ const MonitoringProyek: React.FC = () => {
     const fetchProjects = async () => {
       try {
         const response = await getProgramCsrSayaAPI();
+        console.log(response);
+        
         const list = (response || []).filter((item: any) => STATUS_DIMONITOR.includes(item.status));
         setProjects(list);
         if (list.length > 0) setSelectedProject(String(list[0].id));
@@ -104,6 +106,55 @@ const MonitoringProyek: React.FC = () => {
     );
   }
 
+  const STORAGE_URL = import.meta.env.VITE_STORAGE_URL || 'http://127.0.0.1:8000/storage';
+
+  const getTimelineData = (): StepData[] => {
+    const docs = hasilEvaluasi?.dokumentasi || [];
+    const getDoc = (types: string[]) => docs.find((d: any) => types.includes(d.jenis_dokumentasi));
+
+    const step1Doc = getDoc(['Foto Sebelum']);
+    const step2Doc = getDoc(['Proses Penanaman']);
+    const step3Doc = getDoc(['Kondisi Lokasi']);
+    const step4Doc = getDoc(['Partisipasi Masyarakat', 'Lainnya']);
+
+    return [
+      { 
+        id: 1, 
+        title: 'Tahap 1: Persiapan Lahan', 
+        status: step1Doc ? 'Selesai' : 'Belum Mulai', 
+        description: step1Doc?.keterangan || 'Menunggu dokumentasi persiapan lahan dari penyuluh.',
+        photoUrl: step1Doc ? `${STORAGE_URL}/${step1Doc.file_path}` : undefined,
+        date: step1Doc ? new Date(step1Doc.created_at).toLocaleDateString('id-ID') : undefined
+      },
+      { 
+        id: 2, 
+        title: 'Tahap 2: Pembibitan & Penanaman', 
+        status: step2Doc ? 'Selesai' : 'Belum Mulai', 
+        description: step2Doc?.keterangan || 'Menunggu dokumentasi proses penanaman dari penyuluh.',
+        photoUrl: step2Doc ? `${STORAGE_URL}/${step2Doc.file_path}` : undefined,
+        date: step2Doc ? new Date(step2Doc.created_at).toLocaleDateString('id-ID') : undefined
+      },
+      { 
+        id: 3, 
+        title: 'Tahap 3: Perawatan Pemeliharaan', 
+        status: step3Doc ? 'Selesai' : 'Belum Mulai', 
+        description: step3Doc?.keterangan || 'Menunggu dokumentasi perawatan dan pemeliharaan.',
+        photoUrl: step3Doc ? `${STORAGE_URL}/${step3Doc.file_path}` : undefined,
+        date: step3Doc ? new Date(step3Doc.created_at).toLocaleDateString('id-ID') : undefined
+      },
+      { 
+        id: 4, 
+        title: 'Tahap 4: Rehabilitasi Selesai', 
+        status: step4Doc ? 'Selesai' : 'Belum Mulai', 
+        description: step4Doc?.keterangan || 'Menunggu dokumentasi penyelesaian rehabilitasi.',
+        photoUrl: step4Doc ? `${STORAGE_URL}/${step4Doc.file_path}` : undefined,
+        date: step4Doc ? new Date(step4Doc.created_at).toLocaleDateString('id-ID') : undefined
+      },
+    ];
+  };
+
+  const timelineData = getTimelineData();
+
   return (
     <div className="flex flex-col w-full mx-auto pb-12">
 
@@ -131,11 +182,11 @@ const MonitoringProyek: React.FC = () => {
         </div>
 
         <div className="flex flex-col">
-          {mockTimelineData.map((step, index) => (
+          {timelineData.map((step, index) => (
             <TimelineStep
               key={step.id}
               step={step}
-              isLast={index === mockTimelineData.length - 1}
+              isLast={index === timelineData.length - 1}
             />
           ))}
         </div>
@@ -144,7 +195,7 @@ const MonitoringProyek: React.FC = () => {
       <HentikanPendanaanModal
         isOpen={isModalOpen}
         namaProgram={hasilEvaluasi?.nama_program || ''}
-        persentaseTumbuh={hasilEvaluasi?.persentase_tumbuh ?? null}
+        persentaseTumbuh={hasilEvaluasi?.persentase_tumbuh_terakhir ?? null}
         ambangBatas={hasilEvaluasi?.ambang_batas_tumbuh ?? 75}
         isSubmitting={isSubmitting}
         onClose={() => setIsModalOpen(false)}

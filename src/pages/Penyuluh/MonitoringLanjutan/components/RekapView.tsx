@@ -305,7 +305,7 @@ export const RekapView: React.FC<RekapViewProps> = ({
         <button onClick={() => navigate(-1)} className="px-6 py-2.5 border border-slate-300 text-slate-700 bg-white rounded-full text-sm font-bold flex items-center gap-2 shadow-sm transition-colors cursor-pointer hover:bg-slate-50">
           <HiOutlineArrowLeft className="w-4 h-4 stroke-2" /> Kembali
         </button>
-        {(activeProgram as any)?.status !== 'Monitoring Selesai' && (
+        {(activeProgram as any)?.status !== 'Monitoring Selesai' && (activeProgram as any)?.status !== 'Dihentikan' && (
           <button
             disabled={isSubmitting}
             onClick={async () => {
@@ -317,7 +317,7 @@ export const RekapView: React.FC<RekapViewProps> = ({
                   headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success(`Hasil ${isTindakLanjut ? 'Penyulaman' : 'Monitoring'} berhasil dikirim!`);
-                navigate('/penyuluh/monitoring-program');
+                navigate('/penyuluh/monitoring-lanjutan');
               } catch (err) {
                 console.error(err);
                 toast.error('Gagal mengirim hasil monitoring.');
@@ -333,6 +333,11 @@ export const RekapView: React.FC<RekapViewProps> = ({
         {(activeProgram as any)?.status === 'Monitoring Selesai' && (
           <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 border border-emerald-200 rounded-full text-sm font-bold text-emerald-700">
             <HiOutlineInformationCircle className="w-4 h-4" /> Monitoring Selesai
+          </div>
+        )}
+        {(activeProgram as any)?.status === 'Dihentikan' && (
+          <div className="flex items-center gap-2 px-5 py-2.5 bg-red-50 border border-red-200 rounded-full text-sm font-bold text-red-700">
+            <HiOutlineInformationCircle className="w-4 h-4" /> Program Dihentikan
           </div>
         )}
       </div>

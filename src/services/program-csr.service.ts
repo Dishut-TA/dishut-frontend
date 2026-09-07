@@ -128,11 +128,12 @@ export interface HasilEvaluasiCsr {
   nama_program: string;
   status_program: string;
   ambang_batas_tumbuh: number;
-  persentase_tumbuh: number | null;
+  persentase_tumbuh_terakhir: number | null;
   di_bawah_ambang_batas: boolean;
   boleh_dihentikan: boolean;
   alasan_tidak_boleh: string | null;
   evaluasi: any | null;
+  dokumentasi?: any[];
   penghentian: {
     alasan: string | null;
     dihentikan_at: string | null;

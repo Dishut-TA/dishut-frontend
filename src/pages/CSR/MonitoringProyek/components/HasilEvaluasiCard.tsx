@@ -10,7 +10,7 @@ interface HasilEvaluasiCardProps {
 const HasilEvaluasiCard: React.FC<HasilEvaluasiCardProps> = ({ hasil, onHentikan }) => {
   const {
     ambang_batas_tumbuh,
-    persentase_tumbuh,
+    persentase_tumbuh_terakhir,
     di_bawah_ambang_batas,
     boleh_dihentikan,
     alasan_tidak_boleh,
@@ -19,7 +19,7 @@ const HasilEvaluasiCard: React.FC<HasilEvaluasiCardProps> = ({ hasil, onHentikan
   } = hasil;
 
   const sudahDihentikan = status_program === 'Dihentikan';
-  const warna = persentase_tumbuh === null
+  const warna = persentase_tumbuh_terakhir === null
     ? 'text-gray-400'
     : di_bawah_ambang_batas
       ? 'text-red-600'
@@ -36,7 +36,7 @@ const HasilEvaluasiCard: React.FC<HasilEvaluasiCardProps> = ({ hasil, onHentikan
         <div className="flex flex-col gap-1">
           <span className="text-sm text-gray-500">Persentase Tumbuh</span>
           <span className={`text-3xl font-bold ${warna}`}>
-            {persentase_tumbuh !== null ? `${persentase_tumbuh}%` : 'Belum dievaluasi'}
+            {persentase_tumbuh_terakhir !== null ? `${persentase_tumbuh_terakhir}%` : 'Belum dievaluasi'}
           </span>
         </div>
         <div className="flex flex-col gap-1">
