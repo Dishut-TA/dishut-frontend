@@ -5,7 +5,6 @@ import {
   HiOutlineDocument,
   HiOutlinePaperAirplane,
   HiEllipsisVertical,
-  HiOutlineMapPin,
   HiOutlineCalendar,
   HiOutlineLockClosed,
   HiOutlineCheckCircle,
@@ -15,6 +14,7 @@ import {
 } from 'react-icons/hi2';
 import { PiPlant } from 'react-icons/pi';
 import { getPenugasanByIdAPI, storeMonitoringAPI } from '../../../../services/penugasan.service';
+import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
 
 const TugaskanMonitoring: React.FC = () => {
   const navigate = useNavigate();
@@ -87,6 +87,7 @@ const TugaskanMonitoring: React.FC = () => {
           penyuluh: penugasan.penyuluh?.username || penugasan.penyuluh?.name || penugasan.penyuluh?.nama_pengguna || '-',
           tanggal_penugasan: penugasan.tanggal_penugasan,
           jenis_kegiatan: penugasan.jenis_kegiatan,
+          petakUkurs: penugasan.petak_ukurs || penugasan.petakUkurs || [],
         });
       } catch (error) {
         console.error("Gagal mengambil data detail:", error);
@@ -158,13 +159,11 @@ const TugaskanMonitoring: React.FC = () => {
 
               {/* Kolom Peta, dipindah ke kanan pada layout lg, tapi masuk flow grid di mobile */}
               <div className="row-span-4 hidden md:block lg:hidden">
-                <div className="w-full h-full min-h-25 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400')] bg-cover bg-center border border-slate-200">
-                  <HiOutlineMapPin className="w-6 h-6 text-red-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow-md" />
-                  <div className="absolute bottom-2 left-2">
-                    <button className="text-[10px] font-bold text-blue-600 bg-white/90 px-2 py-1 rounded shadow-sm flex items-center gap-1">
-                      Lihat di Peta <HiOutlineMapPin className="w-3 h-3" />
-                    </button>
-                  </div>
+                <div className="w-full h-full min-h-25 rounded-lg overflow-hidden border border-slate-200">
+                  <PetaPetakUkur
+                    petakUkurs={programData?.petakUkurs}
+                    emptyMessage="Belum ada batas petak ukur yang digambar penyuluh."
+                  />
                 </div>
               </div>
 

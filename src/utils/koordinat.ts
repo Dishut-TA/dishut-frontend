@@ -33,3 +33,28 @@ export const parseKoordinat = (teks?: string | null): [number, number] | null =>
 
   return [lat, lng];
 };
+
+/**
+ * Centroid sederhana dari polygon petak ukur (petak_ukurs.polygon_data).
+ *
+ * Menerima simpul berbentuk {lat, lng} maupun {latitude, longitude}, dan
+ * mengabaikan simpul yang koordinatnya bukan angka. Mengembalikan null bila
+ * tidak ada simpul valid, sehingga pemanggil bisa menyembunyikan peta.
+ */
+export const centroidPolygon = (polygon: any): [number, number] | null => {
+  if (!Array.isArray(polygon)) return null;
+
+  const titik = polygon.reduce<[number, number][]>((acc, simpul: any) => {
+    const lat = Number(simpul?.lat ?? simpul?.latitude);
+    const lng = Number(simpul?.lng ?? simpul?.longitude);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) acc.push([lat, lng]);
+    return acc;
+  }, []);
+
+  if (titik.length === 0) return null;
+
+  return [
+    titik.reduce((s, t) => s + t[0], 0) / titik.length,
+    titik.reduce((s, t) => s + t[1], 0) / titik.length,
+  ];
+};

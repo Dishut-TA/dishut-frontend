@@ -20,6 +20,8 @@ import {
 } from 'react-icons/hi2';
 import { PiPlant, PiTree, PiLeaf } from 'react-icons/pi';
 import { getPenugasanByIdAPI } from '../../../../services/penugasan.service';
+import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
+import { centroidPolygon } from '@/utils/koordinat';
 
 type MonitoringStatus = 'Siap Monitoring' | 'Berjalan' | 'Menunggu' | 'Menunggu Penugasan' | 'Menunggu Evaluasi' | 'Tindak Lanjut' | 'Selesai' | 'Dihentikan';
 
@@ -98,11 +100,17 @@ const DetailMonitoringPage: React.FC = () => {
         const dokumentasiFromApi = penugasan.dokumentasi || [];
         const countDokumentasi = dokumentasiFromApi.length;
 
-        const geotagList = petakUkurs.map((pu: any) => ({
-          lat: pu.latitude ?? pu.lat ?? pu.lokasi_latitude ?? pu.latitude_ ?? null,
-          lng: pu.longitude ?? pu.lng ?? pu.lokasi_longitude ?? pu.longitude_ ?? null,
-          nama: pu.nama || pu.nama_petak || `PU ${pu.id || ''}`.trim() || 'Petak Ukur'
-        })).filter((point: any) => point.lat !== null && point.lng !== null);
+        // Petak ukur tidak punya kolom latitude/longitude. Koordinatnya tersimpan
+        // sebagai polygon_data [{lat, lng}], jadi titik geotag adalah centroidnya.
+        const geotagList = petakUkurs.map((pu: any) => {
+          const pusat = centroidPolygon(pu?.polygon_data);
+          if (!pusat) return null;
+          return {
+            lat: pusat[0],
+            lng: pusat[1],
+            nama: pu.nama || pu.nama_petak || `PU ${pu.id || ''}`.trim() || 'Petak Ukur'
+          };
+        }).filter(Boolean);
 
         setProgramData({
           id: penugasan.id,
@@ -126,6 +134,7 @@ const DetailMonitoringPage: React.FC = () => {
             countDokumentasi
           },
           geotagList,
+          petakUkurs,
           dokumentasiList: dokumentasiFromApi,
           pelaksanaan: penugasan.pelaksanaan_penanaman || null,
           riwayatMonitoring: penugasan.riwayat_monitoring || []
@@ -318,18 +327,11 @@ const DetailMonitoringPage: React.FC = () => {
               <h3 className="text-sm font-bold text-slate-800">Dokumentasi & Peta Lokasi</h3>
             </div>
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="h-40 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600')] bg-cover bg-center border border-slate-200">
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <HiOutlineMapPin className="w-5 h-5 text-red-500 absolute top-1/4 left-1/4" />
-                  <HiOutlineMapPin className="w-5 h-5 text-green-500 absolute top-1/3 left-1/2" />
-                  <HiOutlineMapPin className="w-5 h-5 text-green-500 absolute top-1/2 left-1/3" />
-                  <HiOutlineMapPin className="w-5 h-5 text-orange-500 absolute bottom-1/3 right-1/4" />
-                </div>
-                <div className="absolute bottom-3 left-3">
-                  <button className="px-3 py-1.5 bg-white rounded-md text-[11px] font-bold text-blue-600 shadow-sm flex items-center gap-1 hover:bg-slate-50 transition-colors cursor-pointer">
-                    Lihat di Peta <HiOutlineMapPin className="w-3 h-3" />
-                  </button>
-                </div>
+              <div className="h-40 rounded-lg overflow-hidden border border-slate-200">
+                <PetaPetakUkur
+                  petakUkurs={programData?.petakUkurs}
+                  emptyMessage="Belum ada batas petak ukur yang digambar penyuluh."
+                />
               </div>
               <div className="flex flex-col gap-2">
                 <div className="grid grid-cols-4 gap-2 flex-1">
@@ -505,10 +507,9 @@ const DetailMonitoringPage: React.FC = () => {
               <div><p className="text-[10px] text-slate-500 font-semibold mb-1">Sumber Dana</p><p className="text-xs font-bold text-slate-900">APBD</p></div>
             </div>
             <div className="w-full md:hidden lg:block lg:w-48 shrink-0">
-              <div className="w-full h-24 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400')] bg-cover bg-center border border-slate-200">
-                <div className="absolute inset-0 flex items-center justify-center"><HiOutlineMapPin className="w-6 h-6 text-green-500 drop-shadow" /></div>
+              <div className="w-full h-24 rounded-lg overflow-hidden border border-slate-200">
+                <PetaPetakUkur petakUkurs={programData?.petakUkurs} emptyMessage="Koordinat belum ada." />
               </div>
-              <button className="text-[10px] font-bold text-blue-600 mt-1.5 flex items-center gap-1 hover:text-blue-700 cursor-pointer">Lihat di Peta <HiOutlineMapPin className="w-3 h-3" /></button>
             </div>
           </div>
         </div>
@@ -834,7 +835,9 @@ const DetailMonitoringPage: React.FC = () => {
             </div>
             <div className="w-full md:hidden lg:block lg:w-48 shrink-0">
               <p className="text-[10px] text-slate-500 font-semibold mb-2">Lokasi Program</p>
-              <div className="w-full h-32 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400')] bg-cover bg-center border border-slate-200"></div>
+              <div className="w-full h-32 rounded-lg overflow-hidden border border-slate-200">
+                <PetaPetakUkur petakUkurs={programData?.petakUkurs} emptyMessage="Koordinat belum ada." />
+              </div>
             </div>
           </div>
         </div>
