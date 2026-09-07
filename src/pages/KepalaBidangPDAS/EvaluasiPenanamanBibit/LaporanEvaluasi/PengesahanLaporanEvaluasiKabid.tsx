@@ -129,7 +129,7 @@ const PengesahanLaporanEvaluasiKabid: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-500">
+      <div className="flex flex-col items-center justify-center min-h-100 text-gray-500">
         <div className="w-8 h-8 border-4 border-[#185325] border-t-transparent rounded-full animate-spin mb-3"></div>
         <p className="text-sm font-semibold">Memuat dokumen pengesahan evaluasi...</p>
       </div>
@@ -311,4 +311,4 @@ const PengesahanLaporanEvaluasiKabid: React.FC = () => {
   );
 };
 
-export default PengesahanLaporanEvaluasiKabid;
+export default PengesahanLaporanEvaluasiKabid;

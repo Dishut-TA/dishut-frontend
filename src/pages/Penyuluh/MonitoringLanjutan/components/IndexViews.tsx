@@ -160,11 +160,15 @@ export const DataTable = ({
       jenisProgram = 'Proposal CSR';
     }
 
-    // Jika jenis_kegiatan adalah 'Tindak Lanjut', badge selalu "Tindak Lanjut"
-    // terlepas dari nilai status di DB (mis. 'Menunggu Evaluasi')
-    let statusText = item.jenis_kegiatan === 'Tindak Lanjut'
-      ? 'Tindak Lanjut'
-      : mapStatus(item.status);
+    // Jika status DB sudah 'Monitoring Selesai', itu harus selalu diprioritaskan
+    // (termasuk untuk jenis_kegiatan 'Tindak Lanjut' yang sudah selesai dikirim).
+    // Selain itu, jika jenis_kegiatan 'Tindak Lanjut' dan status belum selesai,
+    // tampilkan "Tindak Lanjut".
+    let statusText = item.status === 'Monitoring Selesai'
+      ? 'Monitoring Selesai'
+      : item.jenis_kegiatan === 'Tindak Lanjut'
+        ? 'Tindak Lanjut'
+        : mapStatus(item.status);
     let statusColorKey = 'siap';
     let statusSubText = '';
 
@@ -357,11 +361,10 @@ export const DataTable = ({
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`w-8 h-8 rounded-lg text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer ${
-                currentPage === page
+              className={`w-8 h-8 rounded-lg text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer ${currentPage === page
                   ? 'border border-emerald-500 bg-emerald-50 text-emerald-700'
                   : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-              }`}
+                }`}
             >
               {page}
             </button>

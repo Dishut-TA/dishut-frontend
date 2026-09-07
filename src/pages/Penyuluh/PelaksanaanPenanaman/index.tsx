@@ -47,7 +47,7 @@ const StatusBadge = ({ status }: { status: StatusPelaksanaan }) => {
     'Selesai': 'bg-emerald-50 text-emerald-600 border border-emerald-200',
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full ${styles[status]}`}>
+    <span className={`inline-flex items-center justify-center px-2.5 py-1 text-[11px] font-semibold rounded-full whitespace-nowrap ${styles[status]}`}>
       {status}
     </span>
   );
@@ -93,7 +93,7 @@ const FilterSection = ({
   ];
 
   return (
-    <div className="flex flex-col gap-4 mb-6 mt-2">
+    <div className="flex flex-col gap-4 mb-4">
       {/* Top Controls: Search Bar, Filter Program, & Combined Date Range Field */}
       <div className="flex flex-col xl:flex-row items-center gap-3 w-full">
         {/* Search Input */}
@@ -180,81 +180,86 @@ const FilterSection = ({
 };
 
 const KegiatanTable = ({ data, startIndex, navigate }: { data: ProgramData[], startIndex: number, navigate: any }) => (
-  <div className="overflow-x-auto">
-    <div className="px-4 py-3 border-b border-slate-100">
+  <div className="w-full overflow-x-auto">
+    <div className="px-5 py-3.5 border-b border-slate-100 bg-white">
       <h3 className="text-sm font-bold text-slate-800">Daftar Penugasan Kegiatan</h3>
     </div>
-    <table className="w-full text-left text-sm text-slate-600 whitespace-nowrap">
-      <thead className="bg-[#DCECE0] text-[#3A4D3F] text-xs uppercase tracking-wider font-bold">
+    <table className="w-full text-left text-xs text-slate-600 border-collapse">
+      <thead className="bg-[#DCECE0] text-[#3A4D3F] text-[11px] uppercase tracking-wider font-bold">
         <tr>
-          <th className="px-4 py-4 font-bold">No</th>
-          <th className="px-4 py-4 font-bold">ID Penugasan</th>
-          <th className="px-4 py-4 font-bold">ID Program</th>
-          <th className="px-4 py-4 font-bold">Program / Lokasi</th>
-          <th className="px-4 py-4 font-bold">KTH</th>
-          <th className="px-4 py-4 font-bold">Target Kegiatan</th>
-          <th className="px-4 py-4 font-bold">Total PU</th>
-          <th className="px-4 py-4 font-bold">Periode Pelaksanaan</th>
-          <th className="px-4 py-4 font-bold">Progres</th>
-          <th className="px-4 py-4 font-bold">Status</th>
-          <th className="px-4 py-4 font-bold text-center">Aksi</th>
+          <th className="px-3 py-3.5 text-center w-12 font-bold">No</th>
+          <th className="px-3 py-3.5 w-28 font-bold whitespace-nowrap">ID Penugasan</th>
+          <th className="px-3 py-3.5 w-24 font-bold whitespace-nowrap">ID Program</th>
+          <th className="px-4 py-3.5 min-w-[200px] font-bold">Program / Lokasi</th>
+          <th className="px-3 py-3.5 w-28 font-bold">KTH</th>
+          <th className="px-3 py-3.5 min-w-[160px] font-bold">Target Kegiatan</th>
+          <th className="px-3 py-3.5 w-20 text-center font-bold whitespace-nowrap">Total PU</th>
+          <th className="px-3 py-3.5 font-bold whitespace-nowrap">Periode Pelaksanaan</th>
+          {/* <th className="px-3 py-3.5 font-bold">Progres</th> */}
+          <th className="px-3 py-3.5 w-28 text-center font-bold">Status</th>
+          <th className="px-4 py-3.5 w-36 text-center font-bold">Aksi</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-slate-100">
+      <tbody className="divide-y divide-slate-100 bg-white">
         {data.length === 0 ? (
           <tr>
-            <td colSpan={11} className="px-4 py-8 text-center text-slate-500">Tidak ada data penugasan kegiatan.</td>
+            <td colSpan={10} className="px-4 py-8 text-center text-slate-500 font-medium">
+              Tidak ada data penugasan kegiatan.
+            </td>
           </tr>
         ) : data.map((item, idx) => (
-          <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-            <td className="px-4 py-4 font-medium text-center text-slate-700">{startIndex + idx + 1}</td>
-            <td className="px-4 py-4 font-bold text-[#008A4B]">{item.idPenugasan}</td>
-            <td className="px-4 py-4 text-xs font-medium text-slate-500">{item.idProgram}</td>
-            <td className="px-4 py-4">
-              <div className="text-xs font-bold text-slate-900 mb-1">{item.namaProgram}</div>
-              <div className="text-[11px] text-slate-500 whitespace-pre-line leading-snug max-w-xs">{item.lokasi}</div>
+          <tr key={item.id} className="hover:bg-slate-50/70 transition-colors align-middle">
+            <td className="px-3 py-3.5 font-medium text-center text-slate-700">{startIndex + idx + 1}</td>
+            <td className="px-3 py-3.5 font-bold text-[#008A4B] whitespace-nowrap">{item.idPenugasan}</td>
+            <td className="px-3 py-3.5 text-[11px] font-medium text-slate-500 whitespace-nowrap">{item.idProgram}</td>
+            <td className="px-4 py-3.5">
+              <div className="font-bold text-slate-900 text-xs mb-0.5 max-w-xs">{item.namaProgram}</div>
+              <div className="text-[11px] text-slate-500 leading-snug max-w-xs">{item.lokasi}</div>
             </td>
-            <td className="px-4 py-4 text-xs font-medium text-slate-700">{item.kth}</td>
-            <td className="px-4 py-4">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-1">
-                <PiPlant className="w-4 h-4 text-[#008A4B]" /> {item.targetKegiatan}
+            <td className="px-3 py-3.5 text-xs font-medium text-slate-700">{item.kth}</td>
+            <td className="px-3 py-3.5">
+              <div className="flex items-center gap-1.5 font-bold text-slate-800 mb-0.5 text-xs">
+                <PiPlant className="w-4 h-4 text-[#008A4B] shrink-0" /> 
+                <span>{item.targetKegiatan}</span>
               </div>
               <div className="text-[11px] text-slate-500">{item.targetBibit}</div>
             </td>
-            <td className="px-4 py-4 text-xs font-medium text-slate-700">{item.totalPu}</td>
-            <td className="px-4 py-4 text-[11px]">
-              <div className="font-medium text-slate-700 mb-1">{item.periodeMulai} <br /> – {item.periodeSelesai}</div>
-              {item.sisaHari && <div className={`font-bold ${item.sisaHariColor}`}>{item.sisaHari}</div>}
+            <td className="px-3 py-3.5 text-xs font-semibold text-slate-700 text-center whitespace-nowrap">{item.totalPu}</td>
+            <td className="px-3 py-3.5 text-xs font-medium text-slate-700 whitespace-nowrap">
+              {item.periodeMulai} – {item.periodeSelesai}
+              {item.sisaHari && <span className={`ml-2 font-bold ${item.sisaHariColor}`}>{item.sisaHari}</span>}
             </td>
-            <td className="px-4 py-4">
+            {/* <td className="px-3 py-3.5">
               <div className="text-[10px] font-medium text-slate-700 mb-0.5">{item.progresPu}</div>
               <div className="text-[10px] text-slate-500 mb-1.5">{item.progresBibit}</div>
               <div className="w-24 bg-slate-200 rounded-full h-1.5 overflow-hidden">
                 <div className="bg-[#008A4B] h-1.5 rounded-full" style={{ width: `${item.progresPercent}%` }}></div>
               </div>
+            </td> */}
+            <td className="px-3 py-3.5 text-center">
+              <StatusBadge status={item.status} />
             </td>
-            <td className="px-4 py-4"><StatusBadge status={item.status} /></td>
-            <td className="px-4 py-4 text-center">
+            <td className="px-4 py-3.5 text-center">
               {item.status === 'Ditugaskan' && (
                 <button
                   onClick={() => navigate(`/admin/penyuluh/pelaksanaan-penanaman/create/${item.id}`)}
-                  className="inline-flex items-center justify-between w-40 px-4 py-2 text-xs font-bold text-white bg-[#008A4B] rounded-full hover:bg-emerald-800 transition-colors shadow-sm cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 w-full max-w-[140px] px-3 py-1.5 text-xs font-bold text-white bg-[#008A4B] rounded-full hover:bg-emerald-800 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
                 >
-                  Mulai Pelaksanaan <HiChevronRight className="w-4 h-4 stroke-2" />
+                  Mulai Pelaksanaan <HiChevronRight className="w-3.5 h-3.5 stroke-2" />
                 </button>
               )}
               {item.status === 'Berjalan' && (
                 <button
                   onClick={() => navigate(`/admin/penyuluh/pelaksanaan-penanaman/create/${item.id}`)}
-                  className="inline-flex items-center justify-between w-40 px-4 py-2 text-xs font-bold text-blue-600 bg-white border border-blue-500 rounded-full hover:bg-blue-50 transition-colors shadow-sm cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 w-full max-w-[140px] px-3 py-1.5 text-xs font-bold text-blue-600 bg-white border border-blue-500 rounded-full hover:bg-blue-50 transition-colors shadow-sm cursor-pointer whitespace-nowrap"
                 >
-                  Lanjutkan <HiChevronRight className="w-4 h-4 stroke-2" />
+                  Lanjutkan <HiChevronRight className="w-3.5 h-3.5 stroke-2" />
                 </button>
               )}
               {item.status === 'Selesai' && (
                 <button
                   onClick={() => navigate(`/admin/penyuluh/pelaksanaan-penanaman/create/${item.id}`)}
-                  className="inline-flex items-center justify-center gap-1.5 w-40 px-4 py-2 text-xs font-bold text-[#008A4B] bg-white border border-[#008A4B] rounded-full hover:bg-emerald-50 transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold text-[#008A4B] bg-white border border-[#008A4B] rounded-full hover:bg-emerald-50 transition-colors cursor-pointer whitespace-nowrap"
                 >
                   <HiOutlineEye className="w-4 h-4 stroke-2" /> Lihat Detail
                 </button>
@@ -282,7 +287,7 @@ const Pagination = ({
   const endItem = Math.min(currentPage * 5, totalData);
 
   return (
-    <div className="flex items-center justify-between text-xs text-slate-500 px-4 py-4 border-t border-slate-100">
+    <div className="flex items-center justify-between text-xs text-slate-500 px-5 py-3.5 border-t border-slate-100 bg-white">
       <span className="font-medium">
         Menampilkan {startItem} - {endItem} dari {totalData} data
       </span>
@@ -290,7 +295,7 @@ const Pagination = ({
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-2 rounded-lg border border-slate-200 text-slate-500 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           <HiChevronLeft className="w-4 h-4" />
         </button>
@@ -299,7 +304,7 @@ const Pagination = ({
           <button
             key={page}
             onClick={() => onPageChange(page)}
-            className={`w-8 h-8 rounded-lg text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer ${
+            className={`w-7 h-7 rounded-lg text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer ${
               currentPage === page
                 ? 'border border-emerald-500 bg-emerald-50 text-emerald-700'
                 : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
@@ -312,7 +317,7 @@ const Pagination = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages || totalPages === 0}
-          className="p-2 rounded-lg border border-slate-200 text-slate-500 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           <HiChevronRight className="w-4 h-4" />
         </button>
@@ -460,7 +465,7 @@ const PelaksanaanPenanamanIndex: React.FC = () => {
           endDate={endDate}
           setEndDate={setEndDate}
         />
-        <div className="border border-slate-200 rounded-lg overflow-hidden mt-2">
+        <div className="border border-slate-200 rounded-lg overflow-hidden">
           {isLoading ? (
             <div className="py-12 text-center text-slate-500 font-medium">Memuat data penugasan...</div>
           ) : (

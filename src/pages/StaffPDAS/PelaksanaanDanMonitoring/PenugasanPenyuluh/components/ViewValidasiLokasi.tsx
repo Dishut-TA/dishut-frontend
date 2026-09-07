@@ -41,8 +41,19 @@ export default function ViewValidasiLokasi({ status, activeId, data }: Props) {
 
   const fieldValidation = detail?.field_validations?.[0] || null;
 
+  // Resolve storage URL dari backend
+  const STORAGE_URL = (import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api').replace('/api', '/storage');
+  const resolveUrl = (url: string | null | undefined) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${STORAGE_URL}/${url}`;
+  };
+
+  // Foto validasi lapangan dari field_validations
+  const fotoValidasi = fieldValidation?.foto_lokasi_url ? [resolveUrl(fieldValidation.foto_lokasi_url)] : [];
+
   return (
-    <div className="max-w-[1200px] mx-auto space-y-6 animate-in fade-in duration-300">
+    <div className="max-w-300 mx-auto space-y-6 animate-in fade-in duration-300">
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -105,7 +116,7 @@ export default function ViewValidasiLokasi({ status, activeId, data }: Props) {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
           <h3 className="text-base font-bold text-gray-900 mb-6">Koordinat Lokasi Terverifikasi</h3>
           <div className="flex gap-6 items-center flex-1">
-            <div className="w-2/3 h-full rounded-xl overflow-hidden relative border border-gray-200 min-h-[200px] z-0">
+            <div className="w-2/3 h-full rounded-xl overflow-hidden relative border border-gray-200 min-h-50 z-0">
               <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%', minHeight: '200px' }} scrollWheelZoom={false}>
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -131,17 +142,25 @@ export default function ViewValidasiLokasi({ status, activeId, data }: Props) {
       <div className="grid grid-cols-1  gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-base font-bold text-gray-900 mb-6">Dokumentasi Lapangan</h3>
-          <div className="grid grid-cols-5 gap-3">
-            <div className="aspect-square rounded-lg overflow-hidden border border-gray-200"><img src="https://images.unsplash.com/photo-1511884642898-4c92249e20b6?q=80&w=200&auto=format&fit=crop" alt="Doc 1" className="w-full h-full object-cover" /></div>
-            <div className="aspect-square rounded-lg overflow-hidden border border-gray-200"><img src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=200&auto=format&fit=crop" alt="Doc 2" className="w-full h-full object-cover" /></div>
-            <div className="aspect-square rounded-lg overflow-hidden border border-gray-200"><img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=200&auto=format&fit=crop" alt="Doc 3" className="w-full h-full object-cover" /></div>
-            <div className="aspect-square rounded-lg overflow-hidden border border-gray-200"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=200&auto=format&fit=crop" alt="Doc 4" className="w-full h-full object-cover" /></div>
-            <button className="aspect-square rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center hover:bg-gray-100 transition-colors group cursor-pointer">
-              <HiOutlineCamera className="w-6 h-6 text-gray-400 group-hover:text-emerald-600 mb-2" />
-              <span className="text-xs font-bold text-gray-600 group-hover:text-emerald-600">Lihat Semua</span>
-              <span className="text-[10px] text-gray-400">12 foto</span>
-            </button>
-          </div>
+          {fotoValidasi.length > 0 ? (
+            <div className="grid grid-cols-5 gap-3">
+              {fotoValidasi.map((url, idx) => (
+                <div key={idx} className="aspect-square rounded-lg overflow-hidden border border-gray-200">
+                  <img src={url!} alt={`Dokumentasi ${idx + 1}`} className="w-full h-full object-cover" />
+                </div>
+              ))}
+              <div className="aspect-square rounded-lg border border-gray-100 bg-gray-50 flex flex-col items-center justify-center text-center p-2">
+                <HiOutlineCamera className="w-6 h-6 text-gray-300 mb-1" />
+                <span className="text-[10px] text-gray-400">{fotoValidasi.length} foto</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-gray-200 rounded-xl bg-gray-50">
+              <HiOutlineCamera className="w-8 h-8 text-gray-300 mb-2" />
+              <p className="text-sm font-bold text-gray-400">Belum ada dokumentasi lapangan</p>
+              <p className="text-xs text-gray-400 mt-1">Penyuluh belum mengunggah foto validasi lokasi</p>
+            </div>
+          )}
         </div>
 
 
