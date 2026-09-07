@@ -110,12 +110,6 @@ import DetailProgres from "./pages/StaffPDAS/PelaksanaanDanMonitoring/PenugasanP
 // import DetailHasilValidasiPenugasan from "./pages/StaffPDAS/PelaksanaanDanMonitoring/PenugasanPenyuluh/DetailHasilValidasiPenugasan";
 // import DetailVerifikasiPelaksanaan from "./pages/StaffPDAS/PelaksanaanDanMonitoring/VerifikasiMonitoring/components/DetailVerifikasiPelaksanaan";
 import MonitoringProgram from "./pages/StaffPDAS/PelaksanaanDanMonitoring/MonitoringProgram";
-import ProgresMonitoring from "./pages/StaffPDAS/PelaksanaanDanMonitoring/MonitoringProgram/ProgresMonitoring";
-import DetailTitikMonitoring from "./pages/StaffPDAS/PelaksanaanDanMonitoring/MonitoringProgram/DetailTitikMonitoring";
-import TinjauHasilMonitoring from "./pages/StaffPDAS/PelaksanaanDanMonitoring/MonitoringProgram/TinjauHasilMonitoring";
-import TindakLanjutMonitoring from "./pages/StaffPDAS/PelaksanaanDanMonitoring/MonitoringProgram/TindakLanjutMonitoring";
-import HasilMonitoringSelesai from "./pages/StaffPDAS/PelaksanaanDanMonitoring/MonitoringProgram/HasilMonitoringSelesai";
-import DetailPenugasanMonitoring from "./pages/StaffPDAS/PelaksanaanDanMonitoring/MonitoringProgram/DetailPenugasanMonitoring";
 import DetailValidasi from "./pages/Penyuluh/ValidasiLokasi/DetailValidasi";
 import MulaiKegiatan from "./pages/Penyuluh/PelaksanaanPenanaman/MulaiKegiatan";
 import MonitoringProgramRehabilitasi from "./pages/Penyuluh/MonitoringProgram";
@@ -286,13 +280,6 @@ function App() {
                   <Route path="monitoring/penugasan-pelaksanaan/detail/:id" element={<DetailPenugasan />} />
                   <Route path="monitoring/penugasan-penyuluh/progres/:id" element={<DetailProgres />} />
                   <Route path="monitoring/penugasan-penyuluh/detail/:id" element={<DetailPenugasanPenyuluh />} />
-                  <Route path="monitoring/monitoring-program" element={<MonitoringProgram />} />
-                  <Route path="monitoring/monitoring-program/penugasan/:id" element={<DetailPenugasanMonitoring />} />
-                  <Route path="monitoring/monitoring-program/progres/:id" element={<ProgresMonitoring />} />
-                  <Route path="monitoring/monitoring-program/progres/:id/titik/:titikId" element={<DetailTitikMonitoring />} />
-                  <Route path="monitoring/monitoring-program/tinjau/:id" element={<TinjauHasilMonitoring />} />
-                  <Route path="monitoring/monitoring-program/tindak-lanjut/:id" element={<TindakLanjutMonitoring />} />
-                  <Route path="monitoring/monitoring-program/hasil/:id" element={<HasilMonitoringSelesai />} />
                   <Route path="monitoring/pelaporan" element={<PelaporanList />} />
                   <Route path="monitoring/pelaporan/apbd/:id" element={<DetailPelaporanAPBD />} />
                   <Route path="monitoring/pelaporan/donasi/:id" element={<DetailPelaporanDonasi />} />

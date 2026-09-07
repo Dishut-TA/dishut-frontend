@@ -104,7 +104,7 @@ const TugaskanMonitoring: React.FC = () => {
       setIsSubmitting(true);
       await storeMonitoringAPI(id, form);
       alert('Berhasil menugaskan monitoring!');
-      navigate('/admin/staff/monitoring/monitoring-program');
+      navigate('/admin/staff/monitoring/verifikasi');
     } catch (error) {
       console.error(error);
       alert('Gagal menugaskan monitoring.');

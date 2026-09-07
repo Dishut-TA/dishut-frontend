@@ -58,7 +58,7 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Penugasan berhasil disetujui dan diselesaikan');
-      navigate('/admin/staff/monitoring/monitoring-program', {
+      navigate('/admin/staff/monitoring/verifikasi', {
         state: { statusFilter: 'Siap Monitoring' }
       });
     } catch (error) {
