@@ -8,7 +8,6 @@ import {
   HiOutlinePhoto, HiOutlineDocumentText, HiOutlineUser, HiOutlineUsers,
   HiOutlineBriefcase, HiCheck, HiOutlineArrowLeft, HiOutlinePrinter, HiOutlineCamera
 } from 'react-icons/hi2';
-import { MOCK_TANAMAN } from '../data/mockData';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -34,6 +33,7 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
   const [selectedPU, setSelectedPU] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dokumentasi, setDokumentasi] = useState<any[]>([]);
+  const [tanaman, setTanaman] = useState<any[]>([]);
 
   const STORAGE_URL = (import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api').replace('/api', '/storage');
   const resolveUrl = (path: string) => path.startsWith('http') ? path : `${STORAGE_URL}/${path}`;
@@ -45,6 +45,25 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
       headers: { Authorization: `Bearer ${token}` }
     }).then(res => {
       setDokumentasi(res.data?.data || []);
+    }).catch(() => {
+      // silent fail — halaman tetap bisa dipakai
+    });
+
+    // Data tanaman tersimpan di bawah tiap petak ukur, bukan langsung di penugasan.
+    axios.get(`${import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api'}/penugasan/${activeId}/petak-ukur`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => {
+      const daftar = (res.data?.data || []).flatMap((pu: any) =>
+        (pu.data_tanamans || pu.dataTanamans || []).map((t: any) => ({
+          id: t.id,
+          petak: pu.nama,
+          jenis: t.nama_tanaman || t.seed?.name || 'Tidak diketahui',
+          tinggi: t.tinggi_tanaman,
+          kondisi: t.kondisi_tanaman || '-',
+          jumlah: t.jumlah,
+        }))
+      );
+      setTanaman(daftar);
     }).catch(() => {
       // silent fail — halaman tetap bisa dipakai
     });
@@ -311,12 +330,21 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
                         <tr><th className="p-3 text-center w-8">No.</th><th className="p-3">Jenis Tanaman</th><th className="p-3 text-center">Tinggi</th><th className="p-3 text-center">Kondisi</th></tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {MOCK_TANAMAN.map(tanaman => (
-                          <tr key={tanaman.no} className="hover:bg-gray-50">
-                            <td className="p-3 text-center">{tanaman.no}</td>
-                            <td className="p-3 font-medium text-gray-900">{tanaman.jenis}</td>
-                            <td className="p-3 text-center">{tanaman.tinggi} cm</td>
-                            <td className="p-3 text-center"><span className="font-bold text-emerald-600 text-[10px]">{tanaman.kondisi}</span></td>
+                        {tanaman.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="p-6 text-center text-gray-400 font-medium">
+                              Belum ada data tanaman yang diinput penyuluh.
+                            </td>
+                          </tr>
+                        ) : tanaman.map((row, idx) => (
+                          <tr key={row.id ?? idx} className="hover:bg-gray-50">
+                            <td className="p-3 text-center">{idx + 1}</td>
+                            <td className="p-3 font-medium text-gray-900">
+                              {row.jenis}
+                              {row.petak ? <span className="text-[10px] text-gray-400 ml-1">({row.petak})</span> : null}
+                            </td>
+                            <td className="p-3 text-center">{row.tinggi ? `${row.tinggi} cm` : '-'}</td>
+                            <td className="p-3 text-center"><span className="font-bold text-emerald-600 text-[10px]">{row.kondisi}</span></td>
                           </tr>
                         ))}
                       </tbody>

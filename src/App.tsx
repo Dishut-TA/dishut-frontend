@@ -108,7 +108,6 @@ import DetailRiwayatPendanaan from "./pages/CSR/RiwayatPendanaan/DetailRiwayatPe
 import RiwayatPendanaan from "./pages/CSR/RiwayatPendanaan/RiwayatPendanaan";
 import DetailProgres from "./pages/StaffPDAS/PelaksanaanDanMonitoring/PenugasanPenyuluh/DetailProgres";
 // import DetailHasilValidasiPenugasan from "./pages/StaffPDAS/PelaksanaanDanMonitoring/PenugasanPenyuluh/DetailHasilValidasiPenugasan";
-// import DetailVerifikasiPelaksanaan from "./pages/StaffPDAS/PelaksanaanDanMonitoring/VerifikasiMonitoring/components/DetailVerifikasiPelaksanaan";
 import MonitoringProgram from "./pages/StaffPDAS/PelaksanaanDanMonitoring/MonitoringProgram";
 import DetailValidasi from "./pages/Penyuluh/ValidasiLokasi/DetailValidasi";
 import MulaiKegiatan from "./pages/Penyuluh/PelaksanaanPenanaman/MulaiKegiatan";
@@ -174,7 +173,6 @@ const StaffTugasEvaluasi = lazy(() => import("./pages/StaffPDAS/EvaluasiPenanama
 const AnalisisLahanKritis = lazy(() => import("./pages/StaffPDAS/AnalisisLahanKritis/AnalisisCPI/AnalisisLahanKritis"));
 const DashboardMonitoring = lazy(() => import("./pages/StaffPDAS/PelaksanaanDanMonitoring/DashboardMonitoring"));
 const DaftarKegiatan = lazy(() => import("./pages/StaffPDAS/PelaksanaanDanMonitoring/DaftarKegiatan"));
-// const VerifikasiMonitoring = lazy(() => import("./pages/StaffPDAS/PelaksanaanDanMonitoring/VerifikasiMonitoring"));
 const RekapMonitoring = lazy(() => import("./pages/StaffPDAS/PelaksanaanDanMonitoring/RekapMonitoring"));
 const DashboardEvaluasi = lazy(() => import("./pages/StaffPDAS/EvaluasiPenanamanBibit/DashboardEvaluasi/DashboardEvaluasi"));
 // const DataEvaluasi = lazy(() => import("./pages/StaffPDAS/EvaluasiPenanamanBibit/DataEvaluasi"));
