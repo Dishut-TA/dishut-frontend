@@ -25,9 +25,9 @@ type BarisPelaporan = {
 };
 
 const JENIS_PER_SUMBER: Record<string, BarisPelaporan['jenis']> = {
-  'App\Models\DonationProgram': 'Donasi',
-  'App\Models\ProgramApbd': 'APBD',
-  'App\Models\ProgramCsr': 'CSR',
+  'App\\Models\\DonationProgram': 'Donasi',
+  'App\\Models\\ProgramApbd': 'APBD',
+  'App\\Models\\ProgramCsr': 'CSR',
 };
 
 const tanggalId = (nilai?: string | null) => {
