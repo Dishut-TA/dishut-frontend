@@ -113,8 +113,8 @@ export default function DetailProgramKabid() {
 
       {activeTab === 'Pelaksanaan' && <ContentPelaksanaan data={data} />}
       {activeTab === 'Validasi Lokasi' && <ContentValidasiLokasi data={data} />}
-      {activeTab.includes('Monitoring') && activeTab !== 'Monitoring P4' && <ContentMonitoringBerjalan periode={activeTab.split(' ')[1]} />}
-      {activeTab === 'Monitoring P4' && <ContentMonitoringSelesai />}
+      {activeTab.includes('Monitoring') && activeTab !== 'Monitoring P4' && <ContentMonitoringBerjalan periode={activeTab.split(' ')[1]} data={data} />}
+      {activeTab === 'Monitoring P4' && <ContentMonitoringSelesai data={data} />}
 
     </div>
     </StatusMuat>
