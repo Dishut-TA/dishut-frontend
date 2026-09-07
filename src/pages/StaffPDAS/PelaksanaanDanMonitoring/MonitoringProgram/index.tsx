@@ -138,8 +138,6 @@ const MonitoringProgram: React.FC = () => {
     setIsLoading(true);
     try {
       const res = await getAllPenugasanAPI();
-      console.log(res);
-
       setPenugasans(res.data || []);
     } catch (error) {
       console.error('Gagal mengambil data penugasan', error);
@@ -156,8 +154,31 @@ const MonitoringProgram: React.FC = () => {
   const formattedData = useMemo(() => {
     if (!Array.isArray(penugasans)) return [];
 
+    const programKey = (p: any) => `${p.source_type}_${p.original_id}`;
+
+    // Backend kini mengirim satu baris per penugasan, jadi satu program bisa
+    // punya baris Pelaksanaan Penanaman sekaligus baris Monitoring. Baris
+    // Pelaksanaan ter-derive menjadi 'Siap Monitoring' dan akan memunculkan
+    // tombol Tugaskan kedua, padahal monitoringnya sudah berjalan. Sembunyikan
+    // baris Pelaksanaan untuk program yang sudah punya Monitoring/Tindak Lanjut.
+    const programSudahDimonitor = new Set(
+      penugasans
+        .filter((p: any) => p && ['Monitoring', 'Tindak Lanjut'].includes(p.jenisKegiatan))
+        .map(programKey)
+    );
+
     return penugasans
-      .filter((p: any) => p && p.jenisKegiatan !== 'Validasi Lokasi' && p.status !== 'Menunggu Penugasan')
+      .filter((p: any) => {
+        if (!p || p.jenisKegiatan === 'Validasi Lokasi' || p.status === 'Menunggu Penugasan') {
+          return false;
+        }
+
+        if (p.jenisKegiatan === 'Pelaksanaan Penanaman' && programSudahDimonitor.has(programKey(p))) {
+          return false;
+        }
+
+        return true;
+      })
       .map((p: any) => {
         let programName = '-';
         let location = '-';
@@ -176,15 +197,23 @@ const MonitoringProgram: React.FC = () => {
         }
 
         const displayStatus = deriveMonitoringStatus(p);
-        const periodeLabel = detail.periode_monitoring || 'P1';
+        // periode_monitoring tersimpan di penugasan, bukan di program.
+        const periodeLabel = p.periodeMonitoring || 'P1';
 
         const rawDateStr = p.created_at || (p.tanggalPenugasan !== '-' ? p.tanggalPenugasan : null);
         const sortDate = parseSafeDate(rawDateStr);
         const batasWaktuDate = parseSafeDate(p.batasWaktu);
 
         return {
-          id: p.penugasan_id || p.id || '-',
-          rawId: p.penugasan_id || p.id,
+          // ID tampilan tetap kode program, tapi navigasi memakai id numerik:
+          // penugasan_id bila sudah ditugaskan, kalau belum original_id program.
+          // Kode berformat seperti P-CSR-2026-001 tidak bisa di-resolve backend.
+          id: p.id || '-',
+          rowKey: p.row_key || `${p.source_type}_${p.original_id}_${p.penugasan_id ?? 'belum'}`,
+          navId: p.penugasan_id ?? p.original_id ?? null,
+          penugasanId: p.penugasan_id ?? null,
+          sourceType: p.source_type ?? null,
+          rawId: p.penugasan_id || p.original_id,
           program: programName,
           lokasi: location,
           kth: kthName,
@@ -466,7 +495,7 @@ const MonitoringProgram: React.FC = () => {
                   </tr>
                 ) : (
                   currentData.map((row, index) => (
-                    <tr key={row.id || index} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={row.rowKey || index} className="hover:bg-slate-50/60 transition-colors">
                       <td className="px-4 py-3.5 text-center font-medium text-slate-700">
                         {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                       </td>
@@ -497,11 +526,15 @@ const MonitoringProgram: React.FC = () => {
                         <p className="text-[11px] text-slate-400">{row.waktu}</p>
                       </td>
                       <td className="px-4 py-3.5 text-center">
-                        {row.status === 'Siap Monitoring' ? (
+                        {row.navId === null ? (
+                          <span className="text-[11px] text-slate-400 font-medium">
+                            Data belum lengkap
+                          </span>
+                        ) : row.status === 'Siap Monitoring' ? (
                           <button
                             onClick={() =>
-                              navigate(`/admin/staff/monitoring/verifikasi/tugaskan/${row.id}`, {
-                                state: { status: row.status, mode: 'tugaskan' },
+                              navigate(`/admin/staff/monitoring/verifikasi/tugaskan/${row.navId}`, {
+                                state: { status: row.status, mode: 'tugaskan', sourceType: row.sourceType },
                               })
                             }
                             className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 cursor-pointer transition-colors shadow-xs"
@@ -512,8 +545,8 @@ const MonitoringProgram: React.FC = () => {
                         ) : (
                           <button
                             onClick={() =>
-                              navigate(`/admin/staff/monitoring/verifikasi/detail/${row.id}`, {
-                                state: { status: row.status },
+                              navigate(`/admin/staff/monitoring/verifikasi/detail/${row.navId}`, {
+                                state: { status: row.status, sourceType: row.sourceType },
                               })
                             }
                             className="inline-flex items-center gap-1 px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 cursor-pointer transition-colors"
