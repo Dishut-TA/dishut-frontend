@@ -42,7 +42,7 @@ export default function DashboardPelaksanaanMonitoringKabid() {
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                 <MapMockup locations={dashboardData?.map_locations} />
-                <DonutChart stats={dashboardData?.stats} />
+                <DonutChart perSumberDana={dashboardData?.per_sumber_dana} />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
