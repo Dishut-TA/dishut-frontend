@@ -1,4 +1,9 @@
-export default function SummaryCards({ }: { stats?: any }) {
+const angkaId = (nilai?: number | null) =>
+  nilai === null || nilai === undefined ? '-' : Number(nilai).toLocaleString('id-ID');
+
+export default function SummaryCards({ stats }: { stats?: any }) {
+  const s = stats || {};
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex flex-col justify-between">
@@ -8,12 +13,12 @@ export default function SummaryCards({ }: { stats?: any }) {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-500 mb-1">Total Program</p>
-            <p className="text-3xl font-bold text-gray-900">24</p>
+            <p className="text-3xl font-bold text-gray-900">{angkaId(s.total_program)}</p>
             <p className="text-[11px] text-gray-400 mt-0.5">Program</p>
           </div>
         </div>
         <div className="mt-4 pt-3 border-t border-gray-100 text-xs font-medium text-gray-600 flex gap-2">
-          <span className="text-emerald-600">17 Berjalan</span> • <span>3 Selesai</span>
+          <span className="text-emerald-600">{angkaId(s.berjalan)} Berjalan</span> • <span>{angkaId(s.selesai)} Selesai</span>
         </div>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex flex-col justify-center">
@@ -23,7 +28,7 @@ export default function SummaryCards({ }: { stats?: any }) {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-500 mb-1">Total Target Tanaman</p>
-            <p className="text-3xl font-bold text-gray-900">125.450</p>
+            <p className="text-3xl font-bold text-gray-900">{angkaId(s.total_target_bibit)}</p>
             <p className="text-[11px] text-gray-400 mt-0.5">Pohon</p>
           </div>
         </div>
@@ -35,7 +40,7 @@ export default function SummaryCards({ }: { stats?: any }) {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-500 mb-1">Total Realisasi Tanaman</p>
-            <p className="text-3xl font-bold text-gray-900">68.230</p>
+            <p className="text-3xl font-bold text-gray-900">{angkaId(s.total_realisasi_bibit)}</p>
             <p className="text-[11px] text-gray-400 mt-0.5">Pohon</p>
           </div>
         </div>
@@ -47,7 +52,7 @@ export default function SummaryCards({ }: { stats?: any }) {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-500 mb-1">Persentase Realisasi</p>
-            <p className="text-3xl font-bold text-gray-900">54,38%</p>
+            <p className="text-3xl font-bold text-gray-900">{s.persentase_realisasi !== undefined ? `${String(s.persentase_realisasi).replace('.', ',')}%` : '-'}</p>
             <p className="text-[11px] text-gray-400 mt-0.5">dari Target</p>
           </div>
         </div>

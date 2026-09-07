@@ -74,6 +74,21 @@ const PelaporanList: React.FC = () => {
   const semuaBaris = useMemo<BarisPelaporan[]>(() => {
     return penugasans
       .filter((p: any) => p && JENIS_PER_SUMBER[p.source_type] && p.status !== 'Menunggu Penugasan')
+      // Backend mengirim satu baris per penugasan, sehingga satu program bisa
+      // muncul berkali-kali (Pelaksanaan, Monitoring, Tindak Lanjut). Laporan
+      // dibuat per program, jadi ambil penugasan terakhir saja sebagai wakil.
+      .reduce((acc: any[], p: any) => {
+        const kunci = `${p.source_type}_${p.original_id}`;
+        const adaIndex = acc.findIndex((x: any) => `${x.source_type}_${x.original_id}` === kunci);
+
+        if (adaIndex === -1) {
+          acc.push(p);
+        } else if ((p.penugasan_id ?? 0) > (acc[adaIndex].penugasan_id ?? 0)) {
+          acc[adaIndex] = p;
+        }
+
+        return acc;
+      }, [])
       .map((p: any) => {
         const detail = p.detail || {};
         const jenis = JENIS_PER_SUMBER[p.source_type];
