@@ -88,3 +88,72 @@ export const ringkasPerProgram = (programs?: any[]): any[] => {
 
   return Object.values(peta);
 };
+
+/**
+ * Rekapitulasi per petak ukur untuk halaman monitoring penyuluh.
+ *
+ * Data tanaman berada di bawah tiap petak ukur pada respons /penugasan/{id}.
+ * Kondisi tanaman berupa teks bebas, jadi dikelompokkan lewat kata kunci.
+ */
+export const rekapPetakUkur = (petakUkurs?: any[]) => {
+  if (!Array.isArray(petakUkurs)) return [];
+
+  return petakUkurs.map((pu: any) => {
+    const tanaman = pu.data_tanamans || pu.dataTanamans || [];
+
+    let hidup = 0;
+    let mati = 0;
+    let rawat = 0;
+
+    tanaman.forEach((t: any) => {
+      const jumlah = Number(t.jumlah) || 0;
+      const kondisi = (t.kondisi_tanaman || '').toLowerCase();
+
+      if (kondisi.includes('mati') || kondisi.includes('rusak')) mati += jumlah;
+      else if (kondisi.includes('rawat') || kondisi.includes('sakit')) rawat += jumlah;
+      else hidup += jumlah;
+    });
+
+    const total = hidup + mati + rawat;
+    const persen = (nilai: number) => (total > 0 ? Math.round((nilai / total) * 100) : 0);
+
+    return {
+      pu: pu.nama || `PU ${pu.id ?? ''}`.trim(),
+      total,
+      hidup,
+      pctHidup: persen(hidup),
+      mati,
+      pctMati: persen(mati),
+      rawat,
+      pctRawat: persen(rawat),
+      foto: tanaman.filter((t: any) => t.foto_url).length,
+      status: total > 0 ? 'Lengkap' : 'Belum Ada Data',
+      update: tanggalSingkat(pu.eval_at || pu.updated_at),
+    };
+  });
+};
+
+/** Baris tanaman per titik untuk tabel monitoring penyuluh. */
+export const barisTanaman = (petakUkurs?: any[]) => {
+  if (!Array.isArray(petakUkurs)) return [];
+
+  return petakUkurs.flatMap((pu: any) =>
+    (pu.data_tanamans || pu.dataTanamans || []).map((t: any) => ({
+      id: t.id,
+      idTanaman: `${pu.nama || 'PU'}-${String(t.id).padStart(3, '0')}`,
+      jenisTanaman: t.nama_tanaman || t.seed?.name || 'Tidak diketahui',
+      koordinat:
+        t.latitude !== null && t.latitude !== undefined && t.longitude !== null && t.longitude !== undefined
+          ? `${t.latitude}\n${t.longitude}`
+          : (pu.eval_koordinat || '-'),
+      tinggiAwal: t.tinggi_tanaman ? `${t.tinggi_tanaman} cm` : '-',
+      waktuPelaksanaan: tanggalSingkat(t.created_at),
+      fotoSebelum: Boolean(t.foto_url),
+      fotoSesudah: Boolean(pu.eval_foto),
+      waktuMonitoring: tanggalSingkat(pu.eval_at),
+      tinggiSaatMonitoring: pu.eval_tinggi_rata ? `${pu.eval_tinggi_rata} cm` : '-',
+      kondisiTanaman: t.kondisi_tanaman || '-',
+      status: (t.kondisi_tanaman || '').toLowerCase().includes('mati') ? 'Mati' : 'Hidup',
+    }))
+  );
+};

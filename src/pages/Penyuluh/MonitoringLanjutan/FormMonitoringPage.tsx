@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { MOCK_DASHBOARD_DATA } from './constants';
 import type { MonitoringRow, MonitoringStatus, ViewMode } from './types';
 import { ReadOnlyView } from './components/ReadOnlyView';
 import { RekapView } from './components/RekapView';
@@ -16,6 +15,7 @@ const FormMonitoringPage: React.FC = () => {
   const activeId = id || 'PRG-2026-0007';
   
   const [activeProgram, setActiveProgram] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,8 +39,10 @@ const FormMonitoringPage: React.FC = () => {
         }
       } catch (err) {
         console.error("Error fetching program:", err);
-        // Fallback for UI if API fails completely
-        setActiveProgram(MOCK_DASHBOARD_DATA[activeId] || MOCK_DASHBOARD_DATA['PRG-2026-0007']);
+        // Jangan jatuh ke data contoh: menampilkan program lain saat request
+        // gagal membuat penyuluh mengisi monitoring untuk program yang salah.
+        setActiveProgram(null);
+        setError('Gagal memuat data program. Periksa koneksi lalu muat ulang halaman.');
       } finally {
         setLoading(false);
       }
@@ -72,8 +74,18 @@ const FormMonitoringPage: React.FC = () => {
     setSelectedRow(null);
   };
 
-  if (loading || !activeProgram) {
+  if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Memuat data...</div>;
+  }
+
+  if (error || !activeProgram) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-6 text-center">
+        <p className="text-sm font-semibold text-gray-700">
+          {error || 'Data program tidak ditemukan.'}
+        </p>
+      </div>
+    );
   }
 
   if (isReadOnly) {

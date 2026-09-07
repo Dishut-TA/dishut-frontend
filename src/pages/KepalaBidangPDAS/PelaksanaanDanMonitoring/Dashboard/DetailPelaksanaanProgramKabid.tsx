@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import useDetailPenugasan from '@/hooks/useDetailPenugasan';
+import StatusMuat from '@/components/StatusMuat';
 import { HiOutlineArrowLeft, HiOutlinePrinter, HiOutlineMapPin, HiOutlineCalendar } from 'react-icons/hi2';
 import ContentPelaksanaan from './components/ContentPelaksanaan';
 import ContentValidasiLokasi from './components/ContentValidasiLokasi';
@@ -16,6 +18,14 @@ export default function DetailProgramKabid() {
   const defaultTab: TabType = initialKategori === 'Pelaksanaan' ? 'Pelaksanaan' : (initialPeriode === 'Validasi' ? 'Validasi Lokasi' : `Monitoring ${initialPeriode}` as TabType);
   const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
 
+  const { id } = useParams();
+  const { data, isLoading, error } = useDetailPenugasan(id);
+
+  // Progress memakai persentase tanaman hidup terhadap target, bukan angka tetap.
+  const progressPersen = data?.stats?.targetTanam
+    ? Math.round((data.stats.tanamanHidup / data.stats.targetTanam) * 100)
+    : 0;
+
   const getStatus = () => {
     if (activeTab === 'Pelaksanaan' || activeTab === 'Monitoring P4') return 'Selesai';
     if (activeTab.includes('Monitoring')) return 'Berjalan';
@@ -24,6 +34,13 @@ export default function DetailProgramKabid() {
   const status = getStatus();
 
   return (
+    <StatusMuat
+      isLoading={isLoading}
+      error={error}
+      data={data}
+      loadingText="Memuat detail program..."
+      emptyText="Detail program tidak ditemukan."
+    >
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 w-full pb-20">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
@@ -41,8 +58,8 @@ export default function DetailProgramKabid() {
         <h3 className="text-sm font-bold text-slate-900 mb-5">Informasi Utama Program</h3>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <div className="col-span-4 grid grid-cols-2 md:grid-cols-5 gap-y-6 gap-x-4">
-            <div><p className="text-[10px] font-semibold text-slate-500 mb-1">ID Program</p><p className="text-xs font-bold text-slate-900">PRG-2024-015</p></div>
-            <div><p className="text-[10px] font-semibold text-slate-500 mb-1">Sumber Program</p><p className="text-xs font-bold text-slate-900">APBD / CSR / Donasi</p></div>
+            <div><p className="text-[10px] font-semibold text-slate-500 mb-1">ID Program</p><p className="text-xs font-bold text-slate-900">{data?.raw?.penugasanable_id ?? '-'}</p></div>
+            <div><p className="text-[10px] font-semibold text-slate-500 mb-1">Sumber Program</p><p className="text-xs font-bold text-slate-900">{data?.sumberDana || '-'}</p></div>
             <div>
               <p className="text-[10px] font-semibold text-slate-500 mb-1">Kategori</p>
               <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${activeTab === 'Pelaksanaan' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-blue-50 text-blue-700 border border-blue-100'}`}>
@@ -52,9 +69,9 @@ export default function DetailProgramKabid() {
             <div><p className="text-[10px] font-semibold text-slate-500 mb-1">Jenis Rehabilitasi</p><p className="text-xs font-bold text-slate-900">Rehabilitasi Hutan dan Lahan</p></div>
             <div><p className="text-[10px] font-semibold text-slate-500 mb-1">Periode</p><p className="text-xs font-bold text-slate-900">{activeTab.includes('P') ? activeTab.split(' ')[1] : '-'}</p></div>
             
-            <div><p className="text-[10px] font-semibold text-slate-500 mb-1">Nama Program</p><p className="text-xs font-bold text-slate-900">Rehabilitasi DAS Cimanuk Hulu</p></div>
-            <div className="col-span-1"><p className="text-[10px] font-semibold text-slate-500 mb-1">Sumber Lokasi</p><p className="text-xs font-bold text-slate-900">Analisis CPI / Proposal CSR</p></div>
-            <div className="col-span-3"><p className="text-[10px] font-semibold text-slate-500 mb-1">Jenis Bibit</p><p className="text-xs font-bold text-slate-900 leading-snug">Rhizophora apiculata, Avicennia marina, Sonneratia alba</p></div>
+            <div><p className="text-[10px] font-semibold text-slate-500 mb-1">Nama Program</p><p className="text-xs font-bold text-slate-900">{data?.programName || '-'}</p></div>
+            <div className="col-span-1"><p className="text-[10px] font-semibold text-slate-500 mb-1">Sumber Lokasi</p><p className="text-xs font-bold text-slate-900">{data?.raw?.penugasanable?.sumber_lokasi || '-'}</p></div>
+            <div className="col-span-3"><p className="text-[10px] font-semibold text-slate-500 mb-1">Jenis Bibit</p><p className="text-xs font-bold text-slate-900 leading-snug">{data?.raw?.penugasanable?.jenis_tanaman || '-'}</p></div>
           </div>
           <div className="col-span-1 border-l border-slate-100 pl-6 flex flex-col justify-start">
              <div><p className="text-[10px] font-semibold text-slate-500 mb-1">Status</p><span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${status === 'Selesai' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-blue-50 text-blue-700 border border-blue-100'}`}>{status}</span></div>
@@ -62,15 +79,15 @@ export default function DetailProgramKabid() {
         </div>
 
         <div className="mt-6 pt-5 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div><p className="text-[10px] font-semibold text-slate-500 mb-1">Lokasi</p><p className="text-xs font-bold text-slate-900 flex items-center gap-1.5"><HiOutlineMapPin className="w-4 h-4 text-emerald-600"/> Kec. Cikajang, Kab. Garut, Jawa Barat</p></div>
+          <div><p className="text-[10px] font-semibold text-slate-500 mb-1">Lokasi</p><p className="text-xs font-bold text-slate-900 flex items-center gap-1.5"><HiOutlineMapPin className="w-4 h-4 text-emerald-600"/> {data?.lokasi || '-'}</p></div>
           <div>
             <p className="text-[10px] font-semibold text-slate-500 mb-1">Progress</p>
             <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-slate-900">{activeTab === 'Pelaksanaan' || activeTab === 'Monitoring P4' ? '100%' : '33%'}</span>
-              <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 rounded-full" style={{ width: activeTab === 'Pelaksanaan' || activeTab === 'Monitoring P4' ? '100%' : '33%' }}></div></div>
+              <span className="text-xs font-bold text-slate-900">{progressPersen}%</span>
+              <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(progressPersen, 100)}%` }}></div></div>
             </div>
           </div>
-          <div><p className="text-[10px] font-semibold text-slate-500 mb-1">Terakhir Diperbarui</p><p className="text-xs font-bold text-slate-900 flex items-center gap-1.5"><HiOutlineCalendar className="w-4 h-4 text-slate-400"/> 22 Mei 2026, 14:30 WIB</p></div>
+          <div><p className="text-[10px] font-semibold text-slate-500 mb-1">Terakhir Diperbarui</p><p className="text-xs font-bold text-slate-900 flex items-center gap-1.5"><HiOutlineCalendar className="w-4 h-4 text-slate-400"/> {data?.raw?.updated_at ? new Date(data.raw.updated_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB' : '-'}</p></div>
         </div>
       </div>
 
@@ -94,11 +111,12 @@ export default function DetailProgramKabid() {
         </div>
       </div>
 
-      {activeTab === 'Pelaksanaan' && <ContentPelaksanaan />}
-      {activeTab === 'Validasi Lokasi' && <ContentValidasiLokasi />}
+      {activeTab === 'Pelaksanaan' && <ContentPelaksanaan data={data} />}
+      {activeTab === 'Validasi Lokasi' && <ContentValidasiLokasi data={data} />}
       {activeTab.includes('Monitoring') && activeTab !== 'Monitoring P4' && <ContentMonitoringBerjalan periode={activeTab.split(' ')[1]} />}
       {activeTab === 'Monitoring P4' && <ContentMonitoringSelesai />}
 
     </div>
+    </StatusMuat>
   );
 }

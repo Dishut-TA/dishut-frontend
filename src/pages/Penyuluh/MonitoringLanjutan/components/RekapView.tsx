@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { HiOutlineMapPin, HiOutlineCamera, HiOutlineArrowLeft, HiOutlinePaperAirplane, HiOutlineInformationCircle } from 'react-icons/hi2';
 import { PiPlant, PiTree, PiLeaf } from 'react-icons/pi';
 import type { ProgramData, ViewMode } from '../types';
+import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
 
 interface RekapViewProps {
   activeId: string;
@@ -125,21 +126,11 @@ export const RekapView: React.FC<RekapViewProps> = ({
             <p className="text-sm font-bold text-slate-900">27 Mei 2026</p>
           </div>
         </div>
-        <div className="w-full md:w-[320px] h-32 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600')] bg-cover bg-center border border-slate-200 shrink-0">
-          <div className="absolute inset-0 bg-black/10"></div>
-          {isTindakLanjut ? (
-            <>
-              <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-red-500 rounded-full border border-white shadow-md"></div>
-              <div className="absolute top-1/3 left-1/3 w-2 h-2 bg-green-500 rounded-full border border-white shadow-md"></div>
-              <div className="absolute top-2/3 left-1/2 w-2 h-2 bg-orange-500 rounded-full border border-white shadow-md"></div>
-            </>
-          ) : (
-            <>
-              <div className="absolute top-1/2 left-1/4 w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
-              <div className="absolute top-1/3 left-1/3 w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
-              <div className="absolute top-2/3 left-1/2 w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
-            </>
-          )}
+        <div className="w-full md:w-[320px] h-32 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+          <PetaPetakUkur
+            petakUkurs={(activeProgram as any)?.petak_ukurs || (activeProgram as any)?.petakUkurs}
+            emptyMessage="Batas petak ukur belum digambar."
+          />
         </div>
       </div>
 

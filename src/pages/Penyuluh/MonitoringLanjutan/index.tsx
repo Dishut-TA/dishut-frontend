@@ -19,8 +19,6 @@ const MonitoringLanjutanIndex: React.FC = () => {
       try {
         setIsLoading(true);
         const res = await getMyPenugasanAPI();
-        console.log(res);
-        
         const monitoringData = res.data.filter((p: any) => p.jenis_kegiatan && (
           p.jenis_kegiatan.toLowerCase().includes('monitoring') ||
           p.jenis_kegiatan.toLowerCase() === 'tindak lanjut'

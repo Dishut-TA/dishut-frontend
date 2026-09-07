@@ -8,8 +8,9 @@ import {
 } from 'react-icons/hi2';
 import { PiPlant, PiTree, PiLeaf } from 'react-icons/pi';
 import type { ProgramData, MonitoringRow, ViewMode } from '../types';
-import { MOCK_REKAP_DATA, MOCK_TABLE_DATA } from '../constants';
+import { rekapPetakUkur, barisTanaman } from '@/utils/programDashboard';
 import PetaTitikKoordinat from '@/components/maps/PetaTitikKoordinat';
+import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
 
 // =========================================================================
 // 1. REKAP VIEW
@@ -29,7 +30,17 @@ export const RekapView: React.FC<RekapViewProps> = ({
   setViewMode,
   navigate
 }) => {
-  const isAllComplete = MOCK_REKAP_DATA.every(row => row.status === 'Lengkap');
+  // Petak ukur beserta data tanamannya ikut pada respons /penugasan/{id}.
+  const petakUkurs = (activeProgram as any)?.petak_ukurs || (activeProgram as any)?.petakUkurs || [];
+  const rekapData = rekapPetakUkur(petakUkurs);
+  const isAllComplete = rekapData.length > 0 && rekapData.every(row => row.status === 'Lengkap');
+  const totalPu = rekapData.length;
+  const totalTanaman = rekapData.reduce((j, r) => j + r.total, 0);
+  const totalHidup = rekapData.reduce((j, r) => j + r.hidup, 0);
+  const totalMati = rekapData.reduce((j, r) => j + r.mati, 0);
+  const totalRawat = rekapData.reduce((j, r) => j + r.rawat, 0);
+  const angka = (v: number) => v.toLocaleString('id-ID');
+  const persenTotal = (v: number) => (totalTanaman > 0 ? Math.round((v / totalTanaman) * 100) : 0);
   const MOCK_REKAP_PENYULAMAN = [
     { pu: 'PU-01', perlu: 5, sudah: 2, belum: 3, bibit: 35, status: 'Lengkap', update: '27 Mei 2026 10:30' },
     { pu: 'PU-03', perlu: 7, sudah: 1, belum: 6, bibit: 50, status: 'Lengkap', update: '27 Mei 2026 10:40' },
@@ -57,11 +68,8 @@ export const RekapView: React.FC<RekapViewProps> = ({
           <div><p className="text-[10px] text-slate-500 font-medium mb-1">Penyuluh</p><p className="text-sm font-bold text-slate-900">Ahmad Fauzi</p></div>
           <div className="col-span-2 md:col-span-3"><p className="text-[10px] text-slate-500 font-medium mb-1">Tanggal Monitoring</p><p className="text-sm font-bold text-slate-900">27 Mei 2026</p></div>
         </div>
-        <div className="w-full md:w-[320px] h-32 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600')] bg-cover bg-center border border-slate-200 shrink-0">
-          <div className="absolute inset-0 bg-black/10"></div>
-          <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-emerald-400 rounded-full border border-white shadow-md"></div>
-          <div className="absolute top-1/3 left-1/3 w-2 h-2 bg-emerald-400 rounded-full border border-white shadow-md"></div>
-          <div className="absolute top-2/3 left-1/2 w-2 h-2 bg-emerald-400 rounded-full border border-white shadow-md"></div>
+        <div className="w-full md:w-[320px] h-32 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+          <PetaPetakUkur petakUkurs={petakUkurs} emptyMessage="Batas petak ukur belum digambar." />
         </div>
       </div>
 
@@ -70,19 +78,19 @@ export const RekapView: React.FC<RekapViewProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="border border-slate-100 bg-white rounded-xl p-4 shadow-sm flex items-center justify-center flex-col md:flex-row md:justify-start gap-3">
             <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mb-2 md:mb-0"><HiOutlineMapPin className="w-5 h-5" /></div>
-            <div className="text-center md:text-left"><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Total PU</p><h3 className="text-xl font-bold text-slate-900">{isTindakLanjut ? '3' : '5'}</h3></div>
+            <div className="text-center md:text-left"><p className="text-[10px] text-slate-500 font-semibold mb-0.5">Total PU</p><h3 className="text-xl font-bold text-slate-900">{isTindakLanjut ? '3' : angka(totalPu)}</h3></div>
           </div>
           <div className="border border-slate-100 bg-white rounded-xl p-4 shadow-sm flex items-center justify-center flex-col md:flex-row md:justify-start gap-3">
             <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mb-2 md:mb-0"><PiPlant className="w-5 h-5" /></div>
-            <div className="text-center md:text-left"><p className="text-[10px] text-slate-500 font-semibold mb-0.5">{isTindakLanjut ? 'Total Titik Perlu Disulam' : 'Total Tanaman'}</p><h3 className="text-xl font-bold text-slate-900">{isTindakLanjut ? '18' : '2.530'}</h3></div>
+            <div className="text-center md:text-left"><p className="text-[10px] text-slate-500 font-semibold mb-0.5">{isTindakLanjut ? 'Total Titik Perlu Disulam' : 'Total Tanaman'}</p><h3 className="text-xl font-bold text-slate-900">{isTindakLanjut ? '18' : angka(totalTanaman)}</h3></div>
           </div>
           <div className="border border-slate-100 bg-white rounded-xl p-4 shadow-sm flex items-center justify-center flex-col md:flex-row md:justify-start gap-3">
             <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mb-2 md:mb-0"><PiLeaf className="w-5 h-5" /></div>
-            <div className="text-center md:text-left"><p className="text-[10px] text-slate-500 font-semibold mb-0.5">{isTindakLanjut ? 'Sudah Disulam' : 'Hidup'}</p><h3 className="text-xl font-bold text-slate-900">{isTindakLanjut ? '6' : '2.200'}</h3></div>
+            <div className="text-center md:text-left"><p className="text-[10px] text-slate-500 font-semibold mb-0.5">{isTindakLanjut ? 'Sudah Disulam' : 'Hidup'}</p><h3 className="text-xl font-bold text-slate-900">{isTindakLanjut ? '6' : angka(totalHidup)}</h3></div>
           </div>
           <div className="border border-slate-100 bg-white rounded-xl p-4 shadow-sm flex items-center justify-center flex-col md:flex-row md:justify-start gap-3">
             <div className="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0 mb-2 md:mb-0"><PiTree className="w-5 h-5" /></div>
-            <div className="text-center md:text-left"><p className="text-[10px] text-slate-500 font-semibold mb-0.5">{isTindakLanjut ? 'Belum Disulam' : 'Mati'}</p><h3 className="text-xl font-bold text-slate-900">{isTindakLanjut ? '12' : '180'}</h3></div>
+            <div className="text-center md:text-left"><p className="text-[10px] text-slate-500 font-semibold mb-0.5">{isTindakLanjut ? 'Belum Disulam' : 'Mati'}</p><h3 className="text-xl font-bold text-slate-900">{isTindakLanjut ? '12' : angka(totalMati)}</h3></div>
           </div>
           <div className="border border-slate-100 bg-white rounded-xl p-4 shadow-sm flex items-center justify-center flex-col md:flex-row md:justify-start gap-3">
             <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 mb-2 md:mb-0"><PiPlant className="w-5 h-5" /></div>
@@ -111,7 +119,13 @@ export const RekapView: React.FC<RekapViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {(isTindakLanjut ? MOCK_REKAP_PENYULAMAN : MOCK_REKAP_DATA).map((row: any, idx: number) => (
+              {(isTindakLanjut ? MOCK_REKAP_PENYULAMAN : rekapData).length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-8 text-center text-slate-400 font-medium">
+                    Belum ada petak ukur berisi data tanaman untuk program ini.
+                  </td>
+                </tr>
+              ) : (isTindakLanjut ? MOCK_REKAP_PENYULAMAN : rekapData).map((row: any, idx: number) => (
                 <tr key={idx} className="hover:bg-slate-50 transition-colors">
                   <td className="py-3 px-4 text-left font-bold text-slate-700">{row.pu}</td>
                   <td className="py-3 px-4 font-bold">{isTindakLanjut ? row.perlu : row.total}</td>
@@ -135,11 +149,11 @@ export const RekapView: React.FC<RekapViewProps> = ({
               ))}
               <tr className="bg-slate-50/50 font-bold border-t-2 border-slate-200">
                 <td className="py-4 px-4 text-left text-blue-700">Total</td>
-                <td className="py-4 px-4 text-blue-700">{isTindakLanjut ? '18' : '2.530'}</td>
-                <td className="py-4 px-4 text-emerald-600">{isTindakLanjut ? '6' : '2.200 (87%)'}</td>
-                <td className="py-4 px-4 text-red-500">{isTindakLanjut ? '12' : '180 (7%)'}</td>
-                <td className="py-4 px-4 text-orange-500">{isTindakLanjut ? '120 bibit' : '150 (6%)'}</td>
-                {!isTindakLanjut && <td className="py-4 px-4 text-blue-700 flex items-center justify-center gap-1.5"><HiOutlineCamera className="w-4 h-4"/> 50</td>}
+                <td className="py-4 px-4 text-blue-700">{isTindakLanjut ? '18' : angka(totalTanaman)}</td>
+                <td className="py-4 px-4 text-emerald-600">{isTindakLanjut ? '6' : `${angka(totalHidup)} (${persenTotal(totalHidup)}%)`}</td>
+                <td className="py-4 px-4 text-red-500">{isTindakLanjut ? '12' : `${angka(totalMati)} (${persenTotal(totalMati)}%)`}</td>
+                <td className="py-4 px-4 text-orange-500">{isTindakLanjut ? '120 bibit' : `${angka(totalRawat)} (${persenTotal(totalRawat)}%)`}</td>
+                {!isTindakLanjut && <td className="py-4 px-4 text-blue-700 flex items-center justify-center gap-1.5"><HiOutlineCamera className="w-4 h-4"/> {rekapData.reduce((j, r) => j + r.foto, 0)}</td>}
                 <td className="py-4 px-4 text-slate-400">-</td>
                 <td className="py-4 px-4 text-slate-400">-</td>
                 <td className="py-4 px-4 text-slate-400">-</td>
@@ -188,6 +202,10 @@ export const TableView: React.FC<TableViewProps> = ({
   handleBackToRekap,
   handleOpenForm
 }) => {
+  // Titik tanaman diturunkan dari petak ukur pada respons /penugasan/{id}.
+  const petakUkurs = (activeProgram as any)?.petak_ukurs || (activeProgram as any)?.petakUkurs || [];
+  const dataTanaman = barisTanaman(petakUkurs);
+
   const MOCK_TITIK = [
     { id: '1', tk: 'PU-03-TK-001', koordinat: '6.342512° S, 108.323145° E', foto: true, tinggi: '-', status: 'Belum Disulam', tgl: '-' },
     { id: '2', tk: 'PU-03-TK-002', koordinat: '6.342845° S, 108.323582° E', foto: true, tinggi: '-', status: 'Belum Disulam', tgl: '-' },
@@ -321,7 +339,13 @@ export const TableView: React.FC<TableViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-[11px] font-medium">
-              {(isTindakLanjut ? MOCK_TITIK : MOCK_TABLE_DATA).map((row: any) => (
+              {(isTindakLanjut ? MOCK_TITIK : dataTanaman).length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="px-4 py-8 text-center text-gray-400 font-medium">
+                    Belum ada data tanaman pada petak ukur program ini.
+                  </td>
+                </tr>
+              ) : (isTindakLanjut ? MOCK_TITIK : dataTanaman).map((row: any) => (
                 <tr key={row.id} className="hover:bg-gray-50/50">
                   <td className="px-4 py-4 font-bold text-gray-900">{row.id}</td>
                   <td className="px-4 py-4 font-bold text-gray-700 text-left">{isTindakLanjut ? row.tk : row.idTanaman}</td>

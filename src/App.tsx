@@ -107,7 +107,6 @@ import LaporanDanaIndexSTAFF from "./pages/StaffPDAS/Investasi/LaporanDana/Lapor
 import DetailRiwayatPendanaan from "./pages/CSR/RiwayatPendanaan/DetailRiwayatPendanaan";
 import RiwayatPendanaan from "./pages/CSR/RiwayatPendanaan/RiwayatPendanaan";
 import DetailProgres from "./pages/StaffPDAS/PelaksanaanDanMonitoring/PenugasanPenyuluh/DetailProgres";
-// import DetailHasilValidasiPenugasan from "./pages/StaffPDAS/PelaksanaanDanMonitoring/PenugasanPenyuluh/DetailHasilValidasiPenugasan";
 import MonitoringProgram from "./pages/StaffPDAS/PelaksanaanDanMonitoring/MonitoringProgram";
 import DetailValidasi from "./pages/Penyuluh/ValidasiLokasi/DetailValidasi";
 import MulaiKegiatan from "./pages/Penyuluh/PelaksanaanPenanaman/MulaiKegiatan";
