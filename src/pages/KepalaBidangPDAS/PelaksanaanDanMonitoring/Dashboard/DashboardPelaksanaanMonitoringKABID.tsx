@@ -16,7 +16,10 @@ export default function DashboardPelaksanaanMonitoringKabid() {
     const fetchDashboard = async () => {
       try {
         const res = await getPenugasanDashboardAPI();
-        setDashboardData(res.data);
+        // Respons /penugasan/dashboard tidak dibungkus key 'data', isinya
+        // langsung stats, per_wilayah, programs, dan map_locations. Membaca
+        // res.data membuat seluruh dashboard ini kosong.
+        setDashboardData(res);
       } catch (error) {
         console.error('Failed to fetch dashboard data', error);
       } finally {

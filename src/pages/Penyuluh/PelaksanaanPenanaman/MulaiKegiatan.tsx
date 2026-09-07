@@ -3,17 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   HiOutlineArrowLeft,
   HiOutlineDocumentText,
-  HiOutlineMapPin,
   HiOutlineCalendar,
   HiOutlineCheckCircle,
   HiOutlineInformationCircle,
-  HiOutlineBookOpen,
   HiChevronRight,
   HiCheck,
   HiOutlinePlayCircle,
   HiOutlineMap,
   HiPlus,
-  HiMinus,
   HiOutlineFunnel,
   HiOutlineEllipsisVertical,
   HiOutlinePencil,
@@ -21,6 +18,7 @@ import {
   HiCheckCircle,
   HiChevronDown
 } from 'react-icons/hi2';
+import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
 
 // ==========================================
 // 1. DATA TYPES 
@@ -150,6 +148,9 @@ const Step1DetailPenugasan = ({ penugasanData, onNext, navigate }: { penugasanDa
 const Step2PoligonPU = ({ penugasanData, onNext, onPrev }: { penugasanData: PenugasanDataType, onNext: () => void, onPrev: () => void, navigate: any }) => {
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [puList, setPuList] = useState<any[]>([]);
+  // Petak ukur mentah dari API; puList hanya menyimpan ringkasan tampilan
+  // sehingga polygon_data-nya hilang dan tidak bisa dipakai peta.
+  const [petakUkurData, setPetakUkurData] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -163,7 +164,8 @@ const Step2PoligonPU = ({ penugasanData, onNext, onPrev }: { penugasanData: Penu
         const json = await res.json();
         
         const data = json.data || [];
-        
+        setPetakUkurData(data);
+
         // Merge fetched data with placeholders
         const updatedList = Array.from({ length: penugasanData.totalPu }, (_, i) => {
           if (data[i]) {
@@ -324,25 +326,21 @@ const Step2PoligonPU = ({ penugasanData, onNext, onPrev }: { penugasanData: Penu
                <HiOutlineMap className="w-5 h-5 text-gray-400" />
             </div>
             
-            {/* Map Area Mockup */}
-            <div className="h-112.5 relative bg-gray-800 w-full">
-              <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1200&auto=format&fit=crop" alt="Map View" className="w-full h-full object-cover opacity-80" />
-              
-              {/* Map Controls */}
-              <div className="absolute right-4 top-4 flex flex-col gap-2">
-                <div className="bg-white rounded-md shadow-lg flex flex-col overflow-hidden text-gray-700">
-                  <button className="p-2 border-b border-gray-100 hover:bg-gray-50 font-bold"><HiPlus className="w-4 h-4"/></button>
-                  <button className="p-2 hover:bg-gray-50 font-bold"><HiMinus className="w-4 h-4"/></button>
-                </div>
-                <button className="bg-white p-2.5 rounded-md shadow-lg hover:bg-gray-50 text-gray-700"><HiOutlineMapPin className="w-4 h-4"/></button>
-                <button className="bg-white p-2.5 rounded-md shadow-lg hover:bg-gray-50 text-gray-700"><HiOutlineBookOpen className="w-4 h-4"/></button>
+            {/* Peta petak ukur (Leaflet). Titik diambil dari polygon_data petak ukur. */}
+            <div className="h-112.5 relative bg-gray-100 w-full">
+              <div className="absolute inset-0">
+                <PetaPetakUkur
+                  petakUkurs={petakUkurData}
+                  scrollWheelZoom
+                  emptyMessage="Belum ada petak ukur tersimpan. Peta akan menampilkan batas PU setelah tersimpan."
+                />
               </div>
 
               {/* Dynamic Map Content */}
               {!isDrawingMode ? (
                 // State: Belum ada poligon
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                  <div className="bg-white rounded-xl p-6 shadow-xl max-w-sm text-center">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none z-20">
+                  <div className="bg-white rounded-xl p-6 shadow-xl max-w-sm text-center pointer-events-auto">
                     <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3 text-emerald-600">
                       <HiOutlineMap className="w-6 h-6" />
                     </div>
@@ -350,15 +348,15 @@ const Step2PoligonPU = ({ penugasanData, onNext, onPrev }: { penugasanData: Penu
                     <p className="text-xs text-gray-500 leading-relaxed mb-4">Silakan buat PU pertama dengan menggambar poligon pada peta.</p>
                     <p className="text-[10px] text-gray-400">Setelah disimpan, Anda dapat membuat PU berikutnya.</p>
                   </div>
-                  <button className="absolute bottom-4 right-4 bg-white px-4 py-2 rounded-lg shadow font-bold text-xs text-gray-700 flex items-center gap-2 hover:bg-gray-50">
+                  <button className="absolute bottom-4 right-4 bg-white px-4 py-2 rounded-lg shadow font-bold text-xs text-gray-700 flex items-center gap-2 hover:bg-gray-50 pointer-events-auto">
                     <HiOutlineArrowPath className="w-4 h-4"/> Reset Peta
                   </button>
                 </div>
               ) : (
                 // State: Sedang Menggambar (Drawing Mode)
-                <div className="absolute inset-0">
+                <div className="absolute inset-0 pointer-events-none z-20">
                   {/* Mockup SVG Polygon */}
-                  <svg className="w-full h-full absolute inset-0 z-10" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <svg className="w-full h-full absolute inset-0 z-10 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
                      <polygon points="40,30 70,40 60,70 30,60" fill="rgba(16, 185, 129, 0.4)" stroke="#10b981" strokeWidth="0.5" strokeDasharray="1,1" />
                      {/* Vertices */}
                      <circle cx="40" cy="30" r="1.5" fill="white" stroke="#10b981" strokeWidth="0.5" />
@@ -386,7 +384,7 @@ const Step2PoligonPU = ({ penugasanData, onNext, onPrev }: { penugasanData: Penu
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="absolute bottom-4 right-4 z-20 flex gap-3">
+                  <div className="absolute bottom-4 right-4 z-20 flex gap-3 pointer-events-auto">
                      <button onClick={() => setIsDrawingMode(false)} className="bg-white px-4 py-2 rounded-lg shadow font-bold text-xs text-gray-700 hover:bg-gray-50 border border-gray-200">
                        Batalkan PU
                      </button>
