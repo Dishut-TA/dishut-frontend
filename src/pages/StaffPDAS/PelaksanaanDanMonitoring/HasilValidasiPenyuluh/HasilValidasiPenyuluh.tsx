@@ -1,18 +1,56 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineMagnifyingGlass } from 'react-icons/hi2';
+import toast from 'react-hot-toast';
+import { getAllPenugasanAPI } from '@/services/penugasan.service';
+
+interface BarisValidasi {
+  id: number | string;
+  lokasi: string;
+  sumber: string;
+  penyuluh: string;
+  tanggal: string;
+  status: string;
+}
+
+const tanggalId = (nilai?: string | null) => {
+  if (!nilai || nilai === '-') return '-';
+  const tanggal = new Date(nilai);
+  if (Number.isNaN(tanggal.getTime())) return '-';
+  return `${tanggal.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} ${tanggal.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
+};
 
 const HasilValidasiPenyuluh: React.FC = () => {
   const navigate = useNavigate();
+  const [daftar, setDaftar] = useState<BarisValidasi[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const mockData = [
-    { id: 1, lokasi: 'Hulu DAS Sungai Mamberamo', sumber: 'Analisis CPI', penyuluh: 'Siti Nurhaliza', tanggal: '20 Mei 2025 10:23', status: 'Data Diterima' },
-    { id: 2, lokasi: 'Bukit Harapan Jaya', sumber: 'Proposal CSR', penyuluh: 'Budi Santoso', tanggal: '19 Mei 2025 16:45', status: 'Perlu Ditinjau' },
-    { id: 3, lokasi: 'Lereng Gunung Nusa Indah', sumber: 'Analisis CPI', penyuluh: 'Andi Wijaya', tanggal: '19 Mei 2025 09:12', status: 'Lengkap' },
-    { id: 4, lokasi: 'DAS Way Seputih Hulu', sumber: 'Analisis CPI', penyuluh: 'Rina Marlina', tanggal: '18 Mei 2025 14:30', status: 'Perlu Perbaikan' },
-    { id: 5, lokasi: 'Bukit Sumber Makmur', sumber: 'Proposal CSR', penyuluh: 'Agus Setiawan', tanggal: '17 Mei 2025 11:05', status: 'Data Diterima' },
-    { id: 6, lokasi: 'Hutan Lindung Sungai Batu', sumber: 'Analisis CPI', penyuluh: 'Siti Nurhaliza', tanggal: '16 Mei 2025 13:20', status: 'Lengkap' },
-  ];
+  useEffect(() => {
+    const ambil = async () => {
+      try {
+        const res = await getAllPenugasanAPI();
+        // Halaman ini khusus kegiatan Validasi Lokasi yang sudah ditugaskan.
+        const baris = (res?.data || [])
+          .filter((p: any) => p?.jenisKegiatan === 'Validasi Lokasi' && p.penugasan_id)
+          .map((p: any) => ({
+            id: p.penugasan_id,
+            lokasi: p.lokasi || p.program || '-',
+            sumber: p.detail?.sumber_lokasi || 'Analisis CPI',
+            penyuluh: p.penyuluh || '-',
+            tanggal: tanggalId(p.tanggalPenugasan !== '-' ? p.tanggalPenugasan : p.created_at),
+            status: p.status || '-',
+          }));
+        setDaftar(baris);
+      } catch {
+        toast.error('Gagal memuat hasil validasi penyuluh.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    ambil();
+  }, []);
+
+
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -86,7 +124,11 @@ const HasilValidasiPenyuluh: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {mockData.map((item, index) => (
+              {isLoading ? (
+                <tr><td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-500 font-medium">Memuat hasil validasi...</td></tr>
+              ) : daftar.length === 0 ? (
+                <tr><td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-500 font-medium">Belum ada hasil validasi lokasi dari penyuluh.</td></tr>
+              ) : daftar.map((item, index) => (
                 <tr key={item.id} className="hover:bg-gray-50/50">
                   <td className="px-6 py-4 text-sm text-gray-500 font-medium">{index + 1}</td>
                   <td className="px-6 py-4 text-sm font-bold text-gray-800">{item.lokasi}</td>
