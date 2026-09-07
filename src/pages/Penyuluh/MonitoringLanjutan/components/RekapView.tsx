@@ -55,19 +55,18 @@ export const RekapView: React.FC<RekapViewProps> = ({
 
   petakUkurs.forEach((pu: any) => {
     if (isTindakLanjut) {
-      // Gunakan data evaluasi dari petak ukur monitoring sebelumnya
-      const ditanam = pu.total_bibit_ditanam ?? (pu.dataTanamans || pu.data_tanamans || []).reduce((s: number, t: any) => s + (t.jumlah || 0), 0);
-      const tumbuh = pu.eval_bibit_tumbuh ?? 0;
-      const perlDisulam = Math.max(ditanam - tumbuh, 0);
-      totalPerlDisulam += perlDisulam;
-      totalBibitSulam += perlDisulam;
-      // "Sudah Disulam" bisa dihitung dari dataTanamans Tindak Lanjut jika ada
+      // Titik yang perlu disulam adalah tanaman berkondisi mati atau rusak.
+      // Status realisasinya tersimpan pada kolom status_penyulaman, bukan
+      // ditebak dari teks kondisi_tanaman yang isinya bebas.
       const dataTL = pu.dataTanamans || pu.data_tanamans || [];
+
       dataTL.forEach((t: any) => {
-        const kondisi = t.kondisi_tanaman?.toLowerCase() || '';
-        if (kondisi.includes('sudah disulam') || kondisi.includes('disulam')) {
-          totalSudahDisulam += t.jumlah || 0;
-        }
+        const kondisi = (t.kondisi_tanaman || '').toLowerCase();
+        if (!kondisi.includes('mati') && !kondisi.includes('rusak')) return;
+
+        totalPerlDisulam += 1;
+        totalBibitSulam += Number(t.penyulaman_jumlah) || 0;
+        if (t.status_penyulaman === 'Sudah Disulam') totalSudahDisulam += 1;
       });
     } else {
       (pu.dataTanamans || pu.data_tanamans || []).forEach((t: any) => {
@@ -212,17 +211,18 @@ export const RekapView: React.FC<RekapViewProps> = ({
                 // Untuk Tindak Lanjut: hitung dari data evaluasi petak ukur
                 let puPerlDisulam = 0;
                 let puSudahDisulam = 0;
+                let puBibitSulam = 0;
 
                 if (isTindakLanjut) {
-                  const ditanam = pu.total_bibit_ditanam ?? (pu.dataTanamans || pu.data_tanamans || []).reduce((s: number, t: any) => s + (t.jumlah || 0), 0);
-                  const tumbuh = pu.eval_bibit_tumbuh ?? 0;
-                  puPerlDisulam = Math.max(ditanam - tumbuh, 0);
-                  // Hitung sudah disulam dari dataTanamans penugasan TL
+                  // Sama seperti perhitungan total: titik mati atau rusak,
+                  // dengan realisasi dibaca dari kolom status_penyulaman.
                   (pu.dataTanamans || pu.data_tanamans || []).forEach((t: any) => {
-                    const kondisi = t.kondisi_tanaman?.toLowerCase() || '';
-                    if (kondisi.includes('sudah disulam') || kondisi.includes('disulam')) {
-                      puSudahDisulam += t.jumlah || 0;
-                    }
+                    const kondisi = (t.kondisi_tanaman || '').toLowerCase();
+                    if (!kondisi.includes('mati') && !kondisi.includes('rusak')) return;
+
+                    puPerlDisulam += 1;
+                    puBibitSulam += Number(t.penyulaman_jumlah) || 0;
+                    if (t.status_penyulaman === 'Sudah Disulam') puSudahDisulam += 1;
                   });
                 } else {
                   (pu.dataTanamans || pu.data_tanamans || []).forEach((t: any) => {
@@ -251,7 +251,7 @@ export const RekapView: React.FC<RekapViewProps> = ({
                     <td className={`py-3 px-4 font-bold ${isTindakLanjut ? 'text-red-500' : ''}`}>{isTindakLanjut ? puPerlDisulam : puTotal}</td>
                     <td className="py-3 px-4 text-emerald-600 font-bold">{isTindakLanjut ? puSudahDisulam : `${puHidup} (${pctHidup}%)`}</td>
                     <td className={`py-3 px-4 font-bold ${isTindakLanjut ? 'text-orange-500' : 'text-red-500'}`}>{isTindakLanjut ? Math.max(puPerlDisulam - puSudahDisulam, 0) : `${puMati} (${pctMati}%)`}</td>
-                    <td className={`py-3 px-4 font-bold ${isTindakLanjut ? 'text-blue-600' : 'text-orange-500'}`}>{isTindakLanjut ? `${puPerlDisulam} bibit` : `${puBelum} (${pctBelum}%)`}</td>
+                    <td className={`py-3 px-4 font-bold ${isTindakLanjut ? 'text-blue-600' : 'text-orange-500'}`}>{isTindakLanjut ? `${puBibitSulam} bibit` : `${puBelum} (${pctBelum}%)`}</td>
                     {!isTindakLanjut && <td className="py-3 px-4 text-slate-600 flex items-center justify-center gap-1.5"><HiOutlineCamera className="w-4 h-4"/> -</td>}
                     <td className="py-3 px-4">
                       <span className={`${puStatus === 'Lengkap' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-orange-50 text-orange-700 border-orange-100'} border px-2.5 py-1 rounded-full font-bold text-[10px]`}>{puStatus}</span>

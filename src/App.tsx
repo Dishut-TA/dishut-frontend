@@ -63,7 +63,6 @@ import CreateInisiasiPenugasanEvaluasiKABID from "./pages/KepalaBidangPDAS/Evalu
 import DataEvaluasiIndex from "./pages/StaffPDAS/EvaluasiPenanamanBibit/DataEvaluasi/DataEvaluasiIndex";
 import DraftLaporanIndividu from "./pages/StaffPDAS/EvaluasiPenanamanBibit/DataEvaluasi/DraftLaporanIndividu";
 import PenugasanEvaluasiSTAFFPDAS from "./pages/StaffPDAS/EvaluasiPenanamanBibit/Penugasan";
-// import CreatePengesahanLaporanKabid from "./pages/KepalaBidangPDAS/EvaluasiPenanamanBibit/LaporanEvaluasi/CreatePengesahanLaporanKabid";
 // import PengesahanLaporanKABID from "./pages/KepalaBidangPDAS/EvaluasiPenanamanBibit/LaporanEvaluasi";
 import CreatePenugasanEvaluasiStaffPDAS from "./pages/StaffPDAS/EvaluasiPenanamanBibit/Penugasan/InputEvaluasi";
 import InisiasiPenugasanEvaluasiKABID from "./pages/KepalaBidangPDAS/EvaluasiPenanamanBibit/InisiasiPenugasanEvaluasi/InisiasiPenugasanKABID";
@@ -355,13 +354,6 @@ function App() {
                   <Route path="evaluasi/laporan" element={<LaporanEvaluasiKABID />} />
                   <Route path="evaluasi/laporan/pengesahan/:id" element={<PengesahanLaporanEvaluasiKabid />} />
                   <Route path="evaluasi/laporan/detail/:id" element={<DetailLaporanEvaluasiKABID />} />
-
-                  {/* blm fixx */}
-                  {/* <Route path="evaluasi/laporan" element={<PengesahanLaporanKABID />} />
-                  <Route path="evaluasi/laporan/:id" element={<CreatePengesahanLaporanKabid />} />
-                  <Route path="evaluasi/laporan/:id" element={<CreatePengesahanLaporanKabid />} />
-                  <Route path="evaluasi/verifikasi-laporan" element={<KabidVerifikasiBAP />} /> */}
-                  {/* blm fixx */}
 
                   <Route path="manajemen-akun/data-pengguna" element={<DataPengguna />} />
                   <Route path="manajemen-akun/data-pengguna/detail/:id" element={<DetailPengguna />} />

@@ -157,3 +157,58 @@ export const barisTanaman = (petakUkurs?: any[]) => {
     }))
   );
 };
+
+/**
+ * Titik tanaman yang perlu disulam: tanaman berkondisi mati atau rusak.
+ * Status penyulamannya tersimpan pada kolom penyulaman_* di data_tanamans.
+ */
+export const titikPenyulaman = (petakUkurs?: any[]) => {
+  if (!Array.isArray(petakUkurs)) return [];
+
+  return petakUkurs.flatMap((pu: any) =>
+    (pu.data_tanamans || pu.dataTanamans || [])
+      .filter((t: any) => {
+        const kondisi = (t.kondisi_tanaman || '').toLowerCase();
+        return kondisi.includes('mati') || kondisi.includes('rusak');
+      })
+      .map((t: any) => ({
+        id: t.id,
+        tk: `${pu.nama || 'PU'}-TK-${String(t.id).padStart(3, '0')}`,
+        koordinat:
+          t.latitude !== null && t.latitude !== undefined && t.longitude !== null && t.longitude !== undefined
+            ? `${t.latitude}, ${t.longitude}`
+            : (pu.eval_koordinat || '-'),
+        foto: Boolean(t.penyulaman_foto || t.foto_url),
+        tinggi: t.penyulaman_tinggi ? `${t.penyulaman_tinggi} cm` : '-',
+        status: t.status_penyulaman || 'Belum Disulam',
+        tgl: tanggalSingkat(t.penyulaman_at),
+        petak: pu.nama,
+      }))
+  );
+};
+
+/** Rekap penyulaman per petak ukur untuk jalur Tindak Lanjut. */
+export const rekapPenyulaman = (petakUkurs?: any[]) => {
+  if (!Array.isArray(petakUkurs)) return [];
+
+  return petakUkurs
+    .map((pu: any) => {
+      const titik = titikPenyulaman([pu]);
+      const sudah = titik.filter((t) => t.status === 'Sudah Disulam').length;
+      const bibit = (pu.data_tanamans || pu.dataTanamans || []).reduce(
+        (jumlah: number, t: any) => jumlah + (Number(t.penyulaman_jumlah) || 0),
+        0
+      );
+
+      return {
+        pu: pu.nama || `PU ${pu.id ?? ''}`.trim(),
+        perlu: titik.length,
+        sudah,
+        belum: titik.length - sudah,
+        bibit,
+        status: titik.length > 0 && sudah === titik.length ? 'Lengkap' : 'Belum Lengkap',
+        update: tanggalSingkat(pu.updated_at),
+      };
+    })
+    .filter((r) => r.perlu > 0);
+};
