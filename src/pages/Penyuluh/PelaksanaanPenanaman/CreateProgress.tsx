@@ -209,7 +209,7 @@ const InputProgresPage: React.FC = () => {
             </div>
 
             {/* Ringkasan Hasil Validasi Lokasi */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            {/* <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <h2 className="text-sm font-bold text-emerald-800 flex items-center gap-2 mb-6">
                 <HiCheckCircle className="w-5 h-5 text-[#008A4B]" /> Ringkasan Hasil Validasi Lokasi
               </h2>
@@ -258,7 +258,7 @@ const InputProgresPage: React.FC = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </div> */}
 
           </div>
         </div>

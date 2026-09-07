@@ -305,29 +305,36 @@ export const RekapView: React.FC<RekapViewProps> = ({
         <button onClick={() => navigate(-1)} className="px-6 py-2.5 border border-slate-300 text-slate-700 bg-white rounded-full text-sm font-bold flex items-center gap-2 shadow-sm transition-colors cursor-pointer hover:bg-slate-50">
           <HiOutlineArrowLeft className="w-4 h-4 stroke-2" /> Kembali
         </button>
-        <button
-          disabled={isSubmitting}
-          onClick={async () => {
-            try {
-              setIsSubmitting(true);
-              const token = localStorage.getItem('token');
-              const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
-              await axios.post(`${API_URL}/penugasan/${activeId}/${isTindakLanjut ? 'submit-tindak-lanjut' : 'submit-monitoring'}`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-              });
-              toast.success(`Hasil ${isTindakLanjut ? 'Penyulaman' : 'Monitoring'} berhasil dikirim!`);
-              navigate('/penyuluh/monitoring-program');
-            } catch (err) {
-              console.error(err);
-              toast.error('Gagal mengirim hasil monitoring.');
-            } finally {
-              setIsSubmitting(false);
-            }
-          }}
-          className={`px-8 py-2.5 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm transition-colors ${!isSubmitting ? 'bg-[#008A4B] text-white hover:bg-emerald-800 cursor-pointer' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
-        >
-          <HiOutlinePaperAirplane className="w-4 h-4 -rotate-45" /> {isSubmitting ? 'Mengirim...' : `Kirim Hasil ${isTindakLanjut ? `Penyulaman ${activeProgram.periode}` : `Monitoring ${activeProgram.periode}`}`}
-        </button>
+        {(activeProgram as any)?.status !== 'Monitoring Selesai' && (
+          <button
+            disabled={isSubmitting}
+            onClick={async () => {
+              try {
+                setIsSubmitting(true);
+                const token = localStorage.getItem('token');
+                const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
+                await axios.post(`${API_URL}/penugasan/${activeId}/${isTindakLanjut ? 'submit-tindak-lanjut' : 'submit-monitoring'}`, {}, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                toast.success(`Hasil ${isTindakLanjut ? 'Penyulaman' : 'Monitoring'} berhasil dikirim!`);
+                navigate('/penyuluh/monitoring-program');
+              } catch (err) {
+                console.error(err);
+                toast.error('Gagal mengirim hasil monitoring.');
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            className={`px-8 py-2.5 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm transition-colors ${!isSubmitting ? 'bg-[#008A4B] text-white hover:bg-emerald-800 cursor-pointer' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+          >
+            <HiOutlinePaperAirplane className="w-4 h-4 -rotate-45" /> {isSubmitting ? 'Mengirim...' : `Kirim Hasil ${isTindakLanjut ? `Penyulaman ${activeProgram.periode}` : `Monitoring ${activeProgram.periode}`}`}
+          </button>
+        )}
+        {(activeProgram as any)?.status === 'Monitoring Selesai' && (
+          <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 border border-emerald-200 rounded-full text-sm font-bold text-emerald-700">
+            <HiOutlineInformationCircle className="w-4 h-4" /> Monitoring Selesai
+          </div>
+        )}
       </div>
     </div>
   );

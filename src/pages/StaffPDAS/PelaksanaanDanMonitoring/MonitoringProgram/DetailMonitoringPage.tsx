@@ -644,9 +644,6 @@ const DetailMonitoringPage: React.FC = () => {
             <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Luas Area</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{programData?.luas || '-'}</span></div>
             <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Sumber Dana</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{programData?.sumberDana || '-'}</span></div>
           </div>
-          <div className="w-full md:w-64 h-24 shrink-0 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400')] bg-cover bg-center border border-slate-200">
-            <HiOutlineMapPin className="w-7 h-7 text-green-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow-md" />
-          </div>
         </div>
       </div>
 
@@ -779,7 +776,7 @@ const DetailMonitoringPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        {/* <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <h3 className="text-sm font-bold text-slate-900 mb-4">Riwayat Monitoring</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[11px]">
@@ -791,8 +788,8 @@ const DetailMonitoringPage: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        </div> */}
+        {/* <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <h3 className="text-sm font-bold text-slate-900 mb-3">Dokumentasi Foto</h3>
           {dokumentasiPreview.length > 0 ? (
             <div className="grid grid-cols-4 gap-2 mb-2">
@@ -803,7 +800,7 @@ const DetailMonitoringPage: React.FC = () => {
           ) : (
             <div className="h-20 bg-slate-50 border border-dashed border-slate-200 rounded flex items-center justify-center text-xs text-slate-400">Belum ada dokumentasi</div>
           )}
-        </div>
+        </div> */}
       </div>
 
     </div>

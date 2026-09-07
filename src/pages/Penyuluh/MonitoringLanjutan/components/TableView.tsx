@@ -29,7 +29,8 @@ export const TableView: React.FC<TableViewProps> = ({
   const targetPu = petakUkurs.find((pu: any, idx: number) => pu.id === selectedPuId || idx === selectedPuId) || petakUkurs[0];
   const allPlants = targetPu?.data_tanamans || targetPu?.dataTanamans || [];
   const puName = targetPu?.nama || `PU-${(petakUkurs.indexOf(targetPu) + 1).toString().padStart(2, '0')}`;
-
+  
+  const STORAGE_URL = (import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api').replace('/api', '/storage');
   const totalTanaman = allPlants.reduce((acc: any, curr: any) => acc + (curr.jumlah || 0), 0);
   let sudahDiinput = 0;
   let mati = 0;
@@ -201,7 +202,7 @@ export const TableView: React.FC<TableViewProps> = ({
                       <span className="text-blue-500 font-bold">Belum diinput</span>
                     ) : (
                       <div className="w-20 h-10 bg-gray-200 rounded overflow-hidden inline-block border border-gray-300 mx-auto relative">
-                        <img src={row.foto_url} alt="Sesudah" className="object-cover w-full h-full" />
+                        <img src={row.foto_url.startsWith('http') ? row.foto_url : `${STORAGE_URL}/${row.foto_url}`} alt="Sesudah" className="object-cover w-full h-full" />
                         {!isTindakLanjut && (
                           <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[7px] text-white py-0.5 text-center leading-tight">
                             {new Date(row.updated_at).toLocaleDateString('id-ID')}

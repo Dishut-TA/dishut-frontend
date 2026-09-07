@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -6,7 +6,7 @@ import {
   HiOutlineMapPin, HiOutlineCalendar, HiOutlineCheckCircle, HiCheckCircle,
   HiOutlineXMark, HiOutlineEye, HiOutlineInformationCircle,
   HiOutlinePhoto, HiOutlineDocumentText, HiOutlineUser, HiOutlineUsers,
-  HiOutlineBriefcase, HiCheck, HiOutlineArrowLeft, HiOutlinePrinter
+  HiOutlineBriefcase, HiCheck, HiOutlineArrowLeft, HiOutlinePrinter, HiOutlineCamera
 } from 'react-icons/hi2';
 import { MOCK_TANAMAN } from '../data/mockData';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -33,6 +33,22 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
   const navigate = useNavigate();
   const [selectedPU, setSelectedPU] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dokumentasi, setDokumentasi] = useState<any[]>([]);
+
+  const STORAGE_URL = (import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api').replace('/api', '/storage');
+  const resolveUrl = (path: string) => path.startsWith('http') ? path : `${STORAGE_URL}/${path}`;
+
+  useEffect(() => {
+    if (!activeId) return;
+    const token = localStorage.getItem('token');
+    axios.get(`${import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api'}/penugasan/${activeId}/dokumentasi`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => {
+      setDokumentasi(res.data?.data || []);
+    }).catch(() => {
+      // silent fail — halaman tetap bisa dipakai
+    });
+  }, [activeId]);
 
   const handleApprove = async () => {
     try {
@@ -179,7 +195,7 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
               <div className="border border-gray-200 rounded-lg p-2.5 text-center"><p className="text-[9px] font-bold text-gray-400 mb-1">Belum Selesai</p><p className="text-sm font-bold text-gray-900">0 / {jumlahPu}</p><p className="text-[9px] text-gray-400">PU</p></div>
               <div className="border border-gray-200 rounded-lg p-2.5 text-center"><p className="text-[9px] font-bold text-gray-400 flex items-center justify-center gap-1 mb-1"><HiOutlinePhoto className="w-3 h-3" /> Foto</p><p className="text-sm font-bold text-gray-900">{targetKegiatan} / {targetKegiatan}</p></div>
               <div className="border border-gray-200 rounded-lg p-2.5 text-center"><p className="text-[9px] font-bold text-gray-400 flex items-center justify-center gap-1 mb-1"><HiOutlineMapPin className="w-3 h-3" /> Koordinat</p><p className="text-sm font-bold text-gray-900">{targetKegiatan} / {targetKegiatan}</p></div>
-              <div className="border border-gray-200 rounded-lg p-2.5 text-center"><p className="text-[9px] font-bold text-gray-400 mb-1">Dokumentasi</p><p className="text-sm font-bold text-gray-900">8 / 8</p></div>
+              <div className="border border-gray-200 rounded-lg p-2.5 text-center"><p className="text-[9px] font-bold text-gray-400 mb-1">Dokumentasi</p><p className="text-sm font-bold text-gray-900">{dokumentasi.length} / {dokumentasi.length || '-'}</p></div>
             </div>
             <div>
               <div className="flex justify-between items-end mb-2">
@@ -201,7 +217,7 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
             </div>
           </div>
           <div className="p-4 flex-1 relative">
-            <div className="w-full h-full min-h-[300px] rounded-lg border border-gray-200 relative overflow-hidden z-0">
+            <div className="w-full h-full min-h-75 rounded-lg border border-gray-200 relative overflow-hidden z-0">
               <MapContainer center={[-7.033, 107.522]} zoom={12} style={{ height: '100%', width: '100%', minHeight: '300px' }} scrollWheelZoom={false}>
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -326,6 +342,32 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
           </div>
         </div>
       )}
+
+      {/* Dokumentasi Pelaksanaan dari API */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-base font-bold text-gray-900 mb-6">Dokumentasi Pelaksanaan</h3>
+        {dokumentasi.length > 0 ? (
+          <div className="grid grid-cols-5 gap-3">
+            {dokumentasi.slice(0, 4).map((dok: any, idx: number) => (
+              <div key={idx} className="aspect-square rounded-lg overflow-hidden border border-gray-200">
+                <img src={resolveUrl(dok.file_path)} alt={dok.keterangan || `Dokumentasi ${idx + 1}`} className="w-full h-full object-cover" />
+              </div>
+            ))}
+            {dokumentasi.length > 4 && (
+              <div className="aspect-square rounded-lg border border-gray-100 bg-gray-50 flex flex-col items-center justify-center text-center p-2 cursor-pointer hover:bg-gray-100 transition-colors">
+                <HiOutlineCamera className="w-6 h-6 text-gray-300 mb-1" />
+                <span className="text-xs font-bold text-gray-500">+{dokumentasi.length - 4} lainnya</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-gray-200 rounded-xl bg-gray-50">
+            <HiOutlineCamera className="w-8 h-8 text-gray-300 mb-2" />
+            <p className="text-sm font-bold text-gray-400">Belum ada dokumentasi diunggah</p>
+            <p className="text-xs text-gray-400 mt-1">Penyuluh belum mengunggah foto dokumentasi pelaksanaan</p>
+          </div>
+        )}
+      </div>
 
       <div className="pt-5 border-t border-gray-100 flex items-center justify-end gap-4">
         <button
