@@ -7,11 +7,14 @@ import {
   HiOutlineClipboardDocumentCheck,
   HiOutlineCheckCircle,
   HiOutlineEye,
+  HiOutlineArrowDownTray,
   HiChevronLeft,
   HiChevronRight,
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
-import { getAllPenugasanAPI } from '@/services/penugasan.service';
+import { getAllPenugasanAPI, getPenugasanByIdAPI } from '@/services/penugasan.service';
+import { normalisasiPenugasan } from '@/hooks/useDetailPenugasan';
+import { unduhLaporanPDF } from '@/components/pdf/laporanVerifikasi';
 import { kunciProgram, waktuTerakhir } from '@/utils/programDashboard';
 
 const PER_HALAMAN = 10;
@@ -73,6 +76,7 @@ const LaporanKabid: React.FC = () => {
   const [filterProgram, setFilterProgram] = useState('Semua Program');
   const [filterJenis, setFilterJenis] = useState('Semua Jenis');
   const [halaman, setHalaman] = useState(1);
+  const [sedangUnduh, setSedangUnduh] = useState<number | null>(null);
 
   useEffect(() => {
     const ambil = async () => {
@@ -147,6 +151,28 @@ const LaporanKabid: React.FC = () => {
     setCari('');
     setFilterProgram('Semua Program');
     setFilterJenis('Semua Jenis');
+  };
+
+  /**
+   * Daftar laporan hanya memuat ringkasan penugasan, sedangkan PDF butuh petak
+   * ukur dan data tanamannya. Detailnya diambil saat tombol ditekan supaya
+   * halaman ini tidak menarik seluruh detail sekaligus.
+   */
+  const unduhPDF = async (row: BarisLaporan) => {
+    if (!row.navId || sedangUnduh !== null) return;
+
+    setSedangUnduh(row.navId);
+    try {
+      const res = await getPenugasanByIdAPI(String(row.navId));
+      if (!res?.data) throw new Error('Detail laporan tidak ditemukan.');
+
+      await unduhLaporanPDF(normalisasiPenugasan(res.data, String(row.navId)));
+      toast.success(`Laporan ${row.idLaporan} berhasil diunduh.`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Gagal menyusun laporan PDF.');
+    } finally {
+      setSedangUnduh(null);
+    }
   };
 
   return (
@@ -264,7 +290,7 @@ const LaporanKabid: React.FC = () => {
                   <td className="py-4 px-2 font-medium text-slate-600">{row.penyuluh}</td>
                   <td className="py-4 px-2 font-medium text-slate-600">{row.tanggal}</td>
                   <td className="py-4 pr-6 pl-2">
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() =>
                           navigate(`/admin/kabid/monitoring/dashboard/detail/${row.navId}`, {
@@ -277,6 +303,15 @@ const LaporanKabid: React.FC = () => {
                         className="inline-flex items-center gap-1.5 px-4 py-1.5 text-[10px] font-bold border border-[#185325] text-[#185325] rounded-lg bg-white hover:bg-[#f0f9f3] transition-colors cursor-pointer"
                       >
                         <HiOutlineEye className="w-3.5 h-3.5" /> Lihat Laporan
+                      </button>
+                      <button
+                        onClick={() => unduhPDF(row)}
+                        disabled={sedangUnduh !== null}
+                        title="Unduh laporan sebagai PDF"
+                        className="inline-flex items-center gap-1.5 px-4 py-1.5 text-[10px] font-bold bg-[#185325] text-white rounded-lg hover:bg-[#124019] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <HiOutlineArrowDownTray className="w-3.5 h-3.5" />
+                        {sedangUnduh === row.navId ? 'Menyusun...' : 'Export PDF'}
                       </button>
                     </div>
                   </td>

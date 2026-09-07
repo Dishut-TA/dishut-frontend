@@ -1,8 +1,16 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import useDetailPenugasan from '@/hooks/useDetailPenugasan';
 import StatusMuat from '@/components/StatusMuat';
-import { HiOutlineArrowLeft, HiOutlinePrinter, HiOutlineMapPin, HiOutlineCalendar } from 'react-icons/hi2';
+import { unduhLaporanPDF, bukaLaporanPDF } from '@/components/pdf/laporanVerifikasi';
+import {
+  HiOutlineArrowLeft,
+  HiOutlineArrowDownTray,
+  HiOutlineEye,
+  HiOutlineMapPin,
+  HiOutlineCalendar,
+} from 'react-icons/hi2';
 import ContentPelaksanaan from './components/ContentPelaksanaan';
 import ContentValidasiLokasi from './components/ContentValidasiLokasi';
 import ContentMonitoringBerjalan from './components/ContentMonitoringBerjalan';
@@ -20,6 +28,27 @@ export default function DetailProgramKabid() {
 
   const { id } = useParams();
   const { data, isLoading, error } = useDetailPenugasan(id);
+  const [sedangCetak, setSedangCetak] = useState<'unduh' | 'lihat' | null>(null);
+
+  // Laporan PDF dirakit di sisi peramban dari data penugasan yang sudah dimuat,
+  // jadi tidak ada permintaan tambahan ke server saat tombol ditekan.
+  const cetakLaporan = async (mode: 'unduh' | 'lihat') => {
+    if (!data || sedangCetak) return;
+
+    setSedangCetak(mode);
+    try {
+      if (mode === 'unduh') {
+        await unduhLaporanPDF(data);
+        toast.success('Laporan PDF berhasil diunduh.');
+      } else {
+        await bukaLaporanPDF(data);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Gagal membuat laporan PDF.');
+    } finally {
+      setSedangCetak(null);
+    }
+  };
 
   // Progress memakai persentase tanaman hidup terhadap target, bukan angka tetap.
   const progressPersen = data?.stats?.targetTanam
@@ -105,9 +134,24 @@ export default function DetailProgramKabid() {
               </button>
             ))}
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm mb-2 shrink-0 cursor-pointer">
-            <HiOutlinePrinter className="w-4 h-4" /> Cetak Ringkasan
-          </button>
+          <div className="flex items-center gap-2 mb-2 shrink-0">
+            <button
+              onClick={() => cetakLaporan('lihat')}
+              disabled={!data || sedangCetak !== null}
+              className="flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <HiOutlineEye className="w-4 h-4" />
+              {sedangCetak === 'lihat' ? 'Menyiapkan...' : 'Lihat Laporan PDF'}
+            </button>
+            <button
+              onClick={() => cetakLaporan('unduh')}
+              disabled={!data || sedangCetak !== null}
+              className="flex items-center gap-2 px-4 py-2 bg-[#185325] text-white rounded-lg text-xs font-bold hover:bg-[#124019] transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <HiOutlineArrowDownTray className="w-4 h-4" />
+              {sedangCetak === 'unduh' ? 'Menyusun...' : 'Export PDF'}
+            </button>
+          </div>
         </div>
       </div>
 
