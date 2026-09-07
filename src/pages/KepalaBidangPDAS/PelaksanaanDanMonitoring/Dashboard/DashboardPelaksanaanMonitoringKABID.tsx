@@ -47,10 +47,10 @@ export default function DashboardPelaksanaanMonitoringKabid() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <TableRealisasi programs={dashboardData?.programs} />
-                <TableBerjalan programs={dashboardData?.recent_programs} />
+                <TableBerjalan programs={dashboardData?.programs} />
               </div>
 
-              <RecentActivities activities={dashboardData?.recent_programs} />
+              <RecentActivities activities={dashboardData?.programs} />
             </>
           )}
 
