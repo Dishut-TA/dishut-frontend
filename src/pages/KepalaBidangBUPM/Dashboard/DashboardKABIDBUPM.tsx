@@ -1,64 +1,78 @@
-import React from 'react';
-import { 
-  HiOutlineMap, 
-  HiOutlineCheckCircle, 
+import React, { useState, useEffect } from 'react';
+import {
+  HiOutlineMap,
+  HiOutlineCheckCircle,
   HiOutlineUsers,
   HiOutlineChartBar,
   HiOutlineClock,
-  HiOutlineEye
 } from 'react-icons/hi2';
-
-const TABLE_DATA = [
-  {
-    id: 1,
-    no: 1,
-    nama: 'Ekowisata Camp Pinus',
-    target: 'Rp. 5.000.000.000',
-    tenggat: '17/09/2024',
-    status: 'Menunggu Persetujuan',
-  },
-  {
-    id: 2,
-    no: 2,
-    nama: 'Ekowisata Kebun Stroberi',
-    target: 'Rp. 5.000.000.000',
-    tenggat: '17/09/2024',
-    status: 'Active',
-  }
-];
+import { getProgramBUPMAPI } from '../../../services/investasi.service';
 
 const DashboardKABIDBUPM: React.FC = () => {
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const data = await getProgramBUPMAPI();
+        setPrograms(data);
+      } catch (error) {
+        console.error("Gagal mengambil data program BUPM:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPrograms();
+  }, []);
+
+  const totalProgram = programs.length;
+  const programAktif = programs.filter(p => p.status === 'ACTIVE' || p.status === 'AKTIF').length;
+  const totalInvestor = programs.reduce((sum, p) => sum + (p.jumlah_investor || 0), 0);
+  const totalInvestasi = programs.reduce((sum, p) => sum + (p.dana_terkumpul || 0), 0);
+
+  const programsWaitingApproval = programs.filter(p => p.status === 'WAITING_APPROVAL' || p.status === 'MENUNGGU_PERSETUJUAN' || p.status === 'REVIEW');
+
+  const formatRupiah = (number: number) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number);
+  };
   const STAT_CARDS = [
     {
       id: 1,
       title: 'Total Program',
-      value: '12',
+      value: isLoading ? '...' : totalProgram.toString(),
       icon: <HiOutlineMap className="w-6 h-6" />,
     },
     {
       id: 2,
       title: 'Program Aktif',
-      value: '8',
+      value: isLoading ? '...' : programAktif.toString(),
       icon: <HiOutlineCheckCircle className="w-6 h-6" />,
     },
     {
       id: 3,
       title: 'Total Investor',
-      value: '50',
+      value: isLoading ? '...' : totalInvestor.toString(),
       icon: <HiOutlineUsers className="w-6 h-6" />,
     },
     {
       id: 4,
       title: 'Total Investasi',
-      value: 'Rp 0',
+      value: isLoading ? '...' : formatRupiah(totalInvestasi),
       icon: <HiOutlineChartBar className="w-6 h-6" />,
     }
   ];
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'Active': return 'text-[#185325] font-bold';
-      case 'Menunggu Persetujuan': return 'text-gray-500 font-medium';
+      case 'ACTIVE':
+      case 'AKTIF':
+        return 'text-[#185325] font-bold';
+      case 'WAITING_APPROVAL':
+      case 'MENUNGGU_PERSETUJUAN':
+      case 'REVIEW':
+      case 'Menunggu Persetujuan':
+        return 'text-gray-500 font-medium';
       default: return 'text-gray-700 font-medium';
     }
   };
@@ -95,7 +109,7 @@ const DashboardKABIDBUPM: React.FC = () => {
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2 text-gray-800">
           <HiOutlineClock className="w-5 h-5 font-bold" strokeWidth={2} />
-          <h2 className="text-lg font-bold">Menunggu Persetujuan Kepala (2)</h2>
+          <h2 className="text-lg font-bold">Menunggu Persetujuan Kepala ({programsWaitingApproval.length})</h2>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -112,39 +126,40 @@ const DashboardKABIDBUPM: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {TABLE_DATA.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-5 text-sm font-medium text-gray-700 text-center">
-                      {item.no}
-                    </td>
-                    <td className="px-6 py-5 text-sm font-medium text-gray-800 text-center whitespace-nowrap">
-                      {item.nama}
-                    </td>
-                    <td className="px-6 py-5 text-sm font-medium text-gray-800 text-center whitespace-nowrap">
-                      {item.target}
-                    </td>
-                    <td className="px-6 py-5 text-sm font-medium text-gray-800 text-center whitespace-nowrap">
-                      {item.tenggat}
-                    </td>
-                    <td className={`px-6 py-5 text-sm text-center whitespace-nowrap ${getStatusStyle(item.status)}`}>
-                      {item.status}
-                    </td>
-                    <td className="px-6 py-5 flex justify-center whitespace-nowrap">
-                      {item.status === 'Menunggu Persetujuan' ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-gray-500">Memuat data...</td>
+                  </tr>
+                ) : programsWaitingApproval.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-gray-500">Tidak ada program yang menunggu persetujuan</td>
+                  </tr>
+                ) : (
+                  programsWaitingApproval.map((item, index) => (
+                    <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-5 text-sm font-medium text-gray-700 text-center">
+                        {index + 1}
+                      </td>
+                      <td className="px-6 py-5 text-sm font-medium text-gray-800 text-center whitespace-nowrap">
+                        {item.nama_program || item.judulUsaha || '-'}
+                      </td>
+                      <td className="px-6 py-5 text-sm font-medium text-gray-800 text-center whitespace-nowrap">
+                        {formatRupiah(item.target_dana || 0)}
+                      </td>
+                      <td className="px-6 py-5 text-sm font-medium text-gray-800 text-center whitespace-nowrap">
+                        {item.batas_waktu_pengumpulan ? new Date(item.batas_waktu_pengumpulan).toLocaleDateString('id-ID') : '-'}
+                      </td>
+                      <td className={`px-6 py-5 text-sm text-center whitespace-nowrap ${getStatusStyle(item.status)}`}>
+                        {item.status}
+                      </td>
+                      <td className="px-6 py-5 flex justify-center whitespace-nowrap">
                         <button className="px-6 py-2 bg-[#185325] hover:bg-[#123d1c] text-white text-xs font-bold rounded-full transition-colors shadow-sm active:scale-95">
                           Setujui
                         </button>
-                      ) : (
-                        <button 
-                          title="Lihat Detail"
-                          className="p-2 text-gray-500 hover:text-[#185325] hover:bg-[#DCECE0] rounded-full transition-colors border border-gray-300 hover:border-[#185325]/20"
-                        >
-                          <HiOutlineEye className="w-5 h-5" />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

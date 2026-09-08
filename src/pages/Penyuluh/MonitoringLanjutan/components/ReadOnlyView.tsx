@@ -21,6 +21,7 @@ export const ReadOnlyView: React.FC<ReadOnlyViewProps> = ({
 
   const petakUkurs = (anyProgram?.petak_ukurs || anyProgram?.petakUkurs || []) as any[];
   const dokumentasiList = (anyProgram?.dokumentasi || []) as any[];
+  const STORAGE_URL = import.meta.env.VITE_STORAGE_URL || 'http://127.0.0.1:8000/storage';
   const penyuluhName = anyProgram?.penyuluh?.username || anyProgram?.penyuluh?.name || anyProgram?.penyuluh?.nama || '-';
 
   // Ambil data program & KTH langsung dari objek penugasanable (sama seperti logika di halaman list),
@@ -165,9 +166,12 @@ export const ReadOnlyView: React.FC<ReadOnlyViewProps> = ({
              {dokumentasiList.length > 0 ? (
                <>
                  <div className="grid grid-cols-4 gap-2 mb-3">
-                   {dokumentasiList.slice(0, 8).map((doc: any, i: number) => (
-                     <div key={doc.id || i} className="bg-slate-200 rounded-lg h-16 bg-cover bg-center border border-slate-200" style={{ backgroundImage: doc.file_path ? `url(${doc.file_path})` : undefined }}></div>
-                   ))}
+                   {dokumentasiList.slice(0, 8).map((doc: any, i: number) => {
+                     const photoUrl = doc.file_path ? (doc.file_path.startsWith('http') ? doc.file_path : `${STORAGE_URL}/${doc.file_path}`) : undefined;
+                     return (
+                       <div key={doc.id || i} className="bg-slate-200 rounded-lg h-16 bg-cover bg-center border border-slate-200" style={{ backgroundImage: photoUrl ? `url(${photoUrl})` : undefined }}></div>
+                     );
+                   })}
                  </div>
                  <p className="text-[11px] text-slate-500">{dokumentasiList.length} foto dokumentasi tersimpan untuk program ini.</p>
                </>

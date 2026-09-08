@@ -3,11 +3,12 @@ import toast from 'react-hot-toast';
 import PreviewBastModal from './components/PreviewBastModal';
 import UploadBastModal from './components/UploadBastModal';
 import RincianDanaModal from './components/RincianDanaModal';
+import BuktiTanamModal from './components/BuktiTanamModal';
 import KegiatanTable from './components/KegiatanTable';
 import { getDonationsAPI } from '@/services/donasi.service';
 
 export type StatusKegiatan = 'Pending' | 'Terkumpul' | 'Disalurkan' | 'Terealisasi';
-export type ModalType = 'previewBAST' | 'rincian' | 'uploadBAST' | null;
+export type ModalType = 'previewBAST' | 'rincian' | 'uploadBAST' | 'buktitanam' | null;
 
 export interface DetailBibitDana {
   nama: string;
@@ -24,8 +25,9 @@ export interface KegiatanData {
   status: StatusKegiatan;
   namaDonatur: string;
   rincianBibit: DetailBibitDana[];
-  bastUrl?: string | null; 
-  buktiTanamUrl?: string | null; 
+  bastUrl?: string | null;
+  buktiTanamUrl?: string | null;
+  dokumentasiPenanaman: any[];
 }
 
 const formatKegiatanData = (item: any): KegiatanData => {
@@ -62,7 +64,8 @@ const formatKegiatanData = (item: any): KegiatanData => {
   const hasProof = Boolean(item.proof_url || item.proof_path);
 
   let status: StatusKegiatan = 'Terkumpul';
-  if (seedStatus === 'Pending' || seedStatus === 'Menunggu Verifikasi') status = 'Terkumpul';
+  if (seedStatus === 'Terealisasi' || seedStatus === 'terealisasi') status = 'Terealisasi';
+  else if (seedStatus === 'Pending' || seedStatus === 'Menunggu Verifikasi') status = 'Terkumpul';
   else if (hasBast && hasProof) status = 'Terealisasi';
   else if (hasBast) status = 'Disalurkan';
   
@@ -76,6 +79,7 @@ const formatKegiatanData = (item: any): KegiatanData => {
     status: status,
     bastUrl: item.bast_url || (item.bast_path ? `http://127.0.0.1:8000/storage/${item.bast_path}` : null),
     buktiTanamUrl: item.proof_url || (item.proof_path ? `http://127.0.0.1:8000/storage/${item.proof_path}` : null),
+    dokumentasiPenanaman: item.dokumentasi_penanaman || [],
     rincianBibit: rincianBibit.length > 0 ? rincianBibit : [{
       nama: 'Bibit Tanaman',
       jumlah: 0,
@@ -152,7 +156,13 @@ const PelaksanaanKegiatan: React.FC = () => {
         isOpen={modal.type === 'rincian'} 
         onClose={handleCloseModal} 
         data={modal.data} 
-      /> 
+      />
+
+      <BuktiTanamModal
+        isOpen={modal.type === 'buktitanam'}
+        onClose={handleCloseModal}
+        data={modal.data}
+      />
       
     </div>
   );

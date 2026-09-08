@@ -31,7 +31,7 @@ export default function DashboardPelaksanaanMonitoringKabid() {
 
   return (
     <div className="flex bg-gray-50 font-sans text-gray-800 w-full min-h-screen">
-      <main className="flex-1 flex flex-col w-full p-4 lg:p-6">
+      <main className="flex-1 flex flex-col w-full">
           <DashboardFilters />
           
           {isLoading ? (

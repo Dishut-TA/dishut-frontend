@@ -308,7 +308,7 @@ export const RekapView: React.FC<RekapViewProps> = ({
                   headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success(`Hasil ${isTindakLanjut ? 'Penyulaman' : 'Monitoring'} berhasil dikirim!`);
-                navigate('/penyuluh/monitoring-lanjutan');
+                navigate('/admin/penyuluh/monitoring-lanjutan');
               } catch (err) {
                 console.error(err);
                 toast.error('Gagal mengirim hasil monitoring.');

@@ -192,9 +192,18 @@ export const TableView: React.FC<TableViewProps> = ({
                   <td className="px-4 py-4 font-bold text-gray-800">-</td>
 
                   <td className="px-4 py-4">
-                    <div className="w-20 h-10 bg-gray-200 rounded overflow-hidden inline-block border border-gray-300 mx-auto relative">
-                      <span className="text-gray-400 text-[10px] flex items-center justify-center h-full w-full">No Photo</span>
-                    </div>
+                    {!row.foto_url ? (
+                      <div className="w-20 h-10 bg-gray-200 rounded overflow-hidden inline-block border border-gray-300 mx-auto relative">
+                        <span className="text-gray-400 text-[10px] flex items-center justify-center h-full w-full">No Photo</span>
+                      </div>
+                    ) : (
+                      <div className="w-20 h-10 bg-gray-200 rounded overflow-hidden inline-block border border-gray-300 mx-auto relative group cursor-pointer">
+                        <img src={row.foto_url.startsWith('http') ? row.foto_url : `${import.meta.env.VITE_STORAGE_URL || 'http://127.0.0.1:8000/storage'}/${row.foto_url}`} alt="Sebelum" className="object-cover w-full h-full" />
+                        <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[7px] text-white py-0.5 text-center leading-tight">
+                          {new Date(row.created_at).toLocaleDateString('id-ID')}
+                        </div>
+                      </div>
+                    )}
                   </td>
 
                   <td className="px-4 py-4">

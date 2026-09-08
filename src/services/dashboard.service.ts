@@ -44,3 +44,13 @@ export const getDashboardKabidPDASAPI = async (year: string) => {
     throw new Error(error.response?.data?.message || 'Gagal memuat data dashboard');
   }
 };
+
+export const getDashboardKthAPI = async () => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${API_URL}/dashboard-kth`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!response.ok) throw new Error("Gagal mengambil data dashboard KTH");
+  const result = await response.json();
+  return result.data;
+};

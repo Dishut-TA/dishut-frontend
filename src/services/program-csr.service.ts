@@ -24,6 +24,13 @@ export const getProgramCsrsAPI = async () => {
   return Array.isArray(data) ? data : data.data; 
 };
 
+export const getDashboardCsrAPI = async () => {
+  const res = await fetch(`${API_URL}/dashboard-csr`, { headers: getHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Gagal mengambil data Dashboard CSR");
+  return json.data;
+};
+
 export const getProgramCsrByIdAPI = async (id: string | number) => {
   const res = await fetch(`${API_URL}/program-csrs/${id}`, { headers: getHeaders() });
   if (!res.ok) throw new Error("Gagal mengambil detail Program CSR");

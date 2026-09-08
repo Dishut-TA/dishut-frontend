@@ -257,14 +257,25 @@ export const InputEditView: React.FC<InputEditViewProps> = ({
               <div className="border border-gray-200 rounded-xl p-3 bg-gray-50 flex flex-col h-45">
                 <p className="text-xs font-bold text-blue-700 mb-2">Foto Sebelum <span className="font-normal text-blue-500 bg-blue-50 px-1 py-0.5 rounded">({isTindakLanjut ? 'hasil monitoring' : 'Dari Pelaksanaan / PO'})</span></p>
                 <div className="flex-1 w-full bg-gray-200 rounded-lg overflow-hidden border border-gray-200 relative group">
-                  <img src="https://images.unsplash.com/photo-1621360841013-c76831f13885?q=80&w=400" alt="Sebelum" className="w-full h-full object-cover" />
+                  {selectedRow?.foto_url ? (
+                    <img 
+                      src={selectedRow.foto_url.startsWith('http') ? selectedRow.foto_url : `${import.meta.env.VITE_STORAGE_URL || 'http://127.0.0.1:8000/storage'}/${selectedRow.foto_url}`} 
+                      alt="Sebelum" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                      <HiOutlineCamera className="w-6 h-6 mb-1" />
+                      <span className="text-[10px] font-medium">Belum ada foto</span>
+                    </div>
+                  )}
                   <button className="absolute bottom-2 right-2 bg-white/90 w-8 h-8 rounded flex items-center justify-center shadow-sm cursor-pointer">
                     <HiOutlineMagnifyingGlass className="w-4 h-4 text-slate-700" />
                   </button>
                 </div>
                 <div className="text-[10px] text-gray-500 flex items-center gap-1.5 mt-2 font-medium">
                   <HiOutlineCalendar className="w-3.5 h-3.5 text-gray-400" />
-                  12 Mei 2026 • 09:15 WIB
+                  {selectedRow?.created_at ? new Date(selectedRow.created_at).toLocaleString('id-ID') : 'Belum tersedia'}
                 </div>
               </div>
 
@@ -274,14 +285,25 @@ export const InputEditView: React.FC<InputEditViewProps> = ({
                   <span className="font-normal text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[9px]">{isEdit ? 'Saat ini' : 'Baru diunggah'}</span>
                 </div>
                 <div className="flex-1 w-full bg-gray-200 rounded-lg overflow-hidden border border-gray-200 relative group">
-                  <img src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=400" alt="Sesudah" className="w-full h-full object-cover" />
+                  {form.fotoUrl ? (
+                    <img 
+                      src={form.fotoUrl.startsWith('http') ? form.fotoUrl : `${import.meta.env.VITE_STORAGE_URL || 'http://127.0.0.1:8000/storage'}/${form.fotoUrl}`} 
+                      alt="Sesudah" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                      <HiOutlineCamera className="w-6 h-6 mb-1" />
+                      <span className="text-[10px] font-medium">Preview Foto Baru</span>
+                    </div>
+                  )}
                   <button className="absolute bottom-2 right-2 bg-white/90 text-gray-700 px-3 py-1.5 rounded text-[11px] font-bold flex items-center gap-1.5 shadow-sm border border-gray-200 cursor-pointer hover:bg-white">
-                    <HiOutlineCamera className="w-4 h-4" /> Ganti Foto
+                    <HiOutlineCamera className="w-4 h-4" /> {form.fotoUrl ? 'Ganti Foto' : 'Pilih Foto'}
                   </button>
                 </div>
                 <div className="text-[10px] text-gray-500 flex items-center gap-1.5 mt-2 font-medium">
                   <HiOutlineCalendar className="w-3.5 h-3.5 text-gray-400" />
-                  27 Mei 2026 • 10:35 WIB
+                  Saat ini
                 </div>
               </div>
             </div>

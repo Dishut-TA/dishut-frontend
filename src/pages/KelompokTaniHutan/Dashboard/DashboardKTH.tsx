@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   HiOutlineDocumentText,
   HiOutlineCheckBadge,
   HiOutlinePresentationChartLine,
 } from 'react-icons/hi2';
+import { getDashboardKthAPI } from '../../../services/dashboard.service';
+import { getKthProgramsAPI } from '../../../services/investasi.service';
 
 interface StatCardData {
   id: number;
@@ -17,54 +19,76 @@ interface StatCardData {
 interface ProgramData {
   id: string;
   judulUsaha: string;
-  skema: 'Investasi' | 'CSR' | 'APBD';
+  skema: string;
   status: string;
 }
 
-// --- MOCK DATA ---
-const STAT_CARDS: StatCardData[] = [
-  {
-    id: 1,
-    title: 'REHABILITASI APBD AKTIF',
-    value: '1 Program',
-    subtitle: 'Dukungan Mandat Dinas Kehutanan',
-    icon: <HiOutlineDocumentText className="w-6 h-6" />,
-    colorClass: 'text-[#185325] bg-[#DCECE0]',
-  },
-  {
-    id: 2,
-    title: 'PENGAJUAN CSR DIPROSES',
-    value: '4 Pengajuan',
-    subtitle: 'Penelaahan Dinas & Mitra CSR',
-    icon: <HiOutlineCheckBadge className="w-6 h-6" />,
-    colorClass: 'text-blue-600 bg-blue-100',
-  },
-  {
-    id: 3,
-    title: 'INVESTASI BERJALAN',
-    value: '3 Proyek',
-    subtitle: 'Pendanaan dari Publik',
-    icon: <HiOutlinePresentationChartLine className="w-6 h-6" />,
-    colorClass: 'text-rose-600 bg-rose-100',
-  }
-];
-
-const MOCK_PROGRAMS: ProgramData[] = [
-  {
-    id: '#INV-001',
-    judulUsaha: 'Pengadaan Ekowisata Kebun Stroberi',
-    skema: 'Investasi',
-    status: 'Aktif'
-  },
-  {
-    id: 'CSR-001',
-    judulUsaha: 'Rehabilitasi Lahan Kritis Hulu DAS Cimanuk',
-    skema: 'CSR',
-    status: 'Disetujui'
-  }
-];
-
 const DashboardKTH: React.FC = () => {
+  const [apbdAktif, setApbdAktif] = useState(0);
+  const [csrDiproses, setCsrDiproses] = useState(0);
+  const [investasiBerjalan, setInvestasiBerjalan] = useState(0);
+  const [programsList, setProgramsList] = useState<ProgramData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const [localRes, investRes] = await Promise.all([
+          getDashboardKthAPI(),
+          getKthProgramsAPI()
+        ]);
+        
+        setApbdAktif(localRes.apbd_aktif || 0);
+        setCsrDiproses(localRes.csr_diproses || 0);
+
+        const investasiAktif = investRes.filter((p: any) => p.status === 'ACTIVE' || p.status === 'AKTIF').length;
+        setInvestasiBerjalan(investasiAktif);
+
+        // Map and merge programs
+        const localPrograms = localRes.programs || [];
+        const investPrograms = investRes.map((p: any) => ({
+          id: p.id,
+          judulUsaha: p.nama_program || p.judulUsaha,
+          skema: 'Investasi',
+          status: p.status
+        }));
+
+        setProgramsList([...localPrograms, ...investPrograms]);
+      } catch (error) {
+        console.error("Gagal mengambil data dashboard KTH:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, []);
+
+  const STAT_CARDS: StatCardData[] = [
+    {
+      id: 1,
+      title: 'REHABILITASI APBD AKTIF',
+      value: isLoading ? '...' : `${apbdAktif} Program`,
+      subtitle: 'Dukungan Mandat Dinas Kehutanan',
+      icon: <HiOutlineDocumentText className="w-6 h-6" />,
+      colorClass: 'text-[#185325] bg-[#DCECE0]',
+    },
+    {
+      id: 2,
+      title: 'PENGAJUAN CSR DIPROSES',
+      value: isLoading ? '...' : `${csrDiproses} Pengajuan`,
+      subtitle: 'Penelaahan Dinas & Mitra CSR',
+      icon: <HiOutlineCheckBadge className="w-6 h-6" />,
+      colorClass: 'text-blue-600 bg-blue-100',
+    },
+    {
+      id: 3,
+      title: 'INVESTASI BERJALAN',
+      value: isLoading ? '...' : `${investasiBerjalan} Proyek`,
+      subtitle: 'Pendanaan dari Publik',
+      icon: <HiOutlinePresentationChartLine className="w-6 h-6" />,
+      colorClass: 'text-rose-600 bg-rose-100',
+    }
+  ];
 
   const getStatusBadge = (status: string) => {
     return (
@@ -119,29 +143,35 @@ const DashboardKTH: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {MOCK_PROGRAMS.map((item, index) => (
-              <tr key={index} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-6 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
-                  {item.id}
-                </td>
-                <td className="px-6 py-4 text-sm font-bold text-gray-800 whitespace-nowrap">
-                  {item.judulUsaha}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
-                  {item.skema}
-                </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap">
-                  {getStatusBadge(item.status)}
+            {isLoading ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-gray-500 text-sm">
+                  Memuat data...
                 </td>
               </tr>
-            ))}
-
-            {MOCK_PROGRAMS.length === 0 && (
+            ) : programsList.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-6 py-12 text-center text-gray-500 text-sm">
                   Belum ada program yang diikutsertakan.
                 </td>
               </tr>
+            ) : (
+              programsList.map((item, index) => (
+                <tr key={index} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-600 whitespace-nowrap">
+                    {item.id.length > 10 && item.id.includes('-') ? item.id.split('-')[0] : item.id}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-800 whitespace-nowrap">
+                    {item.judulUsaha || '-'}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                    {item.skema}
+                  </td>
+                  <td className="px-6 py-4 text-center whitespace-nowrap">
+                    {getStatusBadge(item.status)}
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>

@@ -73,6 +73,13 @@ const KegiatanTable: React.FC<KegiatanTableProps> = ({ data, isLoading, onOpenMo
                         <a href={row.buktiTanamUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5 w-full px-3 py-1.5 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 text-[11px] font-bold rounded-lg transition-colors shadow-sm cursor-pointer">
                           <HiOutlinePhoto className="w-4 h-4" /> Bukti Penanaman
                         </a>
+                      ) : row.dokumentasiPenanaman && row.dokumentasiPenanaman.length > 0 ? (
+                        <button
+                          onClick={() => onOpenModal('buktitanam', row)}
+                          className="flex items-center justify-center gap-1.5 w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
+                        >
+                          <HiOutlinePhoto className="w-4 h-4" /> Integrasi Tanam
+                        </button>
                       ) : (
                         <span className="flex items-center justify-center gap-1.5 w-full px-3 py-1.5 bg-gray-50 border border-gray-100 text-gray-400 text-[10px] font-medium rounded-lg text-center leading-tight">
                           Menunggu integrasi tanam

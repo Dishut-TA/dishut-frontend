@@ -1,4 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
+import { TemplateRekapPelaksanaanPDF } from './TemplateRekapPelaksanaanPDF';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -34,6 +36,12 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dokumentasi, setDokumentasi] = useState<any[]>([]);
   const [tanaman, setTanaman] = useState<any[]>([]);
+
+  const pdfRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: pdfRef,
+    documentTitle: 'Rekap_Pelaksanaan_Penanaman'
+  });
 
   const STORAGE_URL = (import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api').replace('/api', '/storage');
   const resolveUrl = (path: string) => path.startsWith('http') ? path : `${STORAGE_URL}/${path}`;
@@ -364,7 +372,7 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
             <p className="text-sm text-gray-500">Data pelaksanaan penanaman telah diverifikasi dan disetujui.</p>
           </div>
           <div className="flex gap-3 shrink-0 w-full md:w-auto">
-            <button className="flex-1 md:flex-none px-6 py-2.5 bg-[#008A4B] text-white text-sm font-bold rounded-lg hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+            <button onClick={handlePrint} className="flex-1 md:flex-none px-6 py-2.5 bg-[#008A4B] text-white text-sm font-bold rounded-lg hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer">
               <HiOutlinePrinter className="w-4 h-4 stroke-2" /> Cetak Rekap
             </button>
           </div>
@@ -406,6 +414,16 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
           <HiCheck className="w-4 h-4 stroke-3" /> {isSubmitting ? 'Memproses...' : 'Setujui & Selesaikan PO'}
         </button>
       </div>
+      <TemplateRekapPelaksanaanPDF 
+        ref={pdfRef} 
+        data={{
+          ...data,
+          target: targetKegiatan,
+          realisasi: targetKegiatan
+        }} 
+        tanaman={tanaman} 
+        dokumentasi={dokumentasi} 
+      />
     </div>
   );
 }

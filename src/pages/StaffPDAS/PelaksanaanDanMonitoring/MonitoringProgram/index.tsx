@@ -36,12 +36,14 @@ const ITEMS_PER_PAGE = 5;
 const deriveMonitoringStatus = (p: any): string => {
   if (p.status === 'Dihentikan') return 'Dihentikan';
 
-  if (p.jenisKegiatan === 'Tindak Lanjut') {
+  const jk = p.jenisKegiatan || p.jenis_kegiatan;
+
+  if (jk === 'Tindak Lanjut') {
     return p.status === 'Selesai' ? 'Selesai' : 'Tindak Lanjut';
   }
 
-  if (p.jenisKegiatan === 'Monitoring') {
-    if (p.status === 'Selesai') return 'Selesai';
+  if (jk === 'Monitoring') {
+    if (p.status === 'Selesai' || p.status === 'Monitoring Selesai') return 'Selesai';
     if (p.status === 'Menunggu Evaluasi' || p.status === 'Menunggu Verifikasi') return 'Menunggu Evaluasi';
     if (p.status === 'Ditugaskan') return 'Ditugaskan';
     return 'Berjalan';
@@ -139,6 +141,8 @@ const MonitoringProgram: React.FC = () => {
     try {
       const res = await getAllPenugasanAPI();
       setPenugasans(res.data || []);
+      console.log(res);
+      
     } catch (error) {
       console.error('Gagal mengambil data penugasan', error);
       toast.error('Gagal memuat data Monitoring Program Rehabilitasi dari server.');
@@ -163,17 +167,18 @@ const MonitoringProgram: React.FC = () => {
     // baris Pelaksanaan untuk program yang sudah punya Monitoring/Tindak Lanjut.
     const programSudahDimonitor = new Set(
       penugasans
-        .filter((p: any) => p && ['Monitoring', 'Tindak Lanjut'].includes(p.jenisKegiatan))
+        .filter((p: any) => p && ['Monitoring', 'Tindak Lanjut'].includes(p.jenisKegiatan || p.jenis_kegiatan))
         .map(programKey)
     );
 
     return penugasans
       .filter((p: any) => {
-        if (!p || p.jenisKegiatan === 'Validasi Lokasi' || p.status === 'Menunggu Penugasan') {
+        const jk = p.jenisKegiatan || p.jenis_kegiatan;
+        if (!p || jk === 'Validasi Lokasi' || p.status === 'Menunggu Penugasan') {
           return false;
         }
 
-        if (p.jenisKegiatan === 'Pelaksanaan Penanaman' && programSudahDimonitor.has(programKey(p))) {
+        if (jk === 'Pelaksanaan Penanaman' && programSudahDimonitor.has(programKey(p))) {
           return false;
         }
 
