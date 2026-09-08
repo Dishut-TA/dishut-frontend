@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useDetailPenugasan from '@/hooks/useDetailPenugasan';
@@ -32,6 +32,37 @@ export default function DetailProgramKabid() {
   const { id } = useParams();
   const { data, isLoading, error } = useDetailPenugasan(id);
   const [sedangCetak, setSedangCetak] = useState<'unduh' | 'lihat' | null>(null);
+
+  const availableTabs = useMemo(() => {
+    const tabs: TabType[] = ['Validasi Lokasi', 'Pelaksanaan'];
+    if (!data) return tabs;
+    
+    const rawData = data.raw;
+    const periodeAktif = rawData?.penugasanable?.periode_aktif || 'P0';
+    let maxP = 0;
+    
+    if (periodeAktif.startsWith('P')) {
+      maxP = parseInt(periodeAktif.replace('P', ''), 10) || 0;
+    }
+    
+    if (data.status === 'Monitoring Selesai' || data.status === 'Dihentikan' || rawData?.status === 'Selesai' || rawData?.status === 'Dihentikan') {
+      if (data.riwayatMonitoring && data.riwayatMonitoring.length > 0) {
+        data.riwayatMonitoring.forEach((m: any) => {
+          const mPeriode = m.periode || m.periode_evaluasi || '';
+          if (mPeriode.startsWith('P')) {
+            const pVal = parseInt(mPeriode.replace('P', ''), 10);
+            if (pVal > maxP) maxP = pVal;
+          }
+        });
+      }
+    }
+
+    for (let i = 1; i <= Math.min(maxP, 4); i++) {
+      tabs.push(`Monitoring P${i}` as TabType);
+    }
+    
+    return tabs;
+  }, [data]);
 
   // Laporan PDF dirakit di sisi peramban dari data penugasan yang sudah dimuat,
   // jadi tidak ada permintaan tambahan ke server saat tombol ditekan.
@@ -127,7 +158,7 @@ export default function DetailProgramKabid() {
         <h3 className="text-sm font-bold text-slate-900 mb-4">Detail Informasi Kegiatan</h3>
         <div className="flex justify-between items-center border-b border-slate-200">
           <div className="flex gap-2 overflow-x-auto custom-scrollbar">
-            {(['Validasi Lokasi', 'Pelaksanaan', 'Monitoring P1', 'Monitoring P2', 'Monitoring P3', 'Monitoring P4'] as TabType[]).map((tab) => (
+            {availableTabs.map((tab) => (
               <button 
                 key={tab} 
                 onClick={() => setActiveTab(tab)}

@@ -55,18 +55,18 @@ export const RekapView: React.FC<RekapViewProps> = ({
 
   petakUkurs.forEach((pu: any) => {
     if (isTindakLanjut) {
-      // Titik yang perlu disulam adalah tanaman berkondisi mati atau rusak.
-      // Status realisasinya tersimpan pada kolom status_penyulaman, bukan
-      // ditebak dari teks kondisi_tanaman yang isinya bebas.
+      // Pada Tindak Lanjut, semua data tanaman yang dikirimkan backend 
+      // adalah bibit yang perlu disulam. Kita tidak perlu filter "mati" lagi.
       const dataTL = pu.dataTanamans || pu.data_tanamans || [];
 
       dataTL.forEach((t: any) => {
         const kondisi = (t.kondisi_tanaman || '').toLowerCase();
-        if (!kondisi.includes('mati') && !kondisi.includes('rusak')) return;
 
-        totalPerlDisulam += 1;
-        totalBibitSulam += Number(t.penyulaman_jumlah) || 0;
-        if (t.status_penyulaman === 'Sudah Disulam') totalSudahDisulam += 1;
+        totalPerlDisulam += 1; // atau t.jumlah jika menghitung pohon
+        totalBibitSulam += Number(t.penyulaman_jumlah) || t.jumlah || 1;
+        if (kondisi.includes('sudah disulam') || t.status_penyulaman === 'Sudah Disulam') {
+          totalSudahDisulam += 1;
+        }
       });
     } else {
       (pu.dataTanamans || pu.data_tanamans || []).forEach((t: any) => {
@@ -214,15 +214,15 @@ export const RekapView: React.FC<RekapViewProps> = ({
                 let puBibitSulam = 0;
 
                 if (isTindakLanjut) {
-                  // Sama seperti perhitungan total: titik mati atau rusak,
-                  // dengan realisasi dibaca dari kolom status_penyulaman.
+                  // Sama seperti perhitungan total: semua titik di sini adalah yang perlu disulam
                   (pu.dataTanamans || pu.data_tanamans || []).forEach((t: any) => {
                     const kondisi = (t.kondisi_tanaman || '').toLowerCase();
-                    if (!kondisi.includes('mati') && !kondisi.includes('rusak')) return;
 
                     puPerlDisulam += 1;
-                    puBibitSulam += Number(t.penyulaman_jumlah) || 0;
-                    if (t.status_penyulaman === 'Sudah Disulam') puSudahDisulam += 1;
+                    puBibitSulam += Number(t.penyulaman_jumlah) || t.jumlah || 1;
+                    if (kondisi.includes('sudah disulam') || t.status_penyulaman === 'Sudah Disulam') {
+                      puSudahDisulam += 1;
+                    }
                   });
                 } else {
                   (pu.dataTanamans || pu.data_tanamans || []).forEach((t: any) => {

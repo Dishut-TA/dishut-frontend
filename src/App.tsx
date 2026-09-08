@@ -10,7 +10,8 @@ import DashboardKTH from "./pages/KelompokTaniHutan/Dashboard/DashboardKTH";
 import DashboardCSR from "./pages/CSR/DashboardCSR/DashboardCSR";
 import TinjauProposal from "./pages/CSR/TinjauProposal/TinjauProposal";
 import DetailTinjauProposal from "./pages/CSR/TinjauProposal/DetailTinjauProposal";
-import MonitoringProyek from "./pages/CSR/MonitoringProyek/MonitoringProyek";
+import MonitoringProyekIndex from "./pages/CSR/MonitoringProyek/index";
+import DetailMonitoringProyek from "./pages/CSR/MonitoringProyek/DetailMonitoringProyek";
 import DashboardStaffBUPM from "./pages/StaffBUPM/Dashboard/DashboardStaffBUPM";
 import DataInvestasi from "./pages/StaffBUPM/DataInvestasi/DataInvestasi";
 import DetailInvestasi from "./pages/StaffBUPM/DataInvestasi/DetailInvestasi";
@@ -422,7 +423,8 @@ function App() {
                   <Route path="pendanaan/:id" element={<PendanaanProgram />} />
                   <Route path="riwayat-pendanaan" element={<RiwayatPendanaan />} />
                   <Route path="riwayat-pendanaan/detail/:id" element={<DetailRiwayatPendanaan />} />
-                  <Route path="monitoring-proyek" element={<MonitoringProyek />} />
+                  <Route path="monitoring-proyek" element={<MonitoringProyekIndex />} />
+                  <Route path="monitoring-proyek/detail/:id" element={<DetailMonitoringProyek />} />
                   <Route path="laporan-keuangan" element={<LaporanKeuanganIndex />} />
                   <Route path="laporan-keuangan/detail/:id" element={<DetailLaporanKeuangan />} />
                 </Route>

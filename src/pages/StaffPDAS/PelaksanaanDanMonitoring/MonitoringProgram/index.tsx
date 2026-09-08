@@ -160,50 +160,61 @@ const MonitoringProgram: React.FC = () => {
 
     const programKey = (p: any) => `${p.source_type}_${p.original_id}`;
 
-    // Backend kini mengirim satu baris per penugasan, jadi satu program bisa
-    // punya baris Pelaksanaan Penanaman sekaligus baris Monitoring. Baris
-    // Pelaksanaan ter-derive menjadi 'Siap Monitoring' dan akan memunculkan
-    // tombol Tugaskan kedua, padahal monitoringnya sudah berjalan. Sembunyikan
-    // baris Pelaksanaan untuk program yang sudah punya Monitoring/Tindak Lanjut.
-    const programSudahDimonitor = new Set(
-      penugasans
-        .filter((p: any) => p && ['Monitoring', 'Tindak Lanjut'].includes(p.jenisKegiatan || p.jenis_kegiatan))
-        .map(programKey)
-    );
+    // Backend kini mengirim satu baris per penugasan.
+    // Kita harus memfilter penugasan yang valid, lalu MENGELOMPOKKAN berdasarkan program
+    // sehingga HANYA penugasan yang paling baru (Tindak Lanjut atau Monitoring terbaru) yang ditampilkan di tabel.
+    const groupedPenugasans = new Map();
 
-    return penugasans
-      .filter((p: any) => {
-        const jk = p.jenisKegiatan || p.jenis_kegiatan;
-        if (!p || jk === 'Validasi Lokasi' || p.status === 'Menunggu Penugasan') {
-          return false;
-        }
+    penugasans.forEach((p: any) => {
+      const jk = p.jenisKegiatan || p.jenis_kegiatan;
+      // Abaikan Validasi Lokasi dan yang masih Menunggu Penugasan
+      if (!p || jk === 'Validasi Lokasi' || p.status === 'Menunggu Penugasan') {
+        return;
+      }
 
-        if (jk === 'Pelaksanaan Penanaman' && programSudahDimonitor.has(programKey(p))) {
-          return false;
-        }
+      const key = programKey(p);
+      const currentPId = p.penugasan_id || 0;
+      const existingPId = groupedPenugasans.has(key) ? (groupedPenugasans.get(key).penugasan_id || 0) : -1;
+      
+      // Simpan jika belum ada, atau jika penugasan_id lebih besar (lebih baru)
+      if (!groupedPenugasans.has(key) || existingPId < currentPId) {
+        groupedPenugasans.set(key, p);
+      }
+    });
 
-        return true;
-      })
+    return Array.from(groupedPenugasans.values())
       .map((p: any) => {
         let programName = '-';
         let location = '-';
         let kthName = '-';
 
         const detail = p.detail || {};
+        let programPeriodeAktif = '';
 
         if (p.source_type === 'App\\Models\\DonationProgram') {
           programName = detail.name || '-';
-          location = detail.location || '-';
+          location = p.lokasi || detail.location || '-';
           kthName = detail.kth?.name || detail.kth?.nama || '-';
+          programPeriodeAktif = detail.periode_aktif || '';
         } else if (p.source_type === 'App\\Models\\ProgramApbd' || p.source_type === 'App\\Models\\ProgramCsr') {
           programName = detail.nama_program || '-';
-          location = detail.lokasi || '-';
+          location = p.lokasi || detail.lokasi || '-';
           kthName = detail.kth?.nama || detail.kth?.name || '-';
+          programPeriodeAktif = detail.periode_aktif || '';
         }
 
-        const displayStatus = deriveMonitoringStatus(p);
-        // periode_monitoring tersimpan di penugasan, bukan di program.
-        const periodeLabel = p.periodeMonitoring || 'P1';
+        let displayStatus = deriveMonitoringStatus(p);
+        let periodeLabel = p.periodeMonitoring || p.periode_monitoring || 'P1';
+
+        // LOGIKA NAIK KELAS:
+        // Jika periode_aktif pada program lebih tinggi dari periode penugasan terbaru,
+        // ATAU jika backend mengirimkan penugasan kosong/dummy (p.penugasan_id null)
+        // maka statusnya harus "Siap Monitoring" untuk periode yang baru tersebut.
+        if (programPeriodeAktif && programPeriodeAktif !== periodeLabel) {
+            // Program sudah berada di periode yang berbeda (naik kelas)
+            periodeLabel = programPeriodeAktif;
+            displayStatus = 'Siap Monitoring';
+        }
 
         const rawDateStr = p.created_at || (p.tanggalPenugasan !== '-' ? p.tanggalPenugasan : null);
         const sortDate = parseSafeDate(rawDateStr);
@@ -223,7 +234,7 @@ const MonitoringProgram: React.FC = () => {
           lokasi: location,
           kth: kthName,
           periodeLabel,
-          periodeDate: batasWaktuDate ? batasWaktuDate.toLocaleDateString('id-ID') : '-',
+          periodeDate: displayStatus === 'Siap Monitoring' ? '-' : (batasWaktuDate ? batasWaktuDate.toLocaleDateString('id-ID') : '-'),
           status: displayStatus,
           ringkasanTitle: displayStatus,
           ringkasanDesc: p.jenisKegiatan || '-',

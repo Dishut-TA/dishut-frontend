@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   HiOutlineChevronLeft, 
   HiOutlineCheckCircle, 
-  HiOutlineXCircle, 
+  // HiOutlineXCircle, 
   HiOutlineCheckBadge,
   HiOutlineMapPin,
   HiOutlineExclamationTriangle
@@ -279,14 +279,14 @@ const PengesahanLaporanEvaluasiKabid: React.FC = () => {
 
         {/* DECISION AREA */}
         <div className="border-t border-gray-100 pt-6 flex flex-col sm:flex-row justify-end gap-4">
-          <button 
+          {/* <button 
             type="button"
             onClick={() => setShowRevisiModal(true)} 
             disabled={isSubmitting}
             className="px-6 py-2.5 bg-white border-2 border-red-500 text-red-600 hover:bg-red-50 text-sm font-bold rounded-full transition-colors flex items-center justify-center gap-2 active:scale-95 cursor-pointer disabled:opacity-50"
           >
             <HiOutlineXCircle className="w-5 h-5 stroke-2" /> Kembalikan (Revisi)
-          </button>
+          </button> */}
           <button 
             type="button"
             onClick={handleSahkan} 

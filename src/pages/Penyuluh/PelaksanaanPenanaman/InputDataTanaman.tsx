@@ -195,6 +195,73 @@ const PelaksanaanWizard: React.FC = () => {
           totalPu = (d.penugasanable?.analysis_result_zone || d.penugasanable?.analysisResultZone)?.jumlah_pu || '0';
         }
 
+        let centerMap = [-7.6321456, 107.6587921]; // Default
+        const p = d.penugasanable;
+        const cpi = p?.analysis_result_zone || p?.analysisResultZone;
+        
+        if (cpi && (cpi.latitude || cpi.lat || cpi.centroid_lat || cpi.titik_koordinat)) {
+          if (cpi.titik_koordinat) {
+            try {
+              const coords = cpi.titik_koordinat.split(',').map((c: string) => parseFloat(c.trim()));
+              if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) centerMap = coords;
+            } catch(e) {}
+          } else {
+            centerMap = [
+              parseFloat(cpi.latitude || cpi.lat || cpi.centroid_lat),
+              parseFloat(cpi.longitude || cpi.lng || cpi.lon || cpi.centroid_lng)
+            ];
+          }
+        } else if (cpi && cpi.result_id && cpi.zone_id) {
+          // Fallback to fetch from GeoJSON endpoint
+          try {
+             const mapRes = await fetch(`${API_URL}/projects/${cpi.result_id}/map`, { headers: { 'Authorization': `Bearer ${token}` } });
+             if (mapRes.ok) {
+                const mapJson = await mapRes.json();
+                let geoData = mapJson;
+                if (mapJson.geojson_url) {
+                   const directRes = await fetch(mapJson.geojson_url);
+                   geoData = await directRes.json();
+                } else if (mapJson.payload && mapJson.payload.geojson_url) {
+                   const directRes = await fetch(mapJson.payload.geojson_url);
+                   geoData = await directRes.json();
+                }
+                
+                if (geoData && geoData.features) {
+                   const feature = geoData.features.find((f: any) => 
+                     f.properties?.zone_id === cpi.zone_id || 
+                     f.properties?.zone_id?.toString() === cpi.zone_id?.toString()
+                   );
+                   if (feature && feature.geometry?.coordinates) {
+                      let coords = feature.geometry.coordinates;
+                      while (Array.isArray(coords[0])) {
+                          coords = coords[0];
+                      }
+                      if (coords.length >= 2) {
+                          centerMap = [coords[1], coords[0]]; // Leaflet uses [lat, lon]
+                      }
+                   }
+                   console.log(centerMap);
+                }
+             }
+          } catch(e) {
+             console.error("Gagal load GeoJSON center:", e);
+          }
+        } else if (p?.latitude && p?.longitude) {
+          centerMap = [parseFloat(p.latitude), parseFloat(p.longitude)];
+        } else if (p?.kth?.latitude && p?.kth?.longitude) {
+          centerMap = [parseFloat(p.kth.latitude), parseFloat(p.kth.longitude)];
+        } else if (p?.koordinat_lokasi) {
+          try {
+            const coords = p.koordinat_lokasi.split(',').map((c: string) => parseFloat(c.trim()));
+            if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) centerMap = coords;
+          } catch(e) {}
+        } else if (p?.koordinat) {
+          try {
+            const coords = p.koordinat.split(',').map((c: string) => parseFloat(c.trim()));
+            if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) centerMap = coords;
+          } catch(e) {}
+        }
+
         setPenugasanData({
           id: d.id,
           idPenugasan: `TGS-${d.id}`,
@@ -204,7 +271,8 @@ const PelaksanaanWizard: React.FC = () => {
           periodeSelesai: d.batas_waktu ? new Date(d.batas_waktu).toLocaleDateString('id-ID') : '-',
           jenisKegiatan: d.jenis_kegiatan,
           targetPerPu: (parseInt(totalPu) || 0) > 0 ? String(Math.max(1, Math.floor((parseInt(targetBibit) || 0) / (parseInt(totalPu) || 1)))) : '0',
-          luasArea: d.penugasanable?.analysisResultZone?.luas_ha || 0
+          luasArea: d.penugasanable?.analysisResultZone?.luas_ha || 0,
+          centerCoords: centerMap as [number, number]
         });
 
         // 2. Fetch PU List
@@ -569,7 +637,8 @@ const PelaksanaanWizard: React.FC = () => {
 
             <div className="w-full h-100 relative bg-slate-100">
               <MapContainer
-                center={[-7.6321456, 107.6587921]}
+                key={`map-${penugasanData?.centerCoords?.[0]}-${penugasanData?.centerCoords?.[1]}`}
+                center={penugasanData?.centerCoords || [-7.6321456, 107.6587921]}
                 zoom={15}
                 style={{ width: '100%', height: '100%', zIndex: 10 }}
                 zoomControl={false}

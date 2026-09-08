@@ -140,6 +140,7 @@ export interface HasilEvaluasiCsr {
   boleh_dihentikan: boolean;
   alasan_tidak_boleh: string | null;
   evaluasi: any | null;
+  riwayat_evaluasi?: any[]; // Tambahan riwayat evaluasi periodik
   dokumentasi?: any[];
   penghentian: {
     alasan: string | null;

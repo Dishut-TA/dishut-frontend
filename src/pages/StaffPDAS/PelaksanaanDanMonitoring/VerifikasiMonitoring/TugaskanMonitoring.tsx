@@ -16,6 +16,7 @@ import { PiPlant } from 'react-icons/pi';
 import { getPenugasanByIdAPI, storeMonitoringAPI } from '../../../../services/penugasan.service';
 import { getSiklusByPenugasanAPI, type RingkasanSiklus } from '@/services/siklus.service';
 import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
+import toast from 'react-hot-toast';
 
 const TugaskanMonitoring: React.FC = () => {
   const navigate = useNavigate();
@@ -127,11 +128,11 @@ const TugaskanMonitoring: React.FC = () => {
     try {
       setIsSubmitting(true);
       await storeMonitoringAPI(id, form);
-      alert('Berhasil menugaskan monitoring!');
+      toast.success('Berhasil menugaskan monitoring!');
       navigate('/admin/staff/monitoring/verifikasi');
     } catch (error) {
       console.error(error);
-      alert('Gagal menugaskan monitoring.');
+      toast.error('Gagal menugaskan monitoring.');
     } finally {
       setIsSubmitting(false);
     }
