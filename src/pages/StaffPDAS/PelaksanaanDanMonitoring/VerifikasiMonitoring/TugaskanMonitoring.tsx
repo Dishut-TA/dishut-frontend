@@ -14,6 +14,7 @@ import {
 } from 'react-icons/hi2';
 import { PiPlant } from 'react-icons/pi';
 import { getPenugasanByIdAPI, storeMonitoringAPI } from '../../../../services/penugasan.service';
+import { getSiklusByPenugasanAPI, type RingkasanSiklus } from '@/services/siklus.service';
 import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
 
 const TugaskanMonitoring: React.FC = () => {
@@ -27,9 +28,12 @@ const TugaskanMonitoring: React.FC = () => {
   });
 
   const [programData, setProgramData] = useState<any>(null);
+  const [siklus, setSiklus] = useState<RingkasanSiklus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
+    // Diganti oleh periode berjalan program begitu siklusnya dimuat. P1 hanya
+    // nilai awal untuk program yang baru selesai penanaman.
     periode_monitoring: 'P1',
     tanggal_penugasan: '2026-05-10',
     batas_waktu: '2026-05-27',
@@ -96,6 +100,26 @@ const TugaskanMonitoring: React.FC = () => {
       }
     };
     fetchDetail();
+  }, [id]);
+
+  // Periode monitoring yang diturunkan harus mengikuti siklus program, bukan
+  // nilai tetap: program yang sudah lolos P1 turun ke P2, dan seterusnya.
+  React.useEffect(() => {
+    const fetchSiklus = async () => {
+      try {
+        if (!id) return;
+        const data = await getSiklusByPenugasanAPI(id);
+        setSiklus(data);
+
+        // P0 adalah penanaman awal, bukan periode monitoring. Program yang baru
+        // selesai menanam berarti monitoring pertamanya P1.
+        const periode = data.periode_aktif === 'P0' ? 'P1' : data.periode_aktif;
+        setForm((sebelumnya) => ({ ...sebelumnya, periode_monitoring: periode }));
+      } catch (error) {
+        console.error('Gagal memuat siklus program:', error);
+      }
+    };
+    fetchSiklus();
   }, [id]);
 
   const handleSubmit = async () => {
@@ -171,7 +195,7 @@ const TugaskanMonitoring: React.FC = () => {
                 <span className="text-slate-500 font-medium">Jenis Program</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">Rehabilitasi Mangrove</span>
               </div>
               <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs">
-                <span className="text-slate-500 font-medium">Periode Aktif</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">P2</span>
+                <span className="text-slate-500 font-medium">Periode Aktif</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{siklus?.periode_aktif || '-'}</span>
               </div>
               <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs">
                 <span className="text-slate-500 font-medium">Lokasi</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{programData?.lokasi || 'Desa Karangsong, Kec. Indramayu'}</span>
@@ -215,7 +239,12 @@ const TugaskanMonitoring: React.FC = () => {
                       onChange={(e) => setForm({ ...form, periode_monitoring: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:border-[#008A4B] focus:ring-1 focus:ring-[#008A4B] appearance-none"
                     >
-                      <option value="P1">P1</option>
+                      {/* P0 tidak ditawarkan karena itu penanaman awal, bukan
+                          monitoring. Periode yang sudah dilewati juga tidak,
+                          supaya siklus hanya bergerak maju. */}
+                      {['P1', 'P2', 'P3', 'P4']
+                        .filter((p) => p >= form.periode_monitoring)
+                        .map((p) => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </div>
                   <div>
@@ -335,20 +364,33 @@ const TugaskanMonitoring: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    <tr>
-                      <td className="py-3 px-5 font-medium text-slate-900">P1</td>
-                      <td className="py-3 px-5 text-slate-600">27 Mei 2026</td>
-                      <td className="py-3 px-5 text-slate-600">Ahmad Fauzi</td>
-                      <td className="py-3 px-5 text-slate-600">KTH Karangsong Lestari</td>
-                      <td className="py-3 px-5"><span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Selesai</span></td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 px-5 font-medium text-slate-900">P0</td>
-                      <td className="py-3 px-5 text-slate-600">10 Maret 2026</td>
-                      <td className="py-3 px-5 text-slate-600">Ahmad Fauzi</td>
-                      <td className="py-3 px-5 text-slate-600">KTH Karangsong Lestari</td>
-                      <td className="py-3 px-5"><span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Selesai</span></td>
-                    </tr>
+                    {!siklus?.riwayat?.length ? (
+                      <tr>
+                        <td colSpan={5} className="py-6 px-5 text-center text-slate-500 font-medium">
+                          Belum ada periode yang pernah ditempuh program ini.
+                        </td>
+                      </tr>
+                    ) : siklus.riwayat.map((r) => (
+                      <tr key={r.periode}>
+                        <td className="py-3 px-5 font-medium text-slate-900">{r.periode}</td>
+                        <td className="py-3 px-5 text-slate-600">
+                          {r.diukur_at
+                            ? new Date(r.diukur_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                            : '-'}
+                        </td>
+                        <td className="py-3 px-5 text-slate-600">{programData?.penyuluh || '-'}</td>
+                        <td className="py-3 px-5 text-slate-600">{programData?.kth || '-'}</td>
+                        <td className="py-3 px-5">
+                          {r.persentase_tumbuh === null ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-50 text-slate-600 border border-slate-200">Belum diukur</span>
+                          ) : r.lolos_ambang_batas ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Lolos {r.persentase_tumbuh}%</span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-50 text-orange-700 border border-orange-200">Tindak Lanjut {r.persentase_tumbuh}%</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

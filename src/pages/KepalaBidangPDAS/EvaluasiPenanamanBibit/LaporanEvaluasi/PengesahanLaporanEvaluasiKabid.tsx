@@ -10,6 +10,7 @@ import {
 } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import { getPenugasanEvaluasiDetail, sahkanLaporanEvaluasi, revisiLaporanEvaluasi } from '@/services/penugasanEvaluasi.service';
+import { getSiklusByEvaluasiAPI, type RingkasanSiklus } from '@/services/siklus.service';
 
 const PengesahanLaporanEvaluasiKabid: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const PengesahanLaporanEvaluasiKabid: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showRevisiModal, setShowRevisiModal] = useState(false);
   const [catatanRevisi, setCatatanRevisi] = useState('');
+  const [siklus, setSiklus] = useState<RingkasanSiklus | null>(null);
 
   const fetchDetail = async () => {
     try {
@@ -34,9 +36,21 @@ const PengesahanLaporanEvaluasiKabid: React.FC = () => {
     }
   };
 
+  // Siklus program dipakai untuk memberi tahu Kabid ke periode mana program
+  // akan dilanjutkan begitu laporan ini disahkan. Kegagalannya tidak
+  // menghalangi pengesahan, jadi cukup dicatat di konsol.
+  const fetchSiklus = async () => {
+    try {
+      setSiklus(await getSiklusByEvaluasiAPI(id!));
+    } catch (error) {
+      console.error('Gagal memuat siklus program:', error);
+    }
+  };
+
   useEffect(() => {
     if (id) {
       fetchDetail();
+      fetchSiklus();
     }
   }, [id]);
 
@@ -87,14 +101,23 @@ const PengesahanLaporanEvaluasiKabid: React.FC = () => {
   const skorCpi = dataEvaluasi?.skor_cpi ? Number(dataEvaluasi.skor_cpi).toFixed(2) : '3.45';
   const rerataTinggi = countTinggi > 0 ? (sumTinggi / countTinggi).toFixed(1) : '118.5';
 
+  // Pengesahan sekaligus menaikkan program ke periode berikutnya bila lolos
+  // ambang batas, jadi labelnya menyebut tujuannya supaya jelas bagi Kabid.
+  const periodeBerikutnya = siklus?.periode_berikutnya ?? null;
+  const labelSahkan = !isBerhasil
+    ? 'Sahkan Laporan (Wajib Tindak Lanjut)'
+    : periodeBerikutnya
+      ? `Sahkan & Lanjutkan Program ke ${periodeBerikutnya}`
+      : 'Sahkan & Selesaikan Program';
+
   const handleSahkan = async () => {
     setIsSubmitting(true);
     const loadingToast = toast.loading('Menandatangani digital & mengesahkan dokumen...');
-    
+
     try {
-      await sahkanLaporanEvaluasi(id!);
-      toast.success('Laporan Resmi Disahkan! Mengarahkan ke Detail Laporan...', { id: loadingToast });
-      
+      const hasil = await sahkanLaporanEvaluasi(id!);
+      toast.success(hasil?.message || 'Laporan Resmi Disahkan!', { id: loadingToast, duration: 5000 });
+
       // Redirect ke DetailLaporanEvaluasiKABID sesuai permintaan user
       setTimeout(() => {
         navigate(`/admin/kabid/evaluasi/laporan/detail/${id}`);
@@ -240,7 +263,15 @@ const PengesahanLaporanEvaluasiKabid: React.FC = () => {
                 Pengesahan Elektronik Kepala Bidang PDAS
               </span>
               <p className="text-[10px] text-gray-500 mt-1">
-                Dengan menekan tombol &quot;Sahkan &amp; Terbitkan Dokumen PDF&quot;, tanda tangan digital dan stempel dinas akan secara resmi dibubuhkan ke dokumen Berita Acara.
+                Dengan menekan tombol pengesahan, tanda tangan digital dan stempel dinas akan secara resmi dibubuhkan ke
+                dokumen Berita Acara.
+                {siklus && (
+                  isBerhasil
+                    ? periodeBerikutnya
+                      ? ` Persentase tumbuh memenuhi ambang batas ${siklus.ambang_batas_tumbuh}%, sehingga program otomatis naik dari ${siklus.periode_aktif} ke ${periodeBerikutnya} dan kembali masuk antrean monitoring Staff PDAS.`
+                      : ` Ini periode terakhir (${siklus.periode_aktif}), sehingga program langsung dinyatakan selesai dan diserahterimakan.`
+                    : ` Persentase tumbuh di bawah ambang batas ${siklus.ambang_batas_tumbuh}%, sehingga program tetap di ${siklus.periode_aktif} dan wajib menempuh tindak lanjut penyulaman.`
+                )}
               </p>
             </div>
           </div>
@@ -262,7 +293,7 @@ const PengesahanLaporanEvaluasiKabid: React.FC = () => {
             disabled={isSubmitting}
             className="px-6 py-2.5 bg-[#185325] hover:bg-[#123d1c] text-white text-sm font-bold rounded-full shadow-md shadow-[#185325]/20 transition-colors flex items-center justify-center gap-2 active:scale-95 cursor-pointer disabled:opacity-50"
           >
-            <HiOutlineCheckCircle className="w-5 h-5" /> Sahkan & Terbitkan Dokumen PDF
+            <HiOutlineCheckCircle className="w-5 h-5" /> {labelSahkan}
           </button>
         </div>
 

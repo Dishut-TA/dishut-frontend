@@ -33,6 +33,8 @@ export interface RingkasanSiklus {
   nama_program: string;
   sumber_dana: string;
   periode_aktif: string;
+  /** Periode yang akan ditempati bila evaluasi berjalan lolos; null di P4. */
+  periode_berikutnya: string | null;
   status_siklus: string;
   siklus_terakhir_at: string | null;
   periode_terakhir: string;
@@ -55,6 +57,13 @@ const bacaJson = async (response: Response) => {
 /** Ringkasan siklus lewat id penugasan, dipakai halaman detail. */
 export const getSiklusByPenugasanAPI = async (penugasanId: number | string): Promise<RingkasanSiklus> => {
   const response = await fetch(`${API_URL}/penugasan/${penugasanId}/siklus`, { headers: getHeaders() });
+  const isi = await bacaJson(response);
+  return isi.data;
+};
+
+/** Ringkasan siklus lewat id evaluasi, dipakai halaman pengesahan Kabid. */
+export const getSiklusByEvaluasiAPI = async (evaluasiId: number | string): Promise<RingkasanSiklus> => {
+  const response = await fetch(`${API_URL}/penugasan-evaluasi/${evaluasiId}/siklus`, { headers: getHeaders() });
   const isi = await bacaJson(response);
   return isi.data;
 };

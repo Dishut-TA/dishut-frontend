@@ -23,7 +23,9 @@ export default function DetailProgramKabid() {
   const navigate = useNavigate();
   const location = useLocation();
   const initialKategori = location.state?.kategori || 'Pelaksanaan';
-  const initialPeriode = location.state?.periode || 'P2';
+  // P1 adalah monitoring pertama; P2 sebagai bawaan hanya nilai sembarang yang
+  // membuka tab kosong pada program yang baru menempuh satu periode.
+  const initialPeriode = location.state?.periode || 'P1';
   const defaultTab: TabType = initialKategori === 'Pelaksanaan' ? 'Pelaksanaan' : (initialPeriode === 'Validasi' ? 'Validasi Lokasi' : `Monitoring ${initialPeriode}` as TabType);
   const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
 
