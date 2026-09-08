@@ -183,10 +183,18 @@ const DetailMonitoringPage: React.FC = () => {
   
   const allDocs = [
     ...(dokumentasiList || []),
-    ...(programData?.pelaksanaan?.dokumentasi || [])
+    ...(programData?.dokumentasiList || []),
+    ...(programData?.pelaksanaan?.dokumentasi || []),
+    ...(programData?.dokumentasi || [])
   ];
 
-  const dokumentasiPreview = allDocs
+  // Hapus duplikat berdasarkan file_path / url
+  const uniqueDocs = Array.from(new Map(allDocs.map((item: any) => {
+    const path = item.file_path || item.url || item.foto_url || item.file_url || item.path || item.image_url || item.gambar_url;
+    return [path, item];
+  })).values());
+
+  const dokumentasiPreview = uniqueDocs
     .map((item: any) => {
       const path = item.file_path || item.url || item.foto_url || item.file_url || item.path || item.image_url || item.gambar_url;
       if (!path) return null;
@@ -374,12 +382,12 @@ const DetailMonitoringPage: React.FC = () => {
                 {dokumentasiPreview.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2 flex-1">
                     {dokumentasiPreview.map((url, i) => (
-                      <div key={i} className="bg-slate-200 rounded-lg h-20 w-full bg-cover border border-slate-200" style={{ backgroundImage: `url(${url})` }}></div>
+                      <div key={i} className="bg-slate-200 rounded-lg h-20 w-full bg-cover bg-center border border-slate-200" style={{ backgroundImage: `url('${url}')` }}></div>
                     ))}
                   </div>
                 ) : (
-                  <div className="h-full w-full flex items-center justify-center text-[10px] text-slate-500 bg-slate-50 border border-dashed border-slate-300 rounded-lg">
-                    Belum ada dokumentasi
+                  <div className="h-full w-full flex flex-col items-center justify-center text-[10px] text-slate-500 bg-slate-50 border border-dashed border-slate-300 rounded-lg p-2 text-center">
+                    Belum ada dokumentasi pelaksanaan
                   </div>
                 )}
               </div>
