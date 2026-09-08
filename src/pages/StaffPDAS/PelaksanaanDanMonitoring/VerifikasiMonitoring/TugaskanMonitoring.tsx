@@ -30,7 +30,7 @@ const TugaskanMonitoring: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
-    periode_monitoring: 'P2',
+    periode_monitoring: 'P1',
     tanggal_penugasan: '2026-05-10',
     batas_waktu: '2026-05-27',
     metode: 'Monitoring Lapangan',

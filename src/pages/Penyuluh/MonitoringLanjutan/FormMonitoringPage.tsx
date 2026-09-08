@@ -26,6 +26,7 @@ const FormMonitoringPage: React.FC = () => {
         const res = await axios.get(`${API_URL}/penugasan/${activeId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        console.log(res.data);
         if (res.data?.data) {
           const raw = res.data.data;
           if (raw.formatted_data) {
