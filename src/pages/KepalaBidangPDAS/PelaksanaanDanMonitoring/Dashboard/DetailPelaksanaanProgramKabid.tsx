@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useDetailPenugasan from '@/hooks/useDetailPenugasan';
 import StatusMuat from '@/components/StatusMuat';
+import RiwayatSiklus from '@/components/siklus/RiwayatSiklus';
 import { unduhLaporanPDF, bukaLaporanPDF } from '@/components/pdf/laporanVerifikasi';
 import {
   HiOutlineArrowLeft,
@@ -159,6 +160,10 @@ export default function DetailProgramKabid() {
       {activeTab === 'Validasi Lokasi' && <ContentValidasiLokasi data={data} />}
       {activeTab.includes('Monitoring') && activeTab !== 'Monitoring P4' && <ContentMonitoringBerjalan periode={activeTab.split(' ')[1]} data={data} />}
       {activeTab === 'Monitoring P4' && <ContentMonitoringSelesai data={data} />}
+
+      {/* Siklus P0-P4 lintas periode. Kabid yang berwenang menaikkan periode
+          lebih awal ketika penjadwal server belum menjalankannya. */}
+      <RiwayatSiklus penugasanId={id} bolehNaikkanPeriode className="mt-6" />
 
     </div>
     </StatusMuat>

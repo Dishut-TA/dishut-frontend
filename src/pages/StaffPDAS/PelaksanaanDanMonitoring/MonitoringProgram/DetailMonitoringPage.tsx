@@ -23,6 +23,7 @@ import {
 import { PiPlant, PiTree, PiLeaf } from 'react-icons/pi';
 import { getPenugasanByIdAPI } from '../../../../services/penugasan.service';
 import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
+import RiwayatSiklus from '@/components/siklus/RiwayatSiklus';
 import { centroidPolygon } from '@/utils/koordinat';
 
 type MonitoringStatus = 'Siap Monitoring' | 'Berjalan' | 'Menunggu' | 'Menunggu Penugasan' | 'Menunggu Evaluasi' | 'Tindak Lanjut' | 'Selesai' | 'Dihentikan';
@@ -289,7 +290,7 @@ const DetailMonitoringPage: React.FC = () => {
             <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Jenis Program</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">Rehabilitasi Mangrove</span></div>
             <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Penyuluh</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{programData?.penyuluh || 'Ahmad Fauzi'}</span></div>
             <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Lokasi</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold leading-relaxed">{programData?.lokasi || 'Desa Karangsong, Kec. Indramayu'}</span></div>
-            <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Periode Aktif</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">P2</span></div>
+            <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Periode Aktif</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{programData?.periode_monitoring || '-'}</span></div>
             <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Luas Area</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{programData?.luas || '4,2 Ha'}</span></div>
             <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Jadwal Monitoring</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">10 Mei 2026 – 27 Mei 2026</span></div>
             <div className="grid grid-cols-[100px_10px_1fr] items-start text-xs"><span className="text-slate-500 font-medium">Sumber Dana</span><span className="text-slate-500">:</span><span className="text-slate-900 font-semibold">{programData?.sumberDana || 'APBD'}</span></div>
@@ -465,7 +466,7 @@ const DetailMonitoringPage: React.FC = () => {
             <div className="col-span-2"><p className="text-[10px] text-slate-500 font-semibold mb-1">KTH Pelaksana</p><p className="text-xs font-bold text-slate-900">KTH Karangsong Lestari</p></div>
             <div>
               <p className="text-[10px] text-slate-500 font-semibold mb-1">Periode Aktif</p>
-              <p className="text-xs font-bold text-slate-900">P2</p>
+              <p className="text-xs font-bold text-slate-900">{programData?.periode_monitoring || '-'}</p>
             </div>
             <div><p className="text-[10px] text-slate-500 font-semibold mb-1">Periode</p><p className="text-xs font-bold text-slate-900">10 Mei 2026 – 27 Mei 2026</p></div>
           </div>
@@ -795,34 +796,6 @@ const DetailMonitoringPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <h3 className="text-sm font-bold text-slate-900 mb-4">Riwayat Monitoring</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-[11px]">
-              <thead className="bg-[#DCECE0] text-[#3A4D3F] text-xs uppercase tracking-wider font-bold">
-                <tr><th className="py-2.5 px-3">Periode</th><th className="py-2.5 px-3">Tanggal</th><th className="py-2.5 px-3">Penyuluh</th><th className="py-2.5 px-3">Persentase Hidup</th><th className="py-2.5 px-3">Status</th></tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                <tr><td className="py-2.5 px-3 font-bold text-slate-800">{programData?.periode_monitoring || '-'}</td><td className="py-2.5 px-3">{programData?.tanggal_penugasan ? new Date(programData.tanggal_penugasan).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td><td className="py-2.5 px-3">{programData?.penyuluh || '-'}</td><td className="py-2.5 px-3">{programData?.stats?.persentaseHidup || 0}%</td><td className="py-2.5 px-3"><span className="text-orange-700 border border-orange-200 bg-orange-50 px-2 py-0.5 rounded font-bold text-[9px] leading-tight">Tindak Lanjut</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div> */}
-        {/* <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <h3 className="text-sm font-bold text-slate-900 mb-3">Dokumentasi Foto</h3>
-          {dokumentasiPreview.length > 0 ? (
-            <div className="grid grid-cols-4 gap-2 mb-2">
-              {dokumentasiPreview.map((url, i) => (
-                <img key={`${url}-${i}`} src={url} alt={`Dokumentasi ${i + 1}`} className="w-full h-20 object-cover rounded border border-slate-200" />
-              ))}
-            </div>
-          ) : (
-            <div className="h-20 bg-slate-50 border border-dashed border-slate-200 rounded flex items-center justify-center text-xs text-slate-400">Belum ada dokumentasi</div>
-          )}
-        </div> */}
-      </div>
-
     </div>
   );
 
@@ -969,6 +942,12 @@ const DetailMonitoringPage: React.FC = () => {
         {currentStatus === 'Tindak Lanjut' && renderViewTindakLanjut()}
         {currentStatus === 'Selesai' && renderViewSelesai()}
         {currentStatus === 'Dihentikan' && renderViewSiapMonitoring()}
+
+        {/* Riwayat lintas periode P0-P4. Ditaruh di luar cabang status supaya
+            tampil pada tiap tahap, menggantikan tabel satu baris yang dulu
+            hanya menampilkan periode berjalan. Staff PDAS meninjau saja;
+            kenaikan periode adalah wewenang Kepala Bidang PDAS. */}
+        <RiwayatSiklus penugasanId={id} className="mt-6" />
       </div>
 
       {/* MODAL UNDUH / CETAK RINGKASAN */}
