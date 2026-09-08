@@ -149,6 +149,7 @@ import DetailPenugasanPenanaman from "./pages/KTHPelaksanaan/Dashboard/DetailPen
 import DetailPenugasanPenyulaman from "./pages/KTHPelaksanaan/Dashboard/DetailPenugasanPenyulaman";
 import FormMonitoringPage from "./pages/Penyuluh/MonitoringLanjutan/FormMonitoringPage";
 import DetailPelaksanaanProgramKabid from "./pages/KepalaBidangPDAS/PelaksanaanDanMonitoring/Dashboard/DetailPelaksanaanProgramKabid";
+import LaporanKabid from "./pages/KepalaBidangPDAS/PelaksanaanDanMonitoring/Laporan";
 import EditProgramCSR from "./pages/KelompokTaniHutan/Rehabilitasi/PendanaanCSR/EditProgramCSR";
 import DetailLaporanDanaKABID from "./pages/KepalaBidangPDAS/LaporanDana/DetailLaporanDanaKABID";
 import RencanaRehabilitasiIndex from "./pages/StaffPDAS/AnalisisLahanKritis/RencanaRehabilitasi/RencanaRehabilitasiIndex";
@@ -343,6 +344,7 @@ function App() {
                   {/* Monitoring */}
                   <Route path="monitoring/dashboard" element={<DashboardPelaksanaanMonitoringKabid />} />
                   <Route path="monitoring/dashboard/detail/:id" element={<DetailPelaksanaanProgramKabid />} />
+                  <Route path="monitoring/laporan" element={<LaporanKabid />} />
                   
                   {/* Evaluasi */}
                   <Route path="evaluasi/penugasan" element={<InisiasiPenugasanEvaluasiKABID />} />

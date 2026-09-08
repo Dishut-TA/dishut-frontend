@@ -90,10 +90,22 @@ export const ringkasPerProgram = (programs?: any[]): any[] => {
 };
 
 /**
+ * Kondisi tanaman tersimpan sebagai teks bebas. Pemetaannya dikumpulkan di satu
+ * tempat supaya rekap per petak ukur dan tabel per titik tidak saling
+ * bertentangan - sebelumnya tanaman berkondisi "Rusak" dihitung mati pada rekap
+ * tetapi berstatus "Hidup" pada tabel.
+ */
+export const klasifikasiKondisi = (kondisi?: string | null): 'Mati' | 'Perlu Perawatan' | 'Hidup' => {
+  const k = (kondisi || '').toLowerCase();
+  if (k.includes('mati') || k.includes('rusak')) return 'Mati';
+  if (k.includes('rawat') || k.includes('sakit')) return 'Perlu Perawatan';
+  return 'Hidup';
+};
+
+/**
  * Rekapitulasi per petak ukur untuk halaman monitoring penyuluh.
  *
  * Data tanaman berada di bawah tiap petak ukur pada respons /penugasan/{id}.
- * Kondisi tanaman berupa teks bebas, jadi dikelompokkan lewat kata kunci.
  */
 export const rekapPetakUkur = (petakUkurs?: any[]) => {
   if (!Array.isArray(petakUkurs)) return [];
@@ -107,10 +119,10 @@ export const rekapPetakUkur = (petakUkurs?: any[]) => {
 
     tanaman.forEach((t: any) => {
       const jumlah = Number(t.jumlah) || 0;
-      const kondisi = (t.kondisi_tanaman || '').toLowerCase();
 
-      if (kondisi.includes('mati') || kondisi.includes('rusak')) mati += jumlah;
-      else if (kondisi.includes('rawat') || kondisi.includes('sakit')) rawat += jumlah;
+      const kelas = klasifikasiKondisi(t.kondisi_tanaman);
+      if (kelas === 'Mati') mati += jumlah;
+      else if (kelas === 'Perlu Perawatan') rawat += jumlah;
       else hidup += jumlah;
     });
 
@@ -153,7 +165,7 @@ export const barisTanaman = (petakUkurs?: any[]) => {
       waktuMonitoring: tanggalSingkat(pu.eval_at),
       tinggiSaatMonitoring: pu.eval_tinggi_rata ? `${pu.eval_tinggi_rata} cm` : '-',
       kondisiTanaman: t.kondisi_tanaman || '-',
-      status: (t.kondisi_tanaman || '').toLowerCase().includes('mati') ? 'Mati' : 'Hidup',
+      status: klasifikasiKondisi(t.kondisi_tanaman),
     }))
   );
 };
