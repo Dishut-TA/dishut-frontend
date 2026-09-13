@@ -213,8 +213,8 @@ const DetailPerhitunganHasilEvaluasiStaff: React.FC = () => {
                   </button>
                 )}
 
-                <button onClick={() => navigate('/admin/staff/evaluasi/laporan')} className="w-full sm:w-auto px-8 py-3.5 bg-[#185325] hover:bg-[#123d1c] text-white text-sm font-bold rounded-full flex items-center justify-center cursor-pointer gap-2">
-                  <HiOutlineCheckBadge className="w-5 h-5" /> Lanjut Buat Laporan
+                <button onClick={() => navigate('/admin/staff/evaluasi/hasil')} className="w-full sm:w-auto px-8 py-3.5 bg-[#185325] hover:bg-[#123d1c] text-white text-sm font-bold rounded-full flex items-center justify-center cursor-pointer gap-2">
+                  <HiOutlineCheckBadge className="w-5 h-5" /> Lanjut
                 </button>
               </div>
             )}

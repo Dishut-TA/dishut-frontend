@@ -1,14 +1,38 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import { 
   HiOutlineMapPin,
-  HiOutlineMap,
   HiOutlineCheckCircle,
   HiChevronRight,
   HiOutlineInformationCircle
 } from 'react-icons/hi2';
 import { PiPlant, PiFileText } from 'react-icons/pi';
+import useDetailPenugasan from '@/hooks/useDetailPenugasan';
+import StatusMuat from '@/components/StatusMuat';
+import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
+
+const STORAGE_BASE_URL = 'http://127.0.0.1:8000/storage/';
+
+const tanggalId = (nilai?: string | null) => {
+  if (!nilai) return '-';
+  const tanggal = new Date(nilai);
+  if (Number.isNaN(tanggal.getTime())) return '-';
+  return tanggal.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+const angkaId = (nilai?: number | null) =>
+  nilai === null || nilai === undefined ? '-' : Number(nilai).toLocaleString('id-ID');
 
 const DetailPelaporanDonasi: React.FC = () => {
+  const { id } = useParams();
+  const { data, isLoading, error } = useDetailPenugasan(id);
+
+  const sumber = data?.raw?.penugasanable ?? {};
+  const targetBibit = Number(sumber.target_amount ?? sumber.total_seeds_collected ?? data?.stats.targetTanam ?? 0);
+  const bibitDitanam = Number(sumber.total_seeds_realized ?? data?.stats.tanamanHidup ?? 0);
+  const persentase = targetBibit > 0 ? (bibitDitanam / targetBibit) * 100 : 0;
+  const statusCapaian = persentase >= 100 ? 'Tercapai' : persentase >= 90 ? 'Hampir Tercapai' : 'Belum Tercapai';
+  const foto = (data?.dokumentasiProgram?.length ? data.dokumentasiProgram : data?.dokumentasiList) ?? [];
 
   // HELPER COMPONENTS
   const DataRow = ({ label, value, isBold = false }: { label: string; value: string, isBold?: boolean }) => (
@@ -22,6 +46,13 @@ const DetailPelaporanDonasi: React.FC = () => {
   );
 
   return (
+    <StatusMuat
+      isLoading={isLoading}
+      error={error}
+      data={data}
+      loadingText="Memuat data laporan donasi..."
+      emptyText="Data laporan donasi tidak ditemukan."
+    >
     <div className="flex flex-col gap-6 w-full max-w-screen-2xl mx-auto pb-28 animate-in fade-in duration-300">
       
       {/* 1. HEADER PAGE */}
@@ -57,26 +88,22 @@ const DetailPelaporanDonasi: React.FC = () => {
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 min-w-0">
                   <div className="col-span-1 md:col-span-2 text-sm font-bold text-gray-800 mb-1">Informasi Program Donasi</div>
                   <div className="space-y-3">
-                    <DataRow label="ID Program" value="DON-2026-009" />
-                    <DataRow label="Nama Program" value="Penanaman 1000 Pohon Bersama PT ABC Indonesia" />
-                    <DataRow label="Donatur" value="PT ABC Indonesia" />
-                    <DataRow label="Nilai Donasi" value="Rp 50.000.000" />
+                    <DataRow label="ID Program" value={String(data?.id ?? '-')} />
+                    <DataRow label="Nama Program" value={data?.programName || '-'} />
+                    <DataRow label="Donatur" value={sumber.donor?.name || sumber.donatur || '-'} />
+                    <DataRow label="Nilai Donasi" value={sumber.total_donation ? `Rp ${angkaId(Number(sumber.total_donation))}` : '-'} />
                   </div>
                   <div className="space-y-3">
-                    <DataRow label="Tanggal Donasi" value="20 Juni 2026" />
-                    <DataRow label="Lokasi" value="Desa Cikole, Kec. Lembang, Kab. Bandung Barat" />
-                    <DataRow label="Target Bibit" value="2.500 Pohon" />
-                    <DataRow label="Penyuluh" value="Ahmad Fauzi" />
-                    <DataRow label="KTH Pelaksana" value="KTH Lestari Hijau" />
+                    <DataRow label="Tanggal Donasi" value={tanggalId(sumber.created_at)} />
+                    <DataRow label="Lokasi" value={data?.lokasi || '-'} />
+                    <DataRow label="Target Bibit" value={`${angkaId(targetBibit)} Pohon`} />
+                    <DataRow label="Penyuluh" value={data?.penyuluh || '-'} />
+                    <DataRow label="KTH Pelaksana" value={data?.kth || '-'} />
                   </div>
                 </div>
               </div>
-              <div className="w-full lg:w-55 h-40 bg-[#EBF3FA] rounded-xl border border-gray-200 overflow-hidden relative flex flex-col shrink-0">
-                <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=400&q=80" alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                <HiOutlineMapPin className="w-8 h-8 text-red-500 drop-shadow-md relative z-10 m-auto" />
-                <a href="#" className="absolute bottom-0 inset-x-0 bg-white p-2.5 text-blue-600 text-xs font-bold flex items-center justify-center gap-1.5 border-t border-gray-100 hover:bg-gray-50 transition-colors">
-                  <HiOutlineMap className="w-3.5 h-3.5"/> Lihat di Peta
-                </a>
+              <div className="w-full lg:w-55 h-40 rounded-xl border border-gray-200 overflow-hidden shrink-0">
+                <PetaPetakUkur petakUkurs={data?.petakUkurs} emptyMessage="Batas petak ukur belum digambar." />
               </div>
             </div>
           </div>
@@ -87,19 +114,19 @@ const DetailPelaporanDonasi: React.FC = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="border border-gray-100 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:border-emerald-100 transition-colors">
                 <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><PiPlant className="w-4 h-4"/></div><span className="text-[10px] font-bold text-gray-600">Target Bibit</span></div>
-                <div><p className="text-3xl font-bold text-gray-800 leading-none">2.500</p><p className="text-xs text-gray-500 font-medium mt-1">Pohon</p></div>
+                <div><p className="text-3xl font-bold text-gray-800 leading-none">{angkaId(targetBibit)}</p><p className="text-xs text-gray-500 font-medium mt-1">Pohon</p></div>
               </div>
               <div className="border border-gray-100 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:border-emerald-100 transition-colors">
                 <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><PiPlant className="w-4 h-4"/></div><span className="text-[10px] font-bold text-gray-600">Bibit Ditanam</span></div>
-                <div><p className="text-3xl font-bold text-gray-800 leading-none">2.480</p><p className="text-xs text-gray-500 font-medium mt-1">Pohon</p></div>
+                <div><p className="text-3xl font-bold text-gray-800 leading-none">{angkaId(bibitDitanam)}</p><p className="text-xs text-gray-500 font-medium mt-1">Pohon</p></div>
               </div>
               <div className="border border-gray-100 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:border-emerald-100 transition-colors">
                 <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><HiOutlineCheckCircle className="w-4 h-4"/></div><span className="text-[10px] font-bold text-gray-600">Persentase Realisasi</span></div>
-                <div><p className="text-3xl font-bold text-gray-800 leading-none">99,2%</p><p className="text-xs text-gray-500 font-medium mt-1">(2.480 / 2.500)</p></div>
+                <div><p className="text-3xl font-bold text-gray-800 leading-none">{persentase.toFixed(1).replace('.', ',')}%</p><p className="text-xs text-gray-500 font-medium mt-1">({angkaId(bibitDitanam)} / {angkaId(targetBibit)})</p></div>
               </div>
               <div className="border border-gray-100 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:border-emerald-100 transition-colors">
                 <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><HiOutlineCheckCircle className="w-4 h-4"/></div><span className="text-[10px] font-bold text-gray-600">Status Capaian</span></div>
-                <div><p className="text-xl font-bold text-gray-800 leading-none mt-2">Hampir<br/>Tercapai</p></div>
+                <div><p className="text-xl font-bold text-gray-800 leading-none mt-2">{statusCapaian}</p></div>
               </div>
             </div>
           </div>
@@ -170,8 +197,8 @@ const DetailPelaporanDonasi: React.FC = () => {
                   <tr><th className="py-2.5 pr-2">Kegiatan</th><th className="py-2.5 pr-2 text-center">Target</th><th className="py-2.5 pr-2 text-center">Realisasi</th><th className="py-2.5 text-center pr-2">Persentase</th><th className="py-2.5 text-center">Status</th></tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-medium text-gray-700">
-                  <tr><td className="py-4 pr-2">Bibit</td><td className="py-4 pr-2 text-center">2.500 Pohon</td><td className="py-4 pr-2 text-center">2.480 Pohon</td><td className="py-4 pr-2 text-center">99,2%</td><td className="py-4 text-center text-emerald-600 font-bold">Selesai</td></tr>
-                  <tr><td className="py-4 pr-2">Luas Area</td><td className="py-4 pr-2 text-center">3,5 Ha</td><td className="py-4 pr-2 text-center">3,5 Ha</td><td className="py-4 pr-2 text-center">100%</td><td className="py-4 text-center text-emerald-600 font-bold">Selesai</td></tr>
+                  <tr><td className="py-4 pr-2">Bibit</td><td className="py-4 pr-2 text-center">{angkaId(targetBibit)} Pohon</td><td className="py-4 pr-2 text-center">{angkaId(bibitDitanam)} Pohon</td><td className="py-4 pr-2 text-center">{persentase.toFixed(1).replace('.', ',')}%</td><td className="py-4 text-center text-emerald-600 font-bold">{data?.status || '-'}</td></tr>
+                  <tr><td className="py-4 pr-2">Luas Area</td><td className="py-4 pr-2 text-center">{data?.luas || '-'}</td><td className="py-4 pr-2 text-center">{data?.luas || '-'}</td><td className="py-4 pr-2 text-center">-</td><td className="py-4 text-center text-emerald-600 font-bold">{data?.status || '-'}</td></tr>
                 </tbody>
               </table>
               <button className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline">Lihat detail realisasi <HiChevronRight className="w-3 h-3"/></button>
@@ -181,10 +208,18 @@ const DetailPelaporanDonasi: React.FC = () => {
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col">
               <h2 className="text-sm font-bold text-gray-800 mb-4">Dokumentasi Pelaksanaan</h2>
               <div className="grid grid-cols-2 gap-3 mb-4 flex-1">
-                <div className="flex flex-col gap-1.5"><div className="h-24 rounded-lg overflow-hidden border border-gray-200"><img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300&q=80" className="w-full h-full object-cover" alt="img"/></div><p className="text-[10px] text-gray-500 font-medium text-center">Sebelum</p></div>
-                <div className="flex flex-col gap-1.5"><div className="h-24 rounded-lg overflow-hidden border border-gray-200"><img src="https://images.unsplash.com/photo-1511497584788-876760111969?w=300&q=80" className="w-full h-full object-cover" alt="img"/></div><p className="text-[10px] text-gray-500 font-medium text-center">Distribusi Bibit</p></div>
-                <div className="flex flex-col gap-1.5"><div className="h-24 rounded-lg overflow-hidden border border-gray-200"><img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&q=80" className="w-full h-full object-cover" alt="img"/></div><p className="text-[10px] text-gray-500 font-medium text-center">Penanaman</p></div>
-                <div className="flex flex-col gap-1.5"><div className="h-24 rounded-lg bg-gray-800 border border-gray-200 relative flex items-center justify-center cursor-pointer hover:bg-gray-900"><img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&q=80" className="absolute inset-0 w-full h-full object-cover opacity-30" alt="img"/><div className="relative text-center"><p className="text-white text-2xl font-bold">+12</p><p className="text-white text-[9px] font-medium">Foto Lainnya</p></div></div></div>
+                {foto.length === 0 ? (
+                  <p className="col-span-2 text-[11px] text-gray-400 font-medium self-center text-center">
+                    Belum ada dokumentasi lapangan yang diunggah penyuluh.
+                  </p>
+                ) : foto.slice(0, 4).map((doc: any, i: number) => (
+                  <div key={doc.id ?? i} className="flex flex-col gap-1.5">
+                    <div className="h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                      <img src={`${STORAGE_BASE_URL}${doc.file_path}`} className="w-full h-full object-cover" alt={doc.jenis_dokumentasi || 'Dokumentasi'} />
+                    </div>
+                    <p className="text-[10px] text-gray-500 font-medium text-center truncate">{doc.jenis_dokumentasi || 'Dokumentasi'}</p>
+                  </div>
+                ))}
               </div>
               <button className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline self-start">Lihat semua dokumentasi <HiChevronRight className="w-3 h-3"/></button>
             </div>
@@ -251,6 +286,7 @@ const DetailPelaporanDonasi: React.FC = () => {
 
       </div>
     </div>
+    </StatusMuat>
   );
 };
 

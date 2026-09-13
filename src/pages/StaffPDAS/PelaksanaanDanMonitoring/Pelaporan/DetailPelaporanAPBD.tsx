@@ -1,5 +1,18 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
+import useDetailPenugasan from '@/hooks/useDetailPenugasan';
+import StatusMuat from '@/components/StatusMuat';
+import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
+
+const tanggalId = (nilai?: string | null) => {
+  if (!nilai) return '-';
+  const tanggal = new Date(nilai);
+  if (Number.isNaN(tanggal.getTime())) return '-';
+  return tanggal.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+const angkaId = (nilai?: number | null) =>
+  nilai === null || nilai === undefined ? '-' : Number(nilai).toLocaleString('id-ID');
 import { 
   HiOutlineMapPin,
   HiOutlineMap,
@@ -17,6 +30,15 @@ const DetailPelaporanAPBD: React.FC = () => {
   const status = location.state?.status || 'Draft'; 
   const isDisahkan = status === 'Disahkan';
 
+  const { id } = useParams();
+  const { data, isLoading, error } = useDetailPenugasan(id);
+
+  const target = data?.stats.targetTanam ?? 0;
+  const realisasi = data?.stats.tanamanHidup ?? 0;
+  const persentase = target > 0 ? (realisasi / target) * 100 : 0;
+  const persenTeks = persentase.toFixed(1).replace('.', ',');
+  const anggaran = data?.raw?.penugasanable?.anggaran ?? null;
+
   // HELPER COMPONENTS
   const DataRow = ({ label, value }: { label: string; value: string }) => (
     <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 text-2.75 sm:text-xs">
@@ -29,6 +51,13 @@ const DetailPelaporanAPBD: React.FC = () => {
   );
 
   return (
+    <StatusMuat
+      isLoading={isLoading}
+      error={error}
+      data={data}
+      loadingText="Memuat data laporan APBD..."
+      emptyText="Data laporan APBD tidak ditemukan."
+    >
     <div className="flex flex-col gap-6 w-full max-w-screen-2xl mx-auto pb-28 animate-in fade-in duration-300">
       
       {/* 1. HEADER PAGE */}
@@ -73,29 +102,25 @@ const DetailPelaporanAPBD: React.FC = () => {
                 <div className="w-12 h-12 rounded-full bg-[#EBF8F1] text-[#185325] flex items-center justify-center shrink-0"><PiPlant className="w-6 h-6" /></div>
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 min-w-0">
                   <div className="space-y-3">
-                    <DataRow label="ID Program" value="PRG-2026-0007" />
-                    <DataRow label="Nama Program" value="Rehabilitasi Mangrove Karangsong" />
-                    <DataRow label="Jenis Program" value="Mangrove" />
-                    <DataRow label="Sumber Dana" value="APBD" />
-                    <DataRow label="Lokasi" value="Desa Karangsong, Kec. Indramayu, Kab. Indramayu" />
-                    <DataRow label="Luas Area" value="4,2 Ha" />
+                    <DataRow label="ID Program" value={String(data?.raw?.penugasanable_id ?? '-')} />
+                    <DataRow label="Nama Program" value={data?.programName || '-'} />
+                    <DataRow label="Jenis Program" value={data?.raw?.penugasanable?.jenis_tanaman || '-'} />
+                    <DataRow label="Sumber Dana" value={data?.sumberDana || '-'} />
+                    <DataRow label="Lokasi" value={data?.lokasi || '-'} />
+                    <DataRow label="Luas Area" value={data?.luas || '-'} />
                   </div>
                   <div className="space-y-3">
-                    <DataRow label="Tanggal Pelaksanaan" value="12 Juli 2026" />
-                    <DataRow label="Tanggal Selesai" value="15 September 2026" />
-                    <DataRow label="Target Tanam" value="2.500 Pohon" />
-                    <DataRow label="Realisasi Tanam" value="2.480 Pohon (99,2%)" />
-                    <DataRow label="Penyuluh" value="Ahmad Fauzi" />
-                    <DataRow label="KTH" value="KTH Karangsong Lestari" />
+                    <DataRow label="Tanggal Pelaksanaan" value={tanggalId(data?.tanggal_penugasan)} />
+                    <DataRow label="Tanggal Selesai" value={tanggalId(data?.batas_waktu)} />
+                    <DataRow label="Target Tanam" value={`${angkaId(target)} Pohon`} />
+                    <DataRow label="Realisasi Tanam" value={`${angkaId(realisasi)} Pohon (${persentase.toFixed(1).replace('.', ',')}%)`} />
+                    <DataRow label="Penyuluh" value={data?.penyuluh || '-'} />
+                    <DataRow label="KTH" value={data?.kth || '-'} />
                   </div>
                 </div>
               </div>
-              <div className="w-full lg:w-55 h-40 bg-[#EBF3FA] rounded-xl border border-gray-200 overflow-hidden relative flex flex-col shrink-0">
-                <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=400&q=80" alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                <HiOutlineMapPin className="w-8 h-8 text-red-500 drop-shadow-md relative z-10 m-auto" />
-                <a href="#" className="absolute bottom-0 inset-x-0 bg-white p-2.5 text-blue-600 text-xs font-bold flex items-center justify-center gap-1.5 border-t border-gray-100 hover:bg-gray-50 transition-colors">
-                  <HiOutlineMap className="w-3.5 h-3.5"/> Lihat di Peta
-                </a>
+              <div className="w-full lg:w-55 h-40 rounded-xl border border-gray-200 overflow-hidden shrink-0">
+                <PetaPetakUkur petakUkurs={data?.petakUkurs} emptyMessage="Batas petak ukur belum digambar." />
               </div>
             </div>
           </div>
@@ -106,19 +131,19 @@ const DetailPelaporanAPBD: React.FC = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="border border-gray-100 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:border-emerald-100 transition-colors">
                 <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><PiPlant className="w-4 h-4"/></div><span className="text-[10px] font-bold text-gray-600">Target Tanam</span></div>
-                <div><p className="text-3xl font-bold text-gray-800 leading-none">2.500</p><p className="text-xs text-gray-500 font-medium mt-1">Pohon</p></div>
+                <div><p className="text-3xl font-bold text-gray-800 leading-none">{angkaId(target)}</p><p className="text-xs text-gray-500 font-medium mt-1">Pohon</p></div>
               </div>
               <div className="border border-gray-100 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:border-emerald-100 transition-colors">
                 <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><PiFileText className="w-4 h-4"/></div><span className="text-[10px] font-bold text-gray-600">Realisasi Tanam</span></div>
-                <div><p className="text-3xl font-bold text-gray-800 leading-none">2.480</p><p className="text-xs text-gray-500 font-medium mt-1">Pohon (99,2%)</p></div>
+                <div><p className="text-3xl font-bold text-gray-800 leading-none">{angkaId(realisasi)}</p><p className="text-xs text-gray-500 font-medium mt-1">Pohon ({persenTeks}%)</p></div>
               </div>
               <div className="border border-gray-100 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:border-emerald-100 transition-colors">
                 <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><HiOutlineCheckCircle className="w-4 h-4"/></div><span className="text-[10px] font-bold text-gray-600">Persentase Hidup</span></div>
-                <div><p className="text-3xl font-bold text-gray-800 leading-none">92%</p><p className="text-xs text-gray-500 font-medium mt-1">(2.284 Pohon)</p></div>
+                <div><p className="text-3xl font-bold text-gray-800 leading-none">{persenTeks}%</p><p className="text-xs text-gray-500 font-medium mt-1">({angkaId(realisasi)} Pohon)</p></div>
               </div>
               <div className="border border-gray-100 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:border-emerald-100 transition-colors">
                 <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><PiSquaresFour className="w-4 h-4"/></div><span className="text-[10px] font-bold text-gray-600">Luas Tertanam</span></div>
-                <div><p className="text-3xl font-bold text-gray-800 leading-none">4,0</p><p className="text-xs text-gray-500 font-medium mt-1">Ha</p></div>
+                <div><p className="text-3xl font-bold text-gray-800 leading-none">{data?.luas?.replace(' Ha', '') || '-'}</p><p className="text-xs text-gray-500 font-medium mt-1">Ha</p></div>
               </div>
             </div>
           </div>
@@ -192,12 +217,12 @@ const DetailPelaporanAPBD: React.FC = () => {
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col h-full">
               <h2 className="text-sm font-bold text-gray-800 mb-5">Rekapitulasi Anggaran & Output</h2>
               <div className="space-y-4 text-xs font-medium text-gray-600 flex-1">
-                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><PiFileText className="w-4 h-4 text-gray-400"/> Total Anggaran</span><span className="font-bold text-gray-800">Rp 125.000.000</span></div>
-                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><HiOutlineCheckCircle className="w-4 h-4 text-gray-400"/> Realisasi Anggaran</span><span className="font-bold text-gray-800">Rp 118.750.000 (95%)</span></div>
-                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><PiPlant className="w-4 h-4 text-gray-400"/> Total Bibit (Diterima)</span><span className="font-bold text-gray-800">2.500 Pohon</span></div>
-                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><PiPlant className="w-4 h-4 text-gray-400"/> Total Bibit (Ditanam)</span><span className="font-bold text-gray-800">2.480 Pohon (99,2%)</span></div>
-                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><HiOutlineCheckCircle className="w-4 h-4 text-gray-400"/> Persentase Hidup</span><span className="font-bold text-gray-800">92% (2.284 Pohon)</span></div>
-                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><HiOutlineMapPin className="w-4 h-4 text-gray-400"/> Luas Tertanam</span><span className="font-bold text-gray-800">4,0 Ha</span></div>
+                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><PiFileText className="w-4 h-4 text-gray-400"/> Total Anggaran</span><span className="font-bold text-gray-800">{anggaran !== null ? `Rp ${angkaId(anggaran)}` : '-'}</span></div>
+                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><HiOutlineCheckCircle className="w-4 h-4 text-gray-400"/> Realisasi Anggaran</span><span className="font-bold text-gray-400 italic text-[11px]">Belum ada data realisasi anggaran</span></div>
+                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><PiPlant className="w-4 h-4 text-gray-400"/> Total Bibit (Diterima)</span><span className="font-bold text-gray-800">{angkaId(target)} Pohon</span></div>
+                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><PiPlant className="w-4 h-4 text-gray-400"/> Total Bibit (Ditanam)</span><span className="font-bold text-gray-800">{angkaId(realisasi)} Pohon ({persenTeks}%)</span></div>
+                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><HiOutlineCheckCircle className="w-4 h-4 text-gray-400"/> Persentase Hidup</span><span className="font-bold text-gray-800">{persenTeks}% ({angkaId(realisasi)} Pohon)</span></div>
+                <div className="flex justify-between items-center"><span className="flex items-center gap-2"><HiOutlineMapPin className="w-4 h-4 text-gray-400"/> Luas Tertanam</span><span className="font-bold text-gray-800">{data?.luas || '-'}</span></div>
               </div>
             </div>
 
@@ -211,7 +236,7 @@ const DetailPelaporanAPBD: React.FC = () => {
                 <tbody className="divide-y divide-gray-50 font-medium text-gray-700">
                   <tr><td className="py-2.5 pr-2">Persiapan Lokasi</td><td className="py-2.5 pr-2">05 Jul 2026</td><td className="py-2.5 pr-2 text-emerald-600 font-bold">Selesai</td><td className="py-2.5 text-center text-emerald-600 font-bold">Selesai</td></tr>
                   <tr><td className="py-2.5 pr-2">Pengadaan Bibit</td><td className="py-2.5 pr-2">07 Jul 2026</td><td className="py-2.5 pr-2 text-emerald-600 font-bold">Selesai</td><td className="py-2.5 text-center text-emerald-600 font-bold">Selesai</td></tr>
-                  <tr><td className="py-2.5 pr-2">Penanaman</td><td className="py-2.5 pr-2">12 Jul 2026</td><td className="py-2.5 pr-2">2.480 Pohon</td><td className="py-2.5 text-center text-emerald-600 font-bold">Selesai</td></tr>
+                  <tr><td className="py-2.5 pr-2">Penanaman</td><td className="py-2.5 pr-2">{tanggalId(data?.tanggal_penugasan)}</td><td className="py-2.5 pr-2">{angkaId(realisasi)} Pohon</td><td className="py-2.5 text-center text-emerald-600 font-bold">{data?.status || '-'}</td></tr>
                   <tr><td className="py-2.5 pr-2">Pemeliharaan</td><td className="py-2.5 pr-2">20 Jul 2026</td><td className="py-2.5 pr-2">3 Kali</td><td className="py-2.5 text-center text-emerald-600 font-bold">Selesai</td></tr>
                 </tbody>
               </table>
@@ -224,8 +249,8 @@ const DetailPelaporanAPBD: React.FC = () => {
               <div className="flex gap-4 flex-1">
                 <div className="w-1/2 space-y-3 text-[10px] font-medium text-gray-600">
                   <div className="flex justify-between items-center"><span>Tanggal Monitoring</span><span className="font-bold text-gray-800">10 Sep 2026</span></div>
-                  <div className="flex justify-between items-center"><span>Persentase Hidup</span><span className="font-bold text-gray-800">92%</span></div>
-                  <div className="flex justify-between items-center"><span>Jumlah Hidup</span><span className="font-bold text-gray-800">2.284 Pohon</span></div>
+                  <div className="flex justify-between items-center"><span>Persentase Hidup</span><span className="font-bold text-gray-800">{persenTeks}%</span></div>
+                  <div className="flex justify-between items-center"><span>Jumlah Hidup</span><span className="font-bold text-gray-800">{angkaId(data?.stats.tanamanHidup)} Pohon</span></div>
                   <div className="flex justify-between items-center"><span>Jumlah Mati</span><span className="font-bold text-gray-800">196 Pohon</span></div>
                   <div className="flex justify-between items-center"><span>Jumlah Belum Tumbuh</span><span className="font-bold text-gray-800">0 Pohon</span></div>
                 </div>
@@ -364,6 +389,7 @@ const DetailPelaporanAPBD: React.FC = () => {
       </div>
 
     </div>
+    </StatusMuat>
   );
 };
 

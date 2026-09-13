@@ -36,12 +36,14 @@ const ITEMS_PER_PAGE = 5;
 const deriveMonitoringStatus = (p: any): string => {
   if (p.status === 'Dihentikan') return 'Dihentikan';
 
-  if (p.jenisKegiatan === 'Tindak Lanjut') {
+  const jk = p.jenisKegiatan || p.jenis_kegiatan;
+
+  if (jk === 'Tindak Lanjut') {
     return p.status === 'Selesai' ? 'Selesai' : 'Tindak Lanjut';
   }
 
-  if (p.jenisKegiatan === 'Monitoring') {
-    if (p.status === 'Selesai') return 'Selesai';
+  if (jk === 'Monitoring') {
+    if (p.status === 'Selesai' || p.status === 'Monitoring Selesai') return 'Selesai';
     if (p.status === 'Menunggu Evaluasi' || p.status === 'Menunggu Verifikasi') return 'Menunggu Evaluasi';
     if (p.status === 'Ditugaskan') return 'Ditugaskan';
     return 'Berjalan';
@@ -138,9 +140,9 @@ const MonitoringProgram: React.FC = () => {
     setIsLoading(true);
     try {
       const res = await getAllPenugasanAPI();
-      console.log(res);
-
       setPenugasans(res.data || []);
+      console.log(res);
+      
     } catch (error) {
       console.error('Gagal mengambil data penugasan', error);
       toast.error('Gagal memuat data Monitoring Program Rehabilitasi dari server.');
@@ -156,40 +158,83 @@ const MonitoringProgram: React.FC = () => {
   const formattedData = useMemo(() => {
     if (!Array.isArray(penugasans)) return [];
 
-    return penugasans
-      .filter((p: any) => p && p.jenisKegiatan !== 'Validasi Lokasi' && p.status !== 'Menunggu Penugasan')
+    const programKey = (p: any) => `${p.source_type}_${p.original_id}`;
+
+    // Backend kini mengirim satu baris per penugasan.
+    // Kita harus memfilter penugasan yang valid, lalu MENGELOMPOKKAN berdasarkan program
+    // sehingga HANYA penugasan yang paling baru (Tindak Lanjut atau Monitoring terbaru) yang ditampilkan di tabel.
+    const groupedPenugasans = new Map();
+
+    penugasans.forEach((p: any) => {
+      const jk = p.jenisKegiatan || p.jenis_kegiatan;
+      // Abaikan Validasi Lokasi dan yang masih Menunggu Penugasan
+      if (!p || jk === 'Validasi Lokasi' || p.status === 'Menunggu Penugasan') {
+        return;
+      }
+
+      const key = programKey(p);
+      const currentPId = p.penugasan_id || 0;
+      const existingPId = groupedPenugasans.has(key) ? (groupedPenugasans.get(key).penugasan_id || 0) : -1;
+      
+      // Simpan jika belum ada, atau jika penugasan_id lebih besar (lebih baru)
+      if (!groupedPenugasans.has(key) || existingPId < currentPId) {
+        groupedPenugasans.set(key, p);
+      }
+    });
+
+    return Array.from(groupedPenugasans.values())
       .map((p: any) => {
         let programName = '-';
         let location = '-';
         let kthName = '-';
 
         const detail = p.detail || {};
+        let programPeriodeAktif = '';
 
         if (p.source_type === 'App\\Models\\DonationProgram') {
           programName = detail.name || '-';
-          location = detail.location || '-';
+          location = p.lokasi || detail.location || '-';
           kthName = detail.kth?.name || detail.kth?.nama || '-';
+          programPeriodeAktif = detail.periode_aktif || '';
         } else if (p.source_type === 'App\\Models\\ProgramApbd' || p.source_type === 'App\\Models\\ProgramCsr') {
           programName = detail.nama_program || '-';
-          location = detail.lokasi || '-';
+          location = p.lokasi || detail.lokasi || '-';
           kthName = detail.kth?.nama || detail.kth?.name || '-';
+          programPeriodeAktif = detail.periode_aktif || '';
         }
 
-        const displayStatus = deriveMonitoringStatus(p);
-        const periodeLabel = detail.periode_monitoring || 'P1';
+        let displayStatus = deriveMonitoringStatus(p);
+        let periodeLabel = p.periodeMonitoring || p.periode_monitoring || 'P1';
+
+        // LOGIKA NAIK KELAS:
+        // Jika periode_aktif pada program lebih tinggi dari periode penugasan terbaru,
+        // ATAU jika backend mengirimkan penugasan kosong/dummy (p.penugasan_id null)
+        // maka statusnya harus "Siap Monitoring" untuk periode yang baru tersebut.
+        if (programPeriodeAktif && programPeriodeAktif !== periodeLabel) {
+            // Program sudah berada di periode yang berbeda (naik kelas)
+            periodeLabel = programPeriodeAktif;
+            displayStatus = 'Siap Monitoring';
+        }
 
         const rawDateStr = p.created_at || (p.tanggalPenugasan !== '-' ? p.tanggalPenugasan : null);
         const sortDate = parseSafeDate(rawDateStr);
         const batasWaktuDate = parseSafeDate(p.batasWaktu);
 
         return {
-          id: p.penugasan_id || p.id || '-',
-          rawId: p.penugasan_id || p.id,
+          // ID tampilan tetap kode program, tapi navigasi memakai id numerik:
+          // penugasan_id bila sudah ditugaskan, kalau belum original_id program.
+          // Kode berformat seperti P-CSR-2026-001 tidak bisa di-resolve backend.
+          id: p.id || '-',
+          rowKey: p.row_key || `${p.source_type}_${p.original_id}_${p.penugasan_id ?? 'belum'}`,
+          navId: p.penugasan_id ?? p.original_id ?? null,
+          penugasanId: p.penugasan_id ?? null,
+          sourceType: p.source_type ?? null,
+          rawId: p.penugasan_id || p.original_id,
           program: programName,
           lokasi: location,
           kth: kthName,
           periodeLabel,
-          periodeDate: batasWaktuDate ? batasWaktuDate.toLocaleDateString('id-ID') : '-',
+          periodeDate: displayStatus === 'Siap Monitoring' ? '-' : (batasWaktuDate ? batasWaktuDate.toLocaleDateString('id-ID') : '-'),
           status: displayStatus,
           ringkasanTitle: displayStatus,
           ringkasanDesc: p.jenisKegiatan || '-',
@@ -466,7 +511,7 @@ const MonitoringProgram: React.FC = () => {
                   </tr>
                 ) : (
                   currentData.map((row, index) => (
-                    <tr key={row.id || index} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={row.rowKey || index} className="hover:bg-slate-50/60 transition-colors">
                       <td className="px-4 py-3.5 text-center font-medium text-slate-700">
                         {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                       </td>
@@ -497,11 +542,15 @@ const MonitoringProgram: React.FC = () => {
                         <p className="text-[11px] text-slate-400">{row.waktu}</p>
                       </td>
                       <td className="px-4 py-3.5 text-center">
-                        {row.status === 'Siap Monitoring' ? (
+                        {row.navId === null ? (
+                          <span className="text-[11px] text-slate-400 font-medium">
+                            Data belum lengkap
+                          </span>
+                        ) : row.status === 'Siap Monitoring' ? (
                           <button
                             onClick={() =>
-                              navigate(`/admin/staff/monitoring/verifikasi/tugaskan/${row.id}`, {
-                                state: { status: row.status, mode: 'tugaskan' },
+                              navigate(`/admin/staff/monitoring/verifikasi/tugaskan/${row.navId}`, {
+                                state: { status: row.status, mode: 'tugaskan', sourceType: row.sourceType },
                               })
                             }
                             className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 cursor-pointer transition-colors shadow-xs"
@@ -512,8 +561,8 @@ const MonitoringProgram: React.FC = () => {
                         ) : (
                           <button
                             onClick={() =>
-                              navigate(`/admin/staff/monitoring/verifikasi/detail/${row.id}`, {
-                                state: { status: row.status },
+                              navigate(`/admin/staff/monitoring/verifikasi/detail/${row.navId}`, {
+                                state: { status: row.status, sourceType: row.sourceType },
                               })
                             }
                             className="inline-flex items-center gap-1 px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 cursor-pointer transition-colors"

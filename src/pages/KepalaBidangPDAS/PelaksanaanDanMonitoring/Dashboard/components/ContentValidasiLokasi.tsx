@@ -1,8 +1,9 @@
 import React from 'react';
+import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
 import { HiOutlineCalendar } from 'react-icons/hi2';
 import SharedDokumentasi from './SharedDokumentasi';
 
-const ContentValidasiLokasi: React.FC = () => (
+const ContentValidasiLokasi: React.FC<{ data?: any }> = ({ data }) => (
   <div className="space-y-6 animate-in fade-in duration-300">
     <h3 className="text-sm font-bold text-slate-900 mb-2">Ringkasan Hasil Validasi Lokasi</h3>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -36,24 +37,14 @@ const ContentValidasiLokasi: React.FC = () => (
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
         <h4 className="text-xs font-bold text-slate-900 mb-4">Lokasi (Peta)</h4>
-        <div className="w-full flex-1 rounded-lg relative overflow-hidden border border-slate-200 min-h-62.5 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800')] bg-cover bg-center">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <svg viewBox="0 0 100 100" className="w-48 h-48 overflow-visible opacity-90 drop-shadow-md">
-              <polygon points="10,50 30,20 70,30 90,70 60,90 20,80" fill="rgba(16, 185, 129, 0.4)" stroke="white" strokeWidth="2" strokeLinejoin="round" />
-              <circle cx="10" cy="50" r="3" fill="white" />
-              <circle cx="30" cy="20" r="3" fill="white" />
-              <circle cx="70" cy="30" r="3" fill="white" />
-              <circle cx="90" cy="70" r="3" fill="white" />
-              <circle cx="60" cy="90" r="3" fill="white" />
-              <circle cx="20" cy="80" r="3" fill="white" />
-            </svg>
-          </div>
+        <div className="w-full flex-1 rounded-lg overflow-hidden border border-slate-200 min-h-62.5">
+          <PetaPetakUkur petakUkurs={data?.petakUkurs} emptyMessage="Batas petak ukur belum digambar penyuluh." />
         </div>
       </div>
 
     </div>
 
-    <SharedDokumentasi />
+    <SharedDokumentasi dokumentasi={data?.dokumentasiProgram} />
   </div>
 );
 

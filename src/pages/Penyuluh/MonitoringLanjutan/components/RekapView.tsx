@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { HiOutlineMapPin, HiOutlineCamera, HiOutlineArrowLeft, HiOutlinePaperAirplane, HiOutlineInformationCircle } from 'react-icons/hi2';
 import { PiPlant, PiTree, PiLeaf } from 'react-icons/pi';
 import type { ProgramData, ViewMode } from '../types';
+import PetaPetakUkur from '@/components/maps/PetaPetakUkur';
 
 interface RekapViewProps {
   activeId: string;
@@ -54,18 +55,17 @@ export const RekapView: React.FC<RekapViewProps> = ({
 
   petakUkurs.forEach((pu: any) => {
     if (isTindakLanjut) {
-      // Gunakan data evaluasi dari petak ukur monitoring sebelumnya
-      const ditanam = pu.total_bibit_ditanam ?? (pu.dataTanamans || pu.data_tanamans || []).reduce((s: number, t: any) => s + (t.jumlah || 0), 0);
-      const tumbuh = pu.eval_bibit_tumbuh ?? 0;
-      const perlDisulam = Math.max(ditanam - tumbuh, 0);
-      totalPerlDisulam += perlDisulam;
-      totalBibitSulam += perlDisulam;
-      // "Sudah Disulam" bisa dihitung dari dataTanamans Tindak Lanjut jika ada
+      // Pada Tindak Lanjut, semua data tanaman yang dikirimkan backend 
+      // adalah bibit yang perlu disulam. Kita tidak perlu filter "mati" lagi.
       const dataTL = pu.dataTanamans || pu.data_tanamans || [];
+
       dataTL.forEach((t: any) => {
-        const kondisi = t.kondisi_tanaman?.toLowerCase() || '';
-        if (kondisi.includes('sudah disulam') || kondisi.includes('disulam')) {
-          totalSudahDisulam += t.jumlah || 0;
+        const kondisi = (t.kondisi_tanaman || '').toLowerCase();
+
+        totalPerlDisulam += 1; // atau t.jumlah jika menghitung pohon
+        totalBibitSulam += Number(t.penyulaman_jumlah) || t.jumlah || 1;
+        if (kondisi.includes('sudah disulam') || t.status_penyulaman === 'Sudah Disulam') {
+          totalSudahDisulam += 1;
         }
       });
     } else {
@@ -125,21 +125,11 @@ export const RekapView: React.FC<RekapViewProps> = ({
             <p className="text-sm font-bold text-slate-900">27 Mei 2026</p>
           </div>
         </div>
-        <div className="w-full md:w-[320px] h-32 bg-slate-100 rounded-lg relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600')] bg-cover bg-center border border-slate-200 shrink-0">
-          <div className="absolute inset-0 bg-black/10"></div>
-          {isTindakLanjut ? (
-            <>
-              <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-red-500 rounded-full border border-white shadow-md"></div>
-              <div className="absolute top-1/3 left-1/3 w-2 h-2 bg-green-500 rounded-full border border-white shadow-md"></div>
-              <div className="absolute top-2/3 left-1/2 w-2 h-2 bg-orange-500 rounded-full border border-white shadow-md"></div>
-            </>
-          ) : (
-            <>
-              <div className="absolute top-1/2 left-1/4 w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
-              <div className="absolute top-1/3 left-1/3 w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
-              <div className="absolute top-2/3 left-1/2 w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
-            </>
-          )}
+        <div className="w-full md:w-[320px] h-32 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+          <PetaPetakUkur
+            petakUkurs={(activeProgram as any)?.petak_ukurs || (activeProgram as any)?.petakUkurs}
+            emptyMessage="Batas petak ukur belum digambar."
+          />
         </div>
       </div>
 
@@ -221,16 +211,17 @@ export const RekapView: React.FC<RekapViewProps> = ({
                 // Untuk Tindak Lanjut: hitung dari data evaluasi petak ukur
                 let puPerlDisulam = 0;
                 let puSudahDisulam = 0;
+                let puBibitSulam = 0;
 
                 if (isTindakLanjut) {
-                  const ditanam = pu.total_bibit_ditanam ?? (pu.dataTanamans || pu.data_tanamans || []).reduce((s: number, t: any) => s + (t.jumlah || 0), 0);
-                  const tumbuh = pu.eval_bibit_tumbuh ?? 0;
-                  puPerlDisulam = Math.max(ditanam - tumbuh, 0);
-                  // Hitung sudah disulam dari dataTanamans penugasan TL
+                  // Sama seperti perhitungan total: semua titik di sini adalah yang perlu disulam
                   (pu.dataTanamans || pu.data_tanamans || []).forEach((t: any) => {
-                    const kondisi = t.kondisi_tanaman?.toLowerCase() || '';
-                    if (kondisi.includes('sudah disulam') || kondisi.includes('disulam')) {
-                      puSudahDisulam += t.jumlah || 0;
+                    const kondisi = (t.kondisi_tanaman || '').toLowerCase();
+
+                    puPerlDisulam += 1;
+                    puBibitSulam += Number(t.penyulaman_jumlah) || t.jumlah || 1;
+                    if (kondisi.includes('sudah disulam') || t.status_penyulaman === 'Sudah Disulam') {
+                      puSudahDisulam += 1;
                     }
                   });
                 } else {
@@ -260,7 +251,7 @@ export const RekapView: React.FC<RekapViewProps> = ({
                     <td className={`py-3 px-4 font-bold ${isTindakLanjut ? 'text-red-500' : ''}`}>{isTindakLanjut ? puPerlDisulam : puTotal}</td>
                     <td className="py-3 px-4 text-emerald-600 font-bold">{isTindakLanjut ? puSudahDisulam : `${puHidup} (${pctHidup}%)`}</td>
                     <td className={`py-3 px-4 font-bold ${isTindakLanjut ? 'text-orange-500' : 'text-red-500'}`}>{isTindakLanjut ? Math.max(puPerlDisulam - puSudahDisulam, 0) : `${puMati} (${pctMati}%)`}</td>
-                    <td className={`py-3 px-4 font-bold ${isTindakLanjut ? 'text-blue-600' : 'text-orange-500'}`}>{isTindakLanjut ? `${puPerlDisulam} bibit` : `${puBelum} (${pctBelum}%)`}</td>
+                    <td className={`py-3 px-4 font-bold ${isTindakLanjut ? 'text-blue-600' : 'text-orange-500'}`}>{isTindakLanjut ? `${puBibitSulam} bibit` : `${puBelum} (${pctBelum}%)`}</td>
                     {!isTindakLanjut && <td className="py-3 px-4 text-slate-600 flex items-center justify-center gap-1.5"><HiOutlineCamera className="w-4 h-4"/> -</td>}
                     <td className="py-3 px-4">
                       <span className={`${puStatus === 'Lengkap' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-orange-50 text-orange-700 border-orange-100'} border px-2.5 py-1 rounded-full font-bold text-[10px]`}>{puStatus}</span>
@@ -305,7 +296,7 @@ export const RekapView: React.FC<RekapViewProps> = ({
         <button onClick={() => navigate(-1)} className="px-6 py-2.5 border border-slate-300 text-slate-700 bg-white rounded-full text-sm font-bold flex items-center gap-2 shadow-sm transition-colors cursor-pointer hover:bg-slate-50">
           <HiOutlineArrowLeft className="w-4 h-4 stroke-2" /> Kembali
         </button>
-        {(activeProgram as any)?.status !== 'Monitoring Selesai' && (
+        {(activeProgram as any)?.status !== 'Monitoring Selesai' && (activeProgram as any)?.status !== 'Dihentikan' && (
           <button
             disabled={isSubmitting}
             onClick={async () => {
@@ -317,7 +308,7 @@ export const RekapView: React.FC<RekapViewProps> = ({
                   headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success(`Hasil ${isTindakLanjut ? 'Penyulaman' : 'Monitoring'} berhasil dikirim!`);
-                navigate('/penyuluh/monitoring-program');
+                navigate('/admin/penyuluh/monitoring-lanjutan');
               } catch (err) {
                 console.error(err);
                 toast.error('Gagal mengirim hasil monitoring.');
@@ -333,6 +324,11 @@ export const RekapView: React.FC<RekapViewProps> = ({
         {(activeProgram as any)?.status === 'Monitoring Selesai' && (
           <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 border border-emerald-200 rounded-full text-sm font-bold text-emerald-700">
             <HiOutlineInformationCircle className="w-4 h-4" /> Monitoring Selesai
+          </div>
+        )}
+        {(activeProgram as any)?.status === 'Dihentikan' && (
+          <div className="flex items-center gap-2 px-5 py-2.5 bg-red-50 border border-red-200 rounded-full text-sm font-bold text-red-700">
+            <HiOutlineInformationCircle className="w-4 h-4" /> Program Dihentikan
           </div>
         )}
       </div>

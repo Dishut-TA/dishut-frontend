@@ -166,9 +166,11 @@ export const DataTable = ({
     // tampilkan "Tindak Lanjut".
     let statusText = item.status === 'Monitoring Selesai'
       ? 'Monitoring Selesai'
-      : item.jenis_kegiatan === 'Tindak Lanjut'
-        ? 'Tindak Lanjut'
-        : mapStatus(item.status);
+      : item.status === 'Dihentikan'
+        ? 'Dihentikan'
+        : item.jenis_kegiatan === 'Tindak Lanjut'
+          ? 'Tindak Lanjut'
+          : mapStatus(item.status);
     let statusColorKey = 'siap';
     let statusSubText = '';
 

@@ -3,7 +3,18 @@ import { HiOutlineCalendar, HiOutlineMapPin, HiOutlineCamera, HiArrowRight, HiAr
 import { PiPlant, PiTree } from 'react-icons/pi';
 import SharedDokumentasi from './SharedDokumentasi';
 
-const ContentMonitoringSelesai: React.FC = () => (
+const angka = (v?: number | null) => (v === null || v === undefined ? '-' : Number(v).toLocaleString('id-ID'));
+const persen = (v: number) => `${v.toFixed(2).replace('.', ',')}%`;
+
+const ContentMonitoringSelesai: React.FC<{ data?: any }> = ({ data }) => {
+  const hidup = data?.stats?.tanamanHidup ?? 0;
+  const mati = data?.stats?.tanamanMati ?? 0;
+  const target = data?.stats?.targetTanam ?? 0;
+  const titik = data?.geotagList?.length ?? 0;
+  const foto = (data?.dokumentasiProgram || data?.dokumentasiList || []).length;
+  const bagian = (v: number) => (target > 0 ? persen((v / target) * 100) : '-');
+
+  return (
   <div className="space-y-6 animate-in fade-in duration-300">
     <h3 className="text-sm font-bold text-slate-900 mb-2">Ringkasan Hasil Monitoring</h3>
     
@@ -26,26 +37,26 @@ const ContentMonitoringSelesai: React.FC = () => (
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
          <PiPlant className="w-6 h-6 text-emerald-600 mb-3"/>
          <p className="text-[10px] font-semibold text-slate-500 mb-1">Tanaman Hidup</p>
-         <h3 className="text-2xl font-bold text-slate-900 mb-2">16.820 <span className="text-[10px] font-normal text-slate-400">Batang</span></h3>
-         <p className="text-[10px] font-bold text-emerald-600">94,55% dari P0</p>
+         <h3 className="text-2xl font-bold text-slate-900 mb-2">{angka(hidup)} <span className="text-[10px] font-normal text-slate-400">Batang</span></h3>
+         <p className="text-[10px] font-bold text-emerald-600">{bagian(hidup)} dari target</p>
       </div>
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
          <PiTree className="w-6 h-6 text-orange-500 mb-3"/>
          <p className="text-[10px] font-semibold text-slate-500 mb-1">Tanaman Mati</p>
-         <h3 className="text-2xl font-bold text-slate-900 mb-2">910 <span className="text-[10px] font-normal text-slate-400">Batang</span></h3>
-         <p className="text-[10px] font-bold text-red-500">5,7% dari P0</p>
+         <h3 className="text-2xl font-bold text-slate-900 mb-2">{angka(mati)} <span className="text-[10px] font-normal text-slate-400">Batang</span></h3>
+         <p className="text-[10px] font-bold text-red-500">{bagian(mati)} dari target</p>
       </div>
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
          <HiOutlineMapPin className="w-6 h-6 text-blue-500 mb-3"/>
          <p className="text-[10px] font-semibold text-slate-500 mb-1">Titik Geotag</p>
-         <h3 className="text-2xl font-bold text-slate-900 mb-2">118 <span className="text-[10px] font-normal text-slate-400">Titik</span></h3>
-         <p className="text-[10px] font-bold text-emerald-600">100% tervalidasi</p>
+         <h3 className="text-2xl font-bold text-slate-900 mb-2">{angka(titik)} <span className="text-[10px] font-normal text-slate-400">Titik</span></h3>
+         <p className="text-[10px] font-bold text-emerald-600">dari petak ukur</p>
       </div>
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
          <HiOutlineCamera className="w-6 h-6 text-purple-500 mb-3"/>
          <p className="text-[10px] font-semibold text-slate-500 mb-1">Dokumentasi</p>
-         <h3 className="text-2xl font-bold text-slate-900 mb-2">42 <span className="text-[10px] font-normal text-slate-400">Foto</span></h3>
-         <p className="text-[10px] font-bold text-emerald-600">100% lengkap</p>
+         <h3 className="text-2xl font-bold text-slate-900 mb-2">{angka(foto)} <span className="text-[10px] font-normal text-slate-400">Foto</span></h3>
+         <p className="text-[10px] font-bold text-emerald-600">dokumentasi lapangan</p>
       </div>
     </div>
 
@@ -113,8 +124,9 @@ const ContentMonitoringSelesai: React.FC = () => (
       </div>
     </div>
 
-    <SharedDokumentasi />
+    <SharedDokumentasi dokumentasi={data?.dokumentasiProgram || data?.dokumentasiList} />
   </div>
-);
+  );
+};
 
 export default ContentMonitoringSelesai;

@@ -3,7 +3,23 @@ import { HiOutlineArrowLeft, HiOutlineMapPin, HiOutlineCamera, HiCheckCircle, Hi
 import { PiPlant, PiLeaf } from 'react-icons/pi';
 import SharedDokumentasi from './SharedDokumentasi';
 
-const ContentPelaksanaan: React.FC = () => (
+const angka = (v?: number | null) => (v === null || v === undefined ? '-' : Number(v).toLocaleString('id-ID'));
+
+const ContentPelaksanaan: React.FC<{ data?: any }> = ({ data }) => {
+  const target = data?.stats?.targetTanam ?? 0;
+  const realisasi = data?.stats?.tanamanHidup ?? 0;
+  const selisih = realisasi - target;
+
+  // Rekap jenis tanaman dijumlahkan lintas petak ukur.
+  const perJenis: Record<string, number> = {};
+  (data?.petakUkurs || []).forEach((pu: any) =>
+    (pu.data_tanamans || pu.dataTanamans || []).forEach((t: any) => {
+      const nama = t.nama_tanaman || t.seed?.name || 'Tidak diketahui';
+      perJenis[nama] = (perJenis[nama] || 0) + (Number(t.jumlah) || 0);
+    })
+  );
+
+  return (
   <div className="space-y-6 animate-in fade-in duration-300">
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <h3 className="text-sm font-bold text-slate-900 mb-4">Ringkasan Hasil Pelaksanaan</h3>
@@ -11,31 +27,31 @@ const ContentPelaksanaan: React.FC = () => (
         <div className="border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
           <PiPlant className="w-6 h-6 text-emerald-600 mb-2"/>
           <p className="text-[10px] font-semibold text-slate-500 mb-0.5">Target Bibit</p>
-          <h3 className="text-xl font-bold text-slate-900">25.000</h3>
+          <h3 className="text-xl font-bold text-slate-900">{angka(target)}</h3>
           <p className="text-[9px] text-slate-400">Batang</p>
         </div>
         <div className="border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
           <PiLeaf className="w-6 h-6 text-emerald-600 mb-2"/>
           <p className="text-[10px] font-semibold text-slate-500 mb-0.5">Realisasi Bibit</p>
-          <h3 className="text-xl font-bold text-slate-900">23.100</h3>
+          <h3 className="text-xl font-bold text-slate-900">{angka(realisasi)}</h3>
           <p className="text-[9px] text-slate-400">Batang</p>
         </div>
         <div className="border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
           <div className="flex gap-1 items-center mb-2"><HiOutlineArrowLeft className="w-4 h-4 text-emerald-600 rotate-90"/><HiOutlineArrowLeft className="w-4 h-4 text-red-500 -rotate-90"/></div>
           <p className="text-[10px] font-semibold text-slate-500 mb-0.5">Selisih</p>
-          <h3 className="text-xl font-bold text-red-600">-1.900</h3>
+          <h3 className={`text-xl font-bold ${selisih < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{selisih > 0 ? `+${angka(selisih)}` : angka(selisih)}</h3>
           <p className="text-[9px] text-slate-400">Batang</p>
         </div>
         <div className="border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
           <HiOutlineMapPin className="w-6 h-6 text-emerald-600 mb-2"/>
           <p className="text-[10px] font-semibold text-slate-500 mb-0.5">Total Petak Ukur (PU)</p>
-          <h3 className="text-xl font-bold text-slate-900">3</h3>
+          <h3 className="text-xl font-bold text-slate-900">{angka(data?.stats?.countGeotag)}</h3>
           <p className="text-[9px] text-slate-400">PU</p>
         </div>
         <div className="border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
           <HiOutlineCamera className="w-6 h-6 text-emerald-600 mb-2"/>
           <p className="text-[10px] font-semibold text-slate-500 mb-0.5">Dokumentasi</p>
-          <h3 className="text-xl font-bold text-slate-900">36</h3>
+          <h3 className="text-xl font-bold text-slate-900">{angka((data?.dokumentasiProgram || data?.dokumentasiList || []).length)}</h3>
           <p className="text-[9px] text-slate-400">Foto</p>
         </div>
       </div>
@@ -47,10 +63,11 @@ const ContentPelaksanaan: React.FC = () => (
             <tr><th className="py-2.5 px-4">Jenis Tanaman</th><th className="py-2.5 px-4">Jumlah (Tanaman)</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-            <tr><td className="py-2.5 px-4">Rhizophora apiculata</td><td className="py-2.5 px-4">350</td></tr>
-            <tr><td className="py-2.5 px-4">Avicennia marina</td><td className="py-2.5 px-4">100</td></tr>
-            <tr><td className="py-2.5 px-4">Sonneratia alba</td><td className="py-2.5 px-4">52</td></tr>
-            <tr className="bg-emerald-50/50 font-bold"><td className="py-3 px-4 text-emerald-700">Total</td><td className="py-3 px-4 text-emerald-700">502</td></tr>
+            {Object.keys(perJenis).length === 0 ? (
+              <tr><td colSpan={2} className="py-4 px-4 text-center text-slate-400">Belum ada data tanaman.</td></tr>
+            ) : Object.entries(perJenis).map(([nama, jumlah]) => (
+              <tr key={nama}><td className="py-2.5 px-4">{nama}</td><td className="py-2.5 px-4">{angka(jumlah)}</td></tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -83,18 +100,37 @@ const ContentPelaksanaan: React.FC = () => (
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-            {[1,2,3,4,5].map((no) => (
-              <tr key={no} className="hover:bg-slate-50 transition-colors">
-                <td className="py-3 px-4 font-bold text-slate-900">{no}</td>
-                <td className="py-3 px-4 font-bold text-slate-800 text-left">PU-0{no}</td>
-                <td className="py-3 px-4">0,5{no}</td>
-                <td className="py-3 px-4">50</td>
-                <td className="py-3 px-4">{no === 3 ? '52' : '50'}</td>
-                <td className={`py-3 px-4 font-bold ${no === 3 ? 'text-emerald-600' : 'text-slate-600'}`}>{no === 3 ? '+2' : '0'}</td>
-                {[1,2,3,4,5].map(i => <td key={i} className="py-3 px-2"><HiCheckCircle className="w-4 h-4 text-emerald-500 mx-auto"/></td>)}
-                <td className="py-3 px-4"><button className="p-1.5 border border-slate-200 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer mx-auto block"><HiOutlineEye className="w-4 h-4"/></button></td>
+            {(data?.petakUkurs || []).length === 0 ? (
+              <tr>
+                <td colSpan={12} className="py-8 text-center text-slate-400 font-medium">
+                  Belum ada petak ukur pada program ini.
+                </td>
               </tr>
-            ))}
+            ) : (data?.petakUkurs || []).map((pu: any, idx: number) => {
+              const tanaman = pu.data_tanamans || pu.dataTanamans || [];
+              const realisasiPu = tanaman.reduce((j: number, t: any) => j + (Number(t.jumlah) || 0), 0);
+              const adaPolygon = Array.isArray(pu.polygon_data) && pu.polygon_data.length > 0;
+              const cek = [adaPolygon, tanaman.length > 0, tanaman.some((t: any) => t.foto_url), Boolean(pu.eval_koordinat) || adaPolygon, Boolean(pu.eval_foto)];
+
+              return (
+                <tr key={pu.id ?? idx} className="hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-4 font-bold text-slate-900">{idx + 1}</td>
+                  <td className="py-3 px-4 font-bold text-slate-800 text-left">{pu.nama || `PU-${idx + 1}`}</td>
+                  <td className="py-3 px-4">{pu.luas ?? '-'}</td>
+                  <td className="py-3 px-4">-</td>
+                  <td className="py-3 px-4">{angka(realisasiPu)}</td>
+                  <td className="py-3 px-4 font-bold text-slate-600">-</td>
+                  {cek.map((ok, i) => (
+                    <td key={i} className="py-3 px-2">
+                      {ok
+                        ? <HiCheckCircle className="w-4 h-4 text-emerald-500 mx-auto"/>
+                        : <span className="text-slate-300">-</span>}
+                    </td>
+                  ))}
+                  <td className="py-3 px-4"><button className="p-1.5 border border-slate-200 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer mx-auto block"><HiOutlineEye className="w-4 h-4"/></button></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -108,8 +144,9 @@ const ContentPelaksanaan: React.FC = () => (
       </div>
     </div>
 
-    <SharedDokumentasi />
+    <SharedDokumentasi dokumentasi={data?.dokumentasiProgram || data?.dokumentasiList} />
   </div>
-);
+  );
+};
 
 export default ContentPelaksanaan;

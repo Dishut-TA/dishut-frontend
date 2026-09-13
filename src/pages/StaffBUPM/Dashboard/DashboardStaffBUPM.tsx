@@ -1,17 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   HiOutlineDocumentPlus, 
   HiOutlineCheckBadge, 
   HiOutlineBuildingStorefront,
   HiOutlineCheckCircle,
 } from 'react-icons/hi2';
+import { getProgramBUPMAPI } from '../../../services/investasi.service';
 
 const DashboardStaffBUPM: React.FC = () => {
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const data = await getProgramBUPMAPI();
+        setPrograms(data);
+      } catch (error) {
+        console.error("Gagal mengambil data program BUPM:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPrograms();
+  }, []);
+
+  // Map statuses
+  const pengajuanBaruCount = programs.filter(p => p.status === 'PENDING' || p.status === 'SUBMITTED').length;
+  const sedangDiauditCount = programs.filter(p => p.status === 'REVIEW' || p.status === 'VERIFY' || p.status === 'AUDIT' || p.status === 'WAITING_APPROVAL').length;
+  const aktifDiPublikCount = programs.filter(p => p.status === 'ACTIVE' || p.status === 'AKTIF').length;
   const STAT_CARDS = [
     {
       id: 1,
       title: 'PENGAJUAN BARU',
-      value: '0 Berkas',
+      value: isLoading ? '...' : `${pengajuanBaruCount} Berkas`,
       subtitle: 'Menunggu verifikasi administrasi',
       icon: <HiOutlineDocumentPlus className="w-6 h-6" />,
       colorClass: 'text-green-600 bg-green-100',
@@ -19,7 +41,7 @@ const DashboardStaffBUPM: React.FC = () => {
     {
       id: 2,
       title: 'SEDANG DIAUDIT',
-      value: '0 Proyek',
+      value: isLoading ? '...' : `${sedangDiauditCount} Proyek`,
       subtitle: 'Dalam tinjauan Kepala BUPM',
       icon: <HiOutlineCheckBadge className="w-6 h-6" />,
       colorClass: 'text-blue-600 bg-blue-100',
@@ -27,7 +49,7 @@ const DashboardStaffBUPM: React.FC = () => {
     {
       id: 3,
       title: 'AKTIF DI PUBLIK',
-      value: '3 Proyek',
+      value: isLoading ? '...' : `${aktifDiPublikCount} Proyek`,
       subtitle: 'Terbuka untuk pendanaan luar',
       icon: <HiOutlineBuildingStorefront className="w-6 h-6" />,
       colorClass: 'text-rose-600 bg-rose-100',
@@ -64,18 +86,24 @@ const DashboardStaffBUPM: React.FC = () => {
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mt-2">
         <div className="flex items-center gap-2 mb-6">
-          <h2 className="text-base font-bold text-gray-800">Antrean Verifikasi Terbaru (0)</h2>
+          <h2 className="text-base font-bold text-gray-800">Antrean Verifikasi Terbaru ({pengajuanBaruCount})</h2>
         </div>
 
-        <div className="border border-gray-100 rounded-xl p-12 md:p-20 flex flex-col items-center justify-center text-center bg-gray-50/50">
-          <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 mb-4">
-            <HiOutlineCheckCircle className="w-8 h-8 text-[#185325]" strokeWidth={2} />
+        {pengajuanBaruCount === 0 ? (
+          <div className="border border-gray-100 rounded-xl p-12 md:p-20 flex flex-col items-center justify-center text-center bg-gray-50/50">
+            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 mb-4">
+              <HiOutlineCheckCircle className="w-8 h-8 text-[#185325]" strokeWidth={2} />
+            </div>
+            <h3 className="text-base font-bold text-gray-800 mb-1">Semua Proposal Bersih</h3>
+            <p className="text-sm text-gray-500">
+              Tidak ada antrean verifikasi teknis usaha saat ini.
+            </p>
           </div>
-          <h3 className="text-base font-bold text-gray-800 mb-1">Semua Proposal Bersih</h3>
-          <p className="text-sm text-gray-500">
-            Tidak ada antrean verifikasi teknis usaha saat ini.
-          </p>
-        </div>
+        ) : (
+          <div className="border border-gray-100 rounded-xl p-6 bg-gray-50/50">
+             <p className="text-sm text-gray-600 text-center">Ada {pengajuanBaruCount} proposal baru yang menunggu verifikasi Anda.</p>
+          </div>
+        )}
       </div>
 
     </div>

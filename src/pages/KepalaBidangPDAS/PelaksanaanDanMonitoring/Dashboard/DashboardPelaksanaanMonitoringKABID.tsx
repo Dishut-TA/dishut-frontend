@@ -16,7 +16,10 @@ export default function DashboardPelaksanaanMonitoringKabid() {
     const fetchDashboard = async () => {
       try {
         const res = await getPenugasanDashboardAPI();
-        setDashboardData(res.data);
+        // Respons /penugasan/dashboard tidak dibungkus key 'data', isinya
+        // langsung stats, per_wilayah, programs, dan map_locations. Membaca
+        // res.data membuat seluruh dashboard ini kosong.
+        setDashboardData(res);
       } catch (error) {
         console.error('Failed to fetch dashboard data', error);
       } finally {
@@ -28,7 +31,7 @@ export default function DashboardPelaksanaanMonitoringKabid() {
 
   return (
     <div className="flex bg-gray-50 font-sans text-gray-800 w-full min-h-screen">
-      <main className="flex-1 flex flex-col w-full p-4 lg:p-6">
+      <main className="flex-1 flex flex-col w-full">
           <DashboardFilters />
           
           {isLoading ? (
@@ -39,15 +42,15 @@ export default function DashboardPelaksanaanMonitoringKabid() {
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                 <MapMockup locations={dashboardData?.map_locations} />
-                <DonutChart stats={dashboardData?.stats} />
+                <DonutChart perSumberDana={dashboardData?.per_sumber_dana} />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <TableRealisasi programs={dashboardData?.recent_programs} />
-                <TableBerjalan programs={dashboardData?.recent_programs} />
+                <TableRealisasi programs={dashboardData?.programs} />
+                <TableBerjalan programs={dashboardData?.programs} />
               </div>
 
-              <RecentActivities activities={dashboardData?.recent_programs} />
+              <RecentActivities activities={dashboardData?.programs} />
             </>
           )}
 

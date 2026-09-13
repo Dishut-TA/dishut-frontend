@@ -25,7 +25,20 @@ const MonitoringLanjutanIndex: React.FC = () => {
           p.jenis_kegiatan.toLowerCase().includes('monitoring') ||
           p.jenis_kegiatan.toLowerCase() === 'tindak lanjut'
         ));
-        setData(monitoringData);
+
+        // Kelompokkan berdasarkan program untuk hanya mengambil penugasan terbaru
+        const latestPenugasanMap = new Map();
+        monitoringData.forEach((p: any) => {
+          const programKey = `${p.penugasanable_type}-${p.penugasanable_id}`;
+          // Jika belum ada, atau jika ID penugasan ini lebih besar (lebih baru), simpan
+          if (!latestPenugasanMap.has(programKey) || latestPenugasanMap.get(programKey).id < p.id) {
+            latestPenugasanMap.set(programKey, p);
+          }
+        });
+
+        // Ubah kembali menjadi array dan urutkan dari ID terbesar (terbaru)
+        const finalData = Array.from(latestPenugasanMap.values()).sort((a: any, b: any) => b.id - a.id);
+        setData(finalData);
       } catch (error) {
         console.error(error);
       } finally {

@@ -1,8 +1,33 @@
 import { useNavigate } from 'react-router-dom';
-import { TABLE_BERJALAN_DATA } from '../data/mockData';
+import {
+  STATUS_FINAL,
+  kategoriKegiatan,
+  persenRealisasi,
+  ringkasPerProgram,
+  tanggalSingkat,
+  waktuTerakhir,
+} from '@/utils/programDashboard';
 
-export default function TableBerjalan({ }: { programs?: any[] }) {
+const JUMLAH_TAMPIL = 5;
+
+const persenId = (nilai: number) => `${nilai.toFixed(2).replace('.', ',')}%`;
+
+/**
+ * Program yang penugasannya masih berjalan.
+ *
+ * Satu program bisa punya beberapa penugasan sekaligus, jadi baris digabung
+ * dan penugasan dengan pergerakan terakhir dipakai sebagai wakil tahapnya.
+ */
+export default function TableBerjalan({ programs }: { programs?: any[] }) {
   const navigate = useNavigate();
+
+  const berjalan = Array.isArray(programs)
+    ? programs.filter((p: any) => p && !STATUS_FINAL.includes(p.status))
+    : [];
+
+  const baris = ringkasPerProgram(berjalan)
+    .sort((a, b) => waktuTerakhir(b) - waktuTerakhir(a))
+    .slice(0, JUMLAH_TAMPIL);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 overflow-hidden flex flex-col">
@@ -26,37 +51,72 @@ export default function TableBerjalan({ }: { programs?: any[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {TABLE_BERJALAN_DATA.map((row) => (
-              <tr key={row.no} className="hover:bg-gray-50/50">
-                <td className="py-3 pr-2 text-gray-500">{row.no}</td>
-                <td className="py-3 px-2 font-medium text-gray-900">{row.program}</td>
-                <td className="py-3 px-2 text-gray-600">{row.lokasi}</td>
-                <td className="py-3 px-2 text-gray-600">{row.sumber}</td>
-                <td className="py-3 px-2 text-gray-600">{row.tahap}</td>
-                <td className="py-3 px-2">
-                    <span className={`px-2 py-1 rounded-sm text-[10px] font-bold ${row.kategori === 'Pelaksanaan' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                      {row.kategori}
-                    </span>
-                </td>
-                <td className="py-3 px-2">
-                  <div className="flex items-center justify-end gap-2">
-                    <span className="font-bold text-gray-900">{row.progress}</span>
-                    <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden shrink-0">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{width: row.progress.replace(',', '.')}}></div>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-3 px-2 text-right text-[10px] text-gray-500">{row.tanggal}</td>
-                <td className="py-3 pl-2 text-center">
-                  <button 
-                    onClick={() => navigate(`/admin/kabid/monitoring/dashboard/detail/${row.no}`, { state: { kategori: row.kategori, status: row.kategori === 'Pelaksanaan' ? 'Selesai' : 'Berjalan', periode: row.tahap.includes('V') ? 'Validasi' : 'P2' } })}
-                    className="px-3 py-1.5 border border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
-                  >
-                    Lihat Detail
-                  </button>
+            {baris.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="py-8 text-center text-gray-400 font-medium">
+                  Belum ada program yang sedang berjalan.
                 </td>
               </tr>
-            ))}
+            ) : (
+              baris.map((row: any, idx: number) => {
+                const kategori = kategoriKegiatan(row.jenis_kegiatan);
+                const progress = persenRealisasi(row);
+                const tahap = row.periode_monitoring
+                  ? `${row.jenis_kegiatan} ${row.periode_monitoring}`
+                  : row.jenis_kegiatan || '-';
+
+                return (
+                  <tr key={row.program_key || idx} className="hover:bg-gray-50/50">
+                    <td className="py-3 pr-2 text-gray-500">{idx + 1}</td>
+                    <td className="py-3 px-2 font-medium text-gray-900">{row.nama_program || '-'}</td>
+                    <td className="py-3 px-2 text-gray-600">{row.lokasi || row.wilayah || '-'}</td>
+                    <td className="py-3 px-2 text-gray-600">{row.sumber_dana || '-'}</td>
+                    <td className="py-3 px-2 text-gray-600">{tahap}</td>
+                    <td className="py-3 px-2">
+                      <span
+                        className={`px-2 py-1 rounded-sm text-[10px] font-bold ${
+                          kategori === 'Pelaksanaan'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : 'bg-blue-50 text-blue-600'
+                        }`}
+                      >
+                        {kategori}
+                      </span>
+                    </td>
+                    <td className="py-3 px-2">
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="font-bold text-gray-900">{persenId(progress)}</span>
+                        <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden shrink-0">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full"
+                            style={{ width: `${Math.min(progress, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-2 text-right text-[10px] text-gray-500">
+                      {tanggalSingkat(row.updated_at || row.tanggal_penugasan)}
+                    </td>
+                    <td className="py-3 pl-2 text-center">
+                      <button
+                        onClick={() =>
+                          navigate(`/admin/kabid/monitoring/dashboard/detail/${row.id}`, {
+                            state: {
+                              kategori,
+                              status: row.status,
+                              periode: row.periode_monitoring || '-',
+                            },
+                          })
+                        }
+                        className="px-3 py-1.5 border border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
+                      >
+                        Lihat Detail
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

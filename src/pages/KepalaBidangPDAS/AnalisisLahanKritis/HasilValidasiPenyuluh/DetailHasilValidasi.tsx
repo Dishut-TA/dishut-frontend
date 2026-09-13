@@ -86,11 +86,9 @@ const DetailHasilValidasi: React.FC = () => {
             </h3>
             <div className="grid grid-cols-[150px_10px_1fr] gap-y-3 text-sm">
               <div className="text-gray-500 font-medium">Kondisi lahan</div><div>:</div><div className="font-medium text-gray-800">{data.kondisi_lahan || '-'}</div>
-              <div className="text-gray-500 font-medium">Kondisi vegetasi</div><div>:</div><div className="font-medium text-gray-800">{data.kondisi_vegetasi || '-'}</div>
               <div className="text-gray-500 font-medium">Koordinat (rata-rata)</div><div>:</div><div className="font-medium text-gray-800">{data.titik_koordinat_gps || '-'}</div>
               <div className="text-gray-500 font-medium">Geotagging status</div><div>:</div>
               <div className="text-green-600 font-bold flex items-center gap-1">✓ Valid</div>
-              <div className="text-gray-500 font-medium">Kendala lapangan</div><div>:</div><div className="font-medium text-gray-800">{data.kendala_lapangan || '-'}</div>
               <div className="text-gray-500 font-medium">Catatan peninjauan</div><div>:</div>
               <div className="font-medium text-gray-800 leading-relaxed">{data.catatan_peninjauan || '-'}</div>
             </div>

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { getAllPenugasanAPI } from '@/services/penugasan.service';
 import { 
   HiOutlineMagnifyingGlass, 
   HiOutlineArrowPath,
@@ -14,18 +16,67 @@ import {
 import TambahPenyuluhModal from './components/TambahPenyuluhModal';
 
 // --- MOCK DATA ---
-const MOCK_DATA = [
-  { id: '1', nama: 'IMAS ROHMAYATI, S.P., M.P.', nip: '198105152008012001', unitKerja: 'Cabang Dinas Kehutanan Wilayah V Garut', jabatan: 'Penyuluh Kehutanan Ahli Madya', status: 'Aktif', jmlPenugasan: 3 },
-  { id: '2', nama: 'ATAN RUSTANDI, S.P.', nip: '197905222007011015', unitKerja: 'Cabang Dinas Kehutanan Wilayah V Garut', jabatan: 'Penyuluh Kehutanan Ahli Madya', status: 'Aktif', jmlPenugasan: 2 },
-  { id: '3', nama: 'SUHERMAN, S.P.', nip: '197803112006041009', unitKerja: 'Cabang Dinas Kehutanan Wilayah V Garut', jabatan: 'Penyuluh Kehutanan Ahli Madya', status: 'Aktif', jmlPenugasan: 1 },
-  { id: '4', nama: 'DINI NURLATIFAH, S.Hut', nip: '198406102010122005', unitKerja: 'Cabang Dinas Kehutanan Wilayah V Garut', jabatan: 'Penyuluh Kehutanan Ahli Pertama', status: 'Aktif', jmlPenugasan: 2 },
-  { id: '5', nama: 'WAWAN SETIAWAN, S.P.', nip: '198307182009011003', unitKerja: 'Cabang Dinas Kehutanan Wilayah V Garut', jabatan: 'Penyuluh Kehutanan Ahli Muda', status: 'Aktif', jmlPenugasan: 1 },
-];
+interface BarisPenyuluh {
+  id: string;
+  nama: string;
+  nip: string;
+  unitKerja: string;
+  jabatan: string;
+  jmlPenugasan: number;
+}
+
+const API_URL = import.meta.env.VITE_API_MASTER_URL || 'http://127.0.0.1:8000/api';
 
 const MasterPenyuluh: React.FC = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [daftar, setDaftar] = useState<BarisPenyuluh[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const ambil = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/users?role=penyuluh`, {
+          headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Gagal memuat data penyuluh');
+
+        const pengguna = json.payload?.data || json.payload || [];
+
+        // Jumlah penugasan dihitung dari daftar penugasan, bukan disimpan di users.
+        let hitungan: Record<string, number> = {};
+        try {
+          const penugasan = await getAllPenugasanAPI();
+          hitungan = (penugasan?.data || []).reduce((acc: Record<string, number>, p: any) => {
+            if (p?.penyuluh_id) acc[p.penyuluh_id] = (acc[p.penyuluh_id] || 0) + 1;
+            return acc;
+          }, {});
+        } catch {
+          // jumlah penugasan opsional; daftar penyuluh tetap ditampilkan
+        }
+
+        setDaftar(
+          (Array.isArray(pengguna) ? pengguna : []).map((u: any) => ({
+            id: String(u.id),
+            nama: u.nama_pengguna || u.username || u.name || '-',
+            nip: u.nip || u.profil?.nip || '-',
+            // Kolom unit kerja belum ada di basis data pengguna.
+            unitKerja: u.unit_kerja || '-',
+            jabatan: u.jabatan || u.peran?.[0]?.nama || '-',
+            jmlPenugasan: hitungan[u.id] || 0,
+          }))
+        );
+      } catch (e: any) {
+        toast.error(e?.message || 'Gagal memuat data penyuluh.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    ambil();
+  }, []);
 
   const toggleDropdown = (id: string) => {
     if (activeDropdown === id) setActiveDropdown(null);
@@ -52,19 +103,19 @@ const MasterPenyuluh: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex items-center gap-4 hover:shadow-md transition-shadow">
           <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><HiOutlineUserGroup className="w-6 h-6"/></div>
-          <div><p className="text-xs font-bold text-gray-500 mb-0.5">Total Penyuluh</p><p className="text-2xl font-bold text-gray-800 leading-none">156</p><p className="text-[10px] text-gray-400 font-medium mt-1">Seluruh penyuluh terdaftar</p></div>
+          <div><p className="text-xs font-bold text-gray-500 mb-0.5">Total Penyuluh</p><p className="text-2xl font-bold text-gray-800 leading-none">{daftar.length}</p><p className="text-[10px] text-gray-400 font-medium mt-1">Seluruh penyuluh terdaftar</p></div>
         </div>
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex items-center gap-4 hover:shadow-md transition-shadow">
           <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><HiOutlineCheckCircle className="w-6 h-6"/></div>
-          <div><p className="text-xs font-bold text-gray-500 mb-0.5">Penyuluh Aktif</p><p className="text-2xl font-bold text-gray-800 leading-none">148</p><p className="text-[10px] text-gray-400 font-medium mt-1">Penyuluh berstatus aktif</p></div>
+          <div><p className="text-xs font-bold text-gray-500 mb-0.5">Penyuluh Aktif</p><p className="text-2xl font-bold text-gray-800 leading-none">{daftar.length}</p><p className="text-[10px] text-gray-400 font-medium mt-1">Kolom status belum ada di basis data</p></div>
         </div>
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex items-center gap-4 hover:shadow-md transition-shadow">
           <div className="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shrink-0"><HiOutlineBriefcase className="w-6 h-6"/></div>
-          <div><p className="text-xs font-bold text-gray-500 mb-0.5">Sedang Ditugaskan</p><p className="text-2xl font-bold text-gray-800 leading-none">32</p><p className="text-[10px] text-gray-400 font-medium mt-1">Penyuluh dalam program berjalan</p></div>
+          <div><p className="text-xs font-bold text-gray-500 mb-0.5">Sedang Ditugaskan</p><p className="text-2xl font-bold text-gray-800 leading-none">{daftar.filter((d) => d.jmlPenugasan > 0).length}</p><p className="text-[10px] text-gray-400 font-medium mt-1">Penyuluh dalam program berjalan</p></div>
         </div>
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex items-center gap-4 hover:shadow-md transition-shadow">
           <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><HiOutlineUserMinus className="w-6 h-6"/></div>
-          <div><p className="text-xs font-bold text-gray-500 mb-0.5">Penyuluh Nonaktif</p><p className="text-2xl font-bold text-gray-800 leading-none">8</p><p className="text-[10px] text-gray-400 font-medium mt-1">Penyuluh tidak aktif</p></div>
+          <div><p className="text-xs font-bold text-gray-500 mb-0.5">Penyuluh Nonaktif</p><p className="text-2xl font-bold text-gray-800 leading-none">-</p><p className="text-[10px] text-gray-400 font-medium mt-1">Kolom status belum ada di basis data</p></div>
         </div>
       </div>
 
@@ -110,7 +161,11 @@ const MasterPenyuluh: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {MOCK_DATA.map((item, idx) => (
+              {isLoading ? (
+                <tr><td colSpan={8} className="py-10 text-center text-gray-500 font-medium">Memuat data penyuluh...</td></tr>
+              ) : daftar.length === 0 ? (
+                <tr><td colSpan={8} className="py-10 text-center text-gray-500 font-medium">Belum ada penyuluh terdaftar.</td></tr>
+              ) : daftar.map((item, idx) => (
                 <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="py-4 pl-6 pr-2 font-medium text-gray-600">{idx + 1}</td>
                   <td className="py-4 px-2 font-bold text-gray-800">{item.nama}</td>
@@ -153,7 +208,7 @@ const MasterPenyuluh: React.FC = () => {
 
         {/* Pagination */}
         <div className="p-6 flex justify-between items-center text-xs text-gray-500 border-t border-gray-50">
-          <span>Menampilkan 1 - 10 dari 156 data</span>
+          <span>Menampilkan {daftar.length} dari {daftar.length} data</span>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="font-bold">Tampilkan</span>

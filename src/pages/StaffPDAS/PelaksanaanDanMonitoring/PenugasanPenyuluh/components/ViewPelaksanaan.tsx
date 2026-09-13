@@ -1,4 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
+import { TemplateRekapPelaksanaanPDF } from './TemplateRekapPelaksanaanPDF';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -8,7 +10,6 @@ import {
   HiOutlinePhoto, HiOutlineDocumentText, HiOutlineUser, HiOutlineUsers,
   HiOutlineBriefcase, HiCheck, HiOutlineArrowLeft, HiOutlinePrinter, HiOutlineCamera
 } from 'react-icons/hi2';
-import { MOCK_TANAMAN } from '../data/mockData';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -34,6 +35,13 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
   const [selectedPU, setSelectedPU] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dokumentasi, setDokumentasi] = useState<any[]>([]);
+  const [tanaman, setTanaman] = useState<any[]>([]);
+
+  const pdfRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: pdfRef,
+    documentTitle: 'Rekap_Pelaksanaan_Penanaman'
+  });
 
   const STORAGE_URL = (import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api').replace('/api', '/storage');
   const resolveUrl = (path: string) => path.startsWith('http') ? path : `${STORAGE_URL}/${path}`;
@@ -48,6 +56,25 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
     }).catch(() => {
       // silent fail — halaman tetap bisa dipakai
     });
+
+    // Data tanaman tersimpan di bawah tiap petak ukur, bukan langsung di penugasan.
+    axios.get(`${import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api'}/penugasan/${activeId}/petak-ukur`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => {
+      const daftar = (res.data?.data || []).flatMap((pu: any) =>
+        (pu.data_tanamans || pu.dataTanamans || []).map((t: any) => ({
+          id: t.id,
+          petak: pu.nama,
+          jenis: t.nama_tanaman || t.seed?.name || 'Tidak diketahui',
+          tinggi: t.tinggi_tanaman,
+          kondisi: t.kondisi_tanaman || '-',
+          jumlah: t.jumlah,
+        }))
+      );
+      setTanaman(daftar);
+    }).catch(() => {
+      // silent fail — halaman tetap bisa dipakai
+    });
   }, [activeId]);
 
   const handleApprove = async () => {
@@ -58,7 +85,7 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Penugasan berhasil disetujui dan diselesaikan');
-      navigate('/admin/staff/monitoring/monitoring-program', {
+      navigate('/admin/staff/monitoring/verifikasi', {
         state: { statusFilter: 'Siap Monitoring' }
       });
     } catch (error) {
@@ -311,12 +338,21 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
                         <tr><th className="p-3 text-center w-8">No.</th><th className="p-3">Jenis Tanaman</th><th className="p-3 text-center">Tinggi</th><th className="p-3 text-center">Kondisi</th></tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {MOCK_TANAMAN.map(tanaman => (
-                          <tr key={tanaman.no} className="hover:bg-gray-50">
-                            <td className="p-3 text-center">{tanaman.no}</td>
-                            <td className="p-3 font-medium text-gray-900">{tanaman.jenis}</td>
-                            <td className="p-3 text-center">{tanaman.tinggi} cm</td>
-                            <td className="p-3 text-center"><span className="font-bold text-emerald-600 text-[10px]">{tanaman.kondisi}</span></td>
+                        {tanaman.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="p-6 text-center text-gray-400 font-medium">
+                              Belum ada data tanaman yang diinput penyuluh.
+                            </td>
+                          </tr>
+                        ) : tanaman.map((row, idx) => (
+                          <tr key={row.id ?? idx} className="hover:bg-gray-50">
+                            <td className="p-3 text-center">{idx + 1}</td>
+                            <td className="p-3 font-medium text-gray-900">
+                              {row.jenis}
+                              {row.petak ? <span className="text-[10px] text-gray-400 ml-1">({row.petak})</span> : null}
+                            </td>
+                            <td className="p-3 text-center">{row.tinggi ? `${row.tinggi} cm` : '-'}</td>
+                            <td className="p-3 text-center"><span className="font-bold text-emerald-600 text-[10px]">{row.kondisi}</span></td>
                           </tr>
                         ))}
                       </tbody>
@@ -336,7 +372,7 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
             <p className="text-sm text-gray-500">Data pelaksanaan penanaman telah diverifikasi dan disetujui.</p>
           </div>
           <div className="flex gap-3 shrink-0 w-full md:w-auto">
-            <button className="flex-1 md:flex-none px-6 py-2.5 bg-[#008A4B] text-white text-sm font-bold rounded-lg hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+            <button onClick={handlePrint} className="flex-1 md:flex-none px-6 py-2.5 bg-[#008A4B] text-white text-sm font-bold rounded-lg hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer">
               <HiOutlinePrinter className="w-4 h-4 stroke-2" /> Cetak Rekap
             </button>
           </div>
@@ -378,6 +414,16 @@ export default function ViewPelaksanaan({ status, activeId, data }: ViewProps) {
           <HiCheck className="w-4 h-4 stroke-3" /> {isSubmitting ? 'Memproses...' : 'Setujui & Selesaikan PO'}
         </button>
       </div>
+      <TemplateRekapPelaksanaanPDF 
+        ref={pdfRef} 
+        data={{
+          ...data,
+          target: targetKegiatan,
+          realisasi: targetKegiatan
+        }} 
+        tanaman={tanaman} 
+        dokumentasi={dokumentasi} 
+      />
     </div>
   );
 }

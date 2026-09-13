@@ -72,6 +72,23 @@ const CreateInisiasiPenugasan: React.FC = () => {
     const prog = programsReady.find(p => `${p.evaluable_type}|${p.evaluable_id}` === progKey);
     if (prog) {
       setJenisProgram(prog.jenis_program);
+      
+      // Mengambil periode dari data program (bisa dari periode_monitoring, periode_aktif, dll)
+      // Jika data dari backend menggunakan periode_monitoring:
+      if (prog.periode_monitoring) {
+        setPeriodeEvaluasi(prog.periode_monitoring);
+      } else if (prog.periode_aktif) {
+        setPeriodeEvaluasi(prog.periode_aktif);
+      } else if (prog.program_detail?.periode_aktif) {
+        setPeriodeEvaluasi(prog.program_detail.periode_aktif);
+      } else if (prog.penugasan_terakhir?.periode_monitoring) {
+        setPeriodeEvaluasi(prog.penugasan_terakhir.periode_monitoring);
+      } else if (prog.periode) {
+        setPeriodeEvaluasi(prog.periode);
+      } else {
+        // Fallback default jika tidak ditemukan
+        setPeriodeEvaluasi('P0');
+      }
     }
   };
 
@@ -151,7 +168,18 @@ const CreateInisiasiPenugasan: React.FC = () => {
       formData.append('tanggal_surat', tanggalSurat);
       formData.append('evaluable_type', selectedProgram.evaluable_type);
       formData.append('evaluable_id', String(selectedProgram.evaluable_id));
-      formData.append('periode_evaluasi', periodeEvaluasi === 'P0' ? 'Penanaman Awal (P0)' : periodeEvaluasi === 'P1' ? 'Pemeliharaan I (P1)' : 'Pemeliharaan II (P2)');
+      const getPeriodeString = (p: string) => {
+        switch (p) {
+          case 'P0': return 'Penanaman Awal (P0)';
+          case 'P1': return 'Pemeliharaan I (P1)';
+          case 'P2': return 'Pemeliharaan II (P2)';
+          case 'P3': return 'Pemeliharaan III (P3)';
+          case 'P4': return 'Pemeliharaan IV (P4)';
+          default: return p;
+        }
+      };
+      
+      formData.append('periode_evaluasi', getPeriodeString(periodeEvaluasi));
       
       // PERBAIKAN 2: Jika backend di masa depan butuh tanggalMulai & tanggalAkhir, kita append di sini.
       // Jika error 500 karena backend menolak input ini, kamu bisa menghapus 2 baris ini.
@@ -269,13 +297,18 @@ const CreateInisiasiPenugasan: React.FC = () => {
                 <select 
                   required 
                   value={periodeEvaluasi} 
-                  onChange={(e) => setPeriodeEvaluasi(e.target.value)} 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-full text-sm focus:ring-1 focus:ring-[#185325] bg-white outline-none"
+                  disabled
+                  className="w-full px-4 py-3 border border-gray-200 rounded-full text-sm bg-gray-50 text-gray-500 cursor-not-allowed outline-none"
                 >
                   <option value="P0">Penanaman Awal (P0)</option>
                   <option value="P1">Pemeliharaan I (P1)</option>
                   <option value="P2">Pemeliharaan II (P2)</option>
+                  <option value="P3">Pemeliharaan III (P3)</option>
+                  <option value="P4">Pemeliharaan IV (P4)</option>
                 </select>
+                <p className="text-[10px] text-gray-500 mt-1 pl-2">
+                  * Otomatis mengikuti periode program berjalan
+                </p>
               </div>
               
               <div>

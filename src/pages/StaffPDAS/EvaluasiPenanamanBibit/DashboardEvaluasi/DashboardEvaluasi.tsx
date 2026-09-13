@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getMonitoringDashboardAPI } from '@/services/penugasan.service';
 import {
     HiOutlineCube,
     HiOutlineCheckCircle,
@@ -11,14 +12,15 @@ import PetaKegiatanEvaluasi from './components/PetaKegiatanEvaluasi';
 import RingkasanStatus from './components/RingkasanStatus';
 
 const DashboardEvaluasi: React.FC = () => {
-    const [stats, setStats] = useState({
+        const [stats, setStats] = useState({
         total_target_bibit: 0,
         total_bibit_hidup: 0,
         rata_rata_persentase_tumbuh: 0,
         pu_gagal: 0
     });
+    const [mapMarkers, setMapMarkers] = useState<any[]>([]);
 
-    useEffect(() => {
+        useEffect(() => {
         axios.get('http://127.0.0.1:8000/api/evaluasi/dashboard-stats')
             .then(res => {
                 if (res.data?.data) {
@@ -26,6 +28,14 @@ const DashboardEvaluasi: React.FC = () => {
                 }
             })
             .catch(err => console.error("Error fetching evaluasi stats:", err));
+
+        getMonitoringDashboardAPI()
+            .then(res => {
+                if (res?.map_markers) {
+                    setMapMarkers(res.map_markers);
+                }
+            })
+            .catch(err => console.error("Error fetching map markers:", err));
     }, []);
 
     return (
@@ -70,7 +80,7 @@ const DashboardEvaluasi: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-                <PetaKegiatanEvaluasi />
+                <PetaKegiatanEvaluasi markers={mapMarkers} />
                 <RingkasanStatus />
             </div>
 

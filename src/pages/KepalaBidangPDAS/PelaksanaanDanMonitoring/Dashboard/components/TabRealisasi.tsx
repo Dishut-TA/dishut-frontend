@@ -1,6 +1,59 @@
-import { TABLE_REALISASI_DATA } from '../data/mockData';
+const JUMLAH_TAMPIL = 5;
 
-export default function TableRealisasi({}: { programs?: any[] }) {
+const angkaId = (nilai?: number | null) =>
+  nilai === null || nilai === undefined ? '-' : Number(nilai).toLocaleString('id-ID');
+
+const persenId = (nilai: number) => `${nilai.toFixed(1).replace('.', ',')}%`;
+
+interface BarisRealisasi {
+  key: string;
+  program: string;
+  lokasi: string;
+  sumber: string;
+  target: number;
+  realisasi: number;
+  persentase: number;
+}
+
+/**
+ * Program dengan realisasi tertinggi.
+ *
+ * `programs` dari /api/penugasan/dashboard berisi satu entri per penugasan,
+ * sehingga satu program bisa muncul berkali-kali. Baris digabung memakai
+ * program_key sebelum diurutkan agar peringkatnya tidak ganda.
+ */
+export default function TableRealisasi({ programs }: { programs?: any[] }) {
+  const daftar: BarisRealisasi[] = Array.isArray(programs)
+    ? Object.values(
+        programs.reduce((acc: Record<string, BarisRealisasi>, p: any) => {
+          const key = p?.program_key || `${p?.nama_program}_${p?.sumber_dana}`;
+          const target = Number(p?.target_bibit) || 0;
+          const realisasi = Number(p?.realisasi_bibit) || 0;
+
+          // Antar penugasan satu program, ambil angka terbesar sebagai wakil.
+          const lama = acc[key];
+          if (!lama || realisasi > lama.realisasi || target > lama.target) {
+            acc[key] = {
+              key,
+              program: p?.nama_program || '-',
+              lokasi: p?.lokasi || p?.wilayah || '-',
+              sumber: p?.sumber_dana || '-',
+              target: Math.max(target, lama?.target ?? 0),
+              realisasi: Math.max(realisasi, lama?.realisasi ?? 0),
+              persentase: 0,
+            };
+          }
+          return acc;
+        }, {})
+      )
+        .map((row) => ({
+          ...row,
+          persentase: row.target > 0 ? (row.realisasi / row.target) * 100 : 0,
+        }))
+        .sort((a, b) => b.persentase - a.persentase || b.realisasi - a.realisasi)
+        .slice(0, JUMLAH_TAMPIL)
+    : [];
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 overflow-hidden flex flex-col">
       <div className="flex justify-between items-center mb-4">
@@ -21,17 +74,27 @@ export default function TableRealisasi({}: { programs?: any[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {TABLE_REALISASI_DATA.map((row) => (
-              <tr key={row.no} className="hover:bg-gray-50/50">
-                <td className="py-3 pr-2 text-gray-500">{row.no}</td>
-                <td className="py-3 px-2 font-medium text-gray-900">{row.program}</td>
-                <td className="py-3 px-2 text-gray-600">{row.lokasi}</td>
-                <td className="py-3 px-2 text-gray-600">{row.sumber}</td>
-                <td className="py-3 px-2 text-right font-medium">{row.target}</td>
-                <td className="py-3 px-2 text-right font-medium">{row.realisasi}</td>
-                <td className="py-3 pl-2 text-right font-bold text-emerald-600">{row.persentase}</td>
+            {daftar.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-gray-400 font-medium">
+                  Belum ada program dengan data realisasi.
+                </td>
               </tr>
-            ))}
+            ) : (
+              daftar.map((row, idx) => (
+                <tr key={row.key} className="hover:bg-gray-50/50">
+                  <td className="py-3 pr-2 text-gray-500">{idx + 1}</td>
+                  <td className="py-3 px-2 font-medium text-gray-900">{row.program}</td>
+                  <td className="py-3 px-2 text-gray-600">{row.lokasi}</td>
+                  <td className="py-3 px-2 text-gray-600">{row.sumber}</td>
+                  <td className="py-3 px-2 text-right font-medium">{angkaId(row.target)}</td>
+                  <td className="py-3 px-2 text-right font-medium">{angkaId(row.realisasi)}</td>
+                  <td className="py-3 pl-2 text-right font-bold text-emerald-600">
+                    {persenId(row.persentase)}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
