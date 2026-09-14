@@ -15,6 +15,7 @@ const DataInvestasi: React.FC = () => {
       try {
         const result = await getProgramBUPMAPI();
         setData(result);
+        console.log(result)
       } catch (error: any) {
         toast.error(error.message || "Gagal memuat data investasi.");
       } finally {

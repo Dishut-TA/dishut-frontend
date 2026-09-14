@@ -45,10 +45,20 @@ export const createProgramCsrAPI = async (formData: FormData) => {
   });
   
   const json = await res.json();
-  if (!res.ok) throw new Error(json.message || "Gagal mengajukan Program CSR");
+  if (!res.ok) {
+    // If there are validation errors, combine them into a readable string
+    if (json.errors) {
+      const errorMessages = Object.values(json.errors)
+        .flat()
+        .join("\n");
+      throw new Error(errorMessages);
+    }
+    throw new Error(json.message || "Gagal mengajukan Program CSR");
+  }
   
   return json;
 };
+
 
 export const updateProgramCsrAPI = async (id: string | number, formData: FormData) => {
   formData.append('_method', 'PUT');
