@@ -165,7 +165,6 @@ const DataKTH: React.FC = () => {
                 <th className="px-4 py-4 font-bold">Desa/Kelurahan</th>
                 <th className="px-4 py-4 font-bold">Nama Kelompok</th>
                 <th className="px-4 py-4 font-bold">Ketua Kelompok</th>
-                <th className="px-4 py-4 font-bold">Jenis Usaha</th>
                 <th className="px-4 py-4 font-bold text-center">Aksi</th>
               </tr>
             </thead>
@@ -183,7 +182,6 @@ const DataKTH: React.FC = () => {
                     <td className="px-4 py-4 text-gray-600">{row.desa_kelurahan}</td>
                     <td className="px-4 py-4 font-semibold text-[#185325]">{row.nama}</td>
                     <td className="px-4 py-4 text-gray-600">{row.ketua}</td>
-                    <td className="px-4 py-4 text-gray-600">{row.jenis_usaha}</td>
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-1.5">
                         <button

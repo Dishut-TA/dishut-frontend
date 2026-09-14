@@ -425,7 +425,12 @@ const PelaksanaanWizard: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const API_URL = import.meta.env.VITE_API_PELAKSANAAN_URL || 'http://127.0.0.1:8000/api';
-      const res = await fetch(`${API_URL}/petak-ukur/${puId}/tanaman`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch(`${API_URL}/petak-ukur/${puId}/tanaman`, { 
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        } 
+      });
       const json = await res.json();
       setTanamanList(json.data || []);
     } catch (e) {
@@ -467,7 +472,10 @@ const PelaksanaanWizard: React.FC = () => {
 
       const res = await fetch(`${API_URL}/petak-ukur/${activePu.id}/tanaman`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json' 
+        },
         body: formData
       });
       if (res.ok) {

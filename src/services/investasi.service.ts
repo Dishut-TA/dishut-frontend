@@ -7,30 +7,42 @@ export const getKthProgramsAPI = async (): Promise<ProgramInvestasi[]> => {
   const token = localStorage.getItem('token');
   const userId = localStorage.getItem('user_id') || '1'; 
 
-  const response = await fetch(`${API_URL}/kth/programs`, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json',
-      'X-User-Id': userId,
-      ...(token && { 'Authorization': `Bearer ${token}` })
-    },
-  });
+  const headers = {
+    'Accept': 'application/json',
+    'X-User-Id': userId,
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
 
-  const result = await response.json();
+  let allData: any[] = [];
+  let currentPage = 1;
+  let lastPage = 1;
 
-  if (!response.ok) {
-    throw new Error(result.message || 'Gagal memuat data investasi KTH.');
-  }
+  do {
+    const response = await fetch(`${API_URL}/kth/programs?page=${currentPage}`, {
+      method: 'GET',
+      headers,
+    });
 
-  // Mengambil data baik bentuk array langsung maupun terbungkus dalam paginasi (payload.data)
-  const payload = result.payload;
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-  if (payload && Array.isArray(payload.data)) {
-    return payload.data;
-  }
-  return [];
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || 'Gagal memuat data investasi KTH.');
+    }
+
+    const payload = result.payload;
+    if (payload && Array.isArray(payload.data)) {
+      allData = [...allData, ...payload.data];
+      lastPage = payload.meta?.last_page || 1;
+    } else if (Array.isArray(payload)) {
+      allData = [...allData, ...payload];
+      break;
+    } else {
+      break;
+    }
+    currentPage++;
+  } while (currentPage <= lastPage);
+
+  return allData;
 };
 
 export const createKthProgramAPI = async (payloadData: CreateProgramInvestasiPayload): Promise<ProgramInvestasi> => {
@@ -61,21 +73,38 @@ export const getProgramBUPMAPI = async () => {
   const token = localStorage.getItem('token');
   const userId = localStorage.getItem('user_id') || '1';
 
-  const response = await fetch(`${API_URL}/bupm/programs`, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json',
-      'X-User-Id': userId,
-      ...(token && { 'Authorization': `Bearer ${token}` })
-    },
-  });
+  const headers = {
+    'Accept': 'application/json',
+    'X-User-Id': userId,
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
 
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.message || 'Gagal memuat daftar program investasi BUPM.');
-  
-  if (Array.isArray(result.payload)) return result.payload;
-  if (result.payload && Array.isArray(result.payload.data)) return result.payload.data;
-  return [];
+  let allData: any[] = [];
+  let currentPage = 1;
+  let lastPage = 1;
+
+  do {
+    const response = await fetch(`${API_URL}/bupm/programs?page=${currentPage}`, {
+      method: 'GET',
+      headers,
+    });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Gagal memuat daftar program investasi BUPM.');
+    
+    if (result.payload && Array.isArray(result.payload.data)) {
+      allData = [...allData, ...result.payload.data];
+      lastPage = result.payload.meta?.last_page || 1;
+    } else if (Array.isArray(result.payload)) {
+      allData = [...allData, ...result.payload];
+      break;
+    } else {
+      break;
+    }
+    currentPage++;
+  } while (currentPage <= lastPage);
+
+  return allData;
 };
 
 export const getDetailProgramBUPMAPI = async (id: string) => {
