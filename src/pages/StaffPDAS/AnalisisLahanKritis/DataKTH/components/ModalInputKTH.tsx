@@ -100,8 +100,17 @@ const ModalInputKTH: React.FC<ModalInputKTHProps> = ({ isOpen, onClose, onSucces
       onSuccess();
       onClose();
 
-    } catch (error: any) {
-      toast.error(error.message, { id: loadingToast });
+        } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Terjadi kesalahan saat memproses data.';
+
+      toast.error(errorMessage, { 
+        id: loadingToast,
+        style: { 
+          whiteSpace: 'pre-line',
+          textAlign: 'left' 
+        },
+        duration: 5000 
+      });
     } finally {
       setIsSubmitting(false);
     }
