@@ -190,11 +190,11 @@ const MapSection: React.FC<MapSectionProps> = ({
                           <div className="grid grid-cols-2 gap-2 sm:gap-3">
                             <div className="bg-white p-2 rounded-xl border border-gray-100 shadow-sm text-center">
                               <span className="block text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase mb-0.5">Skor CPI</span>
-                              <span className="font-black text-blue-600 text-base sm:text-lg">{skorCpi}</span>
+                              <span className="font-bold text-blue-600 text-base sm:text-lg">{skorCpi}</span>
                             </div>
                             <div className="bg-white p-2 rounded-xl border border-gray-100 shadow-sm text-center">
                               <span className="block text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase mb-0.5">Luas Lahan</span>
-                              <span className="font-black text-[#185325] text-base sm:text-lg">{luas} <span className="text-[9px] sm:text-[10px] font-semibold text-gray-500">Ha</span></span>
+                              <span className="font-bold text-[#185325] text-base sm:text-lg">{luas} <span className="text-[9px] sm:text-[10px] font-semibold text-gray-500">Ha</span></span>
                             </div>
                           </div>
 
