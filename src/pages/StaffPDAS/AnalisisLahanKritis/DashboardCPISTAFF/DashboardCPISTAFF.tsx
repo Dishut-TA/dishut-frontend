@@ -131,6 +131,8 @@ const DashboardCPISTAFF: React.FC = () => {
           analisisTerakhir: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
         });
 
+        console.log("data table", mappedTable)
+
       } catch (error: any) {
         toast.error("Gagal memuat data dashboard. Pastikan endpoint API sudah benar.");
       } finally {

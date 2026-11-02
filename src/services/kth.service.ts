@@ -9,6 +9,17 @@ export interface KthPayload {
   nama: string;
   ketua: string;
   jenis_usaha: string;
+  nomor_sk?: string;
+  no_sk?: string;
+  no_wa_ketua?: string;
+  no_wa?: string;
+  jumlah_anggota?: string | number;
+  kelas_kth?: string;
+  alamat_sekretariat?: string;
+  alamat?: string;
+  nama_bank?: string;
+  nomor_rekening?: string;
+  nama_pemilik_rekening?: string;
 }
 
 export interface KthResponseData extends KthPayload {
@@ -16,6 +27,25 @@ export interface KthResponseData extends KthPayload {
   created_at: string;
   updated_at: string;
 }
+
+export const getKthByIdAPI = async (id: string | number) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/kths/${id}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+    });
+
+    const res = await response.json();
+    if (!response.ok) throw new Error(res.message || 'Gagal mengambil detail KTH');
+    return res.data || res.payload || res;
+  } catch (error: any) {
+    throw new Error(error.message || 'Gagal terhubung ke server.');
+  }
+};
 
 export const getKthsAPI = async () => {
   try {
