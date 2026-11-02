@@ -49,13 +49,30 @@ export interface ProfilDetail {
 
 export interface UserProfile {
   id: number;
-  kth_id: number
-  kth: {
+  kth_id?: number | null;
+  kth?: {
     nama: string;
     nama_ketua: string;
     desa_kelurahan: string;
     kecamatan?: string;
     kabupaten_kota?: string;
+    id?: number;
+    cdk?: string;
+    nomor_sk?: string;
+    nama_kelompok?: string;
+    ketua?: string;
+    no_wa_ketua?: string;
+    jumlah_anggota?: string | number;
+    jenis_usaha?: string;
+    jenis_usaha_utama?: string;
+    kelas_kth?: string;
+    alamat_sekretariat?: string;
+    nama_bank?: string;
+    no_rekening?: string;
+    nomor_rekening?: string;
+    nama_pemilik_rekening?: string;
+    foto_profil?: string | null;
+    [key: string]: any;
   }
   nama_pengguna: string;
   email: string;

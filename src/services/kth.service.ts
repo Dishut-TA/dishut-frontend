@@ -1,5 +1,5 @@
 // const API_URL = import.meta.env.VITE_API_MASTER_URL;
-const API_URL = import.meta.env.VITE_API_EXAMPLE;
+const API_URL = import.meta.env.VITE_API_EXAMPLE || 'http://127.0.0.1:8000/api';
 
 export interface KthPayload {
   cdk: string;
@@ -20,6 +20,7 @@ export interface KthPayload {
   nama_bank?: string;
   nomor_rekening?: string;
   nama_pemilik_rekening?: string;
+  foto_profil?: string;
 }
 
 export interface KthResponseData extends KthPayload {
@@ -151,6 +152,62 @@ export const importKthExcelAPI = async (file: File) => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Gagal mengimpor file Excel');
     return data;
+  } catch (error: any) {
+    throw new Error(error.message || 'Gagal terhubung ke server.');
+  }
+};
+
+/**
+ * Mengambil data profil KTH milik akun pengguna login saat ini (/api/kth/profile)
+ */
+export const getKthProfileAPI = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/kth/profile`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+    });
+
+    const res = await response.json();
+    if (!response.ok) throw new Error(res.message || 'Gagal mengambil profil KTH');
+    return res.payload || res.data || res;
+  } catch (error: any) {
+    throw new Error(error.message || 'Gagal terhubung ke server.');
+  }
+};
+
+/**
+ * Memperbarui profil KTH milik akun pengguna login saat ini (/api/kth/profile)
+ * Mendukung input JSON maupun FormData (termasuk upload foto_profil).
+ */
+export const updateKthProfileAPI = async (payload: FormData | KthPayload | Record<string, any>) => {
+  try {
+    const token = localStorage.getItem('token');
+    const isFormData = payload instanceof FormData;
+
+    const response = await fetch(`${API_URL}/kth/profile`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        ...(!isFormData && { 'Content-Type': 'application/json' }),
+      },
+      body: isFormData ? payload : JSON.stringify(payload),
+    });
+
+    const res = await response.json();
+    if (!response.ok) {
+      if (res.errors) {
+        const firstErr = Object.values(res.errors)[0];
+        const msg = Array.isArray(firstErr) ? firstErr[0] : firstErr;
+        throw new Error(msg || res.message || 'Gagal memperbarui profil KTH');
+      }
+      throw new Error(res.message || 'Gagal memperbarui profil KTH');
+    }
+    return res.payload || res.data || res;
   } catch (error: any) {
     throw new Error(error.message || 'Gagal terhubung ke server.');
   }

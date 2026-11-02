@@ -69,8 +69,8 @@ export const Profile: React.FC = () => {
       return (
         name.includes('kth') ||
         name.includes('kelompok tani') ||
-        name === 'kelompok tani hutan (kth)' ||
-        name === 'kth pelaksanaan'
+        name === 'kelompok tani hutan (kth)' 
+        // name === 'kth pelaksanaan'
       );
     });
     return Boolean(hasRoleKth || user.kth || user.kth_id);
