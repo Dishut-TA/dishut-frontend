@@ -4,7 +4,6 @@ import {
   HiOutlineMagnifyingGlass, 
   HiOutlineMapPin,
   HiOutlineCheckCircle,
-  HiOutlineXCircle,
   HiOutlineClock,
   HiOutlineEye,
   HiOutlinePencilSquare 
@@ -36,8 +35,9 @@ const RencanaRehabilitasiIndex: React.FC = () => {
   }, []);
 
   const filteredData = data.filter(item => {
-    const desa = item.result?.project?.project_code || 'Unknown';
-    const matchSearch = desa.toLowerCase().includes(searchTerm.toLowerCase());
+    const validation = item.field_validations?.length > 0 ? item.field_validations[0] : null;
+    const lokasi = validation?.nama_lokasi || item.result?.project?.project_code || 'Unknown';
+    const matchSearch = lokasi.toLowerCase().includes(searchTerm.toLowerCase());
     // Di sini asumsi data 'Valid' = Menunggu untuk dilengkapinya.
     // Jika 'Layak', maka sudah selesai. 
     // Data yang ditarik dari getValidZones() saat ini hanya mengambil yang 'Valid'
@@ -133,67 +133,82 @@ const RencanaRehabilitasiIndex: React.FC = () => {
         <table className="w-full text-left border-collapse min-w-200">
           <thead className="bg-[#DCECE0] text-[#3A4D3F] text-[11px] uppercase tracking-wider font-bold">
             <tr>
-              <th className="px-6 py-4 rounded-tl-xl whitespace-nowrap">Lokasi</th>
-              <th className="px-6 py-4 whitespace-nowrap">Petak Ukur & Luas</th>
-              <th className="px-6 py-4 whitespace-nowrap">Intervensi</th>
-              <th className="px-6 py-4 whitespace-nowrap">Status Kelayakan</th>
+              <th className="px-6 py-4 rounded-tl-xl whitespace-nowrap text-left">Lokasi</th>
+              <th className="px-6 py-4 whitespace-nowrap text-left">Petak Ukur & Luas</th>
+              <th className="px-6 py-4 whitespace-nowrap text-left">Intervensi</th>
+              <th className="px-6 py-4 whitespace-nowrap text-left">Validator & Tanggal</th>
+              <th className="px-6 py-4 whitespace-nowrap text-center">Status Kelayakan</th>
               <th className="px-6 py-4 rounded-tr-xl whitespace-nowrap text-center">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white">
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-500 rounded-b-xl">
+                <td colSpan={6} className="px-6 py-12 text-center text-gray-500 rounded-b-xl">
                   Memuat data...
                 </td>
               </tr>
             ) : filteredData.length > 0 ? (
               filteredData.map((row, index) => {
                 const isLast = index === filteredData.length - 1;
-                // Coba ambil field validation terkait untuk nama lokasi
+                // Coba ambil field validation terkait untuk nama lokasi & validator
                 const validation = row.field_validations?.length > 0 ? row.field_validations[0] : null;
                 const lokasi = validation?.nama_lokasi || row.result?.project?.project_code || 'Lokasi tidak diketahui';
                 const intervensi = row.rekomendasi_intervensi || '-';
                 const luas = row.luas_ha || 0;
                 const pu = row.jumlah_pu || 0;
+                const validatorName = validation?.nama_penyuluh || '-';
+                const tanggalValidasi = validation?.created_at
+                  ? new Date(validation.created_at).toLocaleDateString('id-ID', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    })
+                  : '-';
 
                 return (
                   <tr key={row.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className={`px-6 py-4 ${isLast ? 'rounded-bl-xl' : ''}`}>
+                    <td className={`px-6 py-4 align-middle ${isLast ? 'rounded-bl-xl' : ''}`}>
                       <p className="font-bold text-gray-800 text-sm">{lokasi}</p>
                       <p className="text-gray-500 text-xs mt-0.5">Analisis CPI</p>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 align-middle whitespace-nowrap">
                       <p className="font-bold text-gray-800 text-sm">{pu} PU</p>
                       <p className="text-gray-500 text-xs mt-0.5">{luas} Ha</p>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700 font-medium">{intervensi}</td>
-                    <td className="px-6 py-4">{getStatusBadge(row.status_kelayakan)}</td>
-                    <td className={`px-6 py-4 flex justify-center ${isLast ? 'rounded-br-xl' : ''}`}>
-                      {/* KONDISIONAL TOMBOL BERDASARKAN STATUS */}
-                      {row.status_kelayakan === 'Valid' ? (
-                        <button 
-                          onClick={() => navigate(`/admin/staff/analisis-cpi/rencana/detail/${row.id}`, { state: { data: row } })}
-                          className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-[#185325] hover:bg-[#123d1c] text-white rounded-full text-[11px] font-bold transition-all shadow-sm cursor-pointer active:scale-95"
-                        >
-                          <HiOutlinePencilSquare className="w-3.5 h-3.5" /> Lengkapi
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => navigate(`/admin/staff/analisis-cpi/rencana/detail/${row.id}`, { state: { data: row } })}
-                          title="Lihat Detail"
-                          className="inline-flex items-center justify-center p-2 border border-gray-300 text-gray-700 bg-white rounded-full hover:bg-gray-50 hover:text-[#185325] hover:border-[#185325] transition-all shadow-sm cursor-pointer"
-                        >
-                          <HiOutlineEye className="w-4 h-4 stroke-2" />
-                        </button>
-                      )}
+                    <td className="px-6 py-4 align-middle text-sm text-gray-700 font-medium">{intervensi}</td>
+                    <td className="px-6 py-4 align-middle whitespace-nowrap">
+                      <p className="font-bold text-gray-800 text-sm">{validatorName}</p>
+                      <p className="text-gray-500 text-xs mt-0.5">{tanggalValidasi}</p>
+                    </td>
+                    <td className="px-6 py-4 align-middle text-center">{getStatusBadge(row.status_kelayakan)}</td>
+                    <td className={`px-6 py-4 align-middle text-center ${isLast ? 'rounded-br-xl' : ''}`}>
+                      <div className="flex items-center justify-center">
+                        {/* KONDISIONAL TOMBOL BERDASARKAN STATUS */}
+                        {row.status_kelayakan === 'Valid' ? (
+                          <button 
+                            onClick={() => navigate(`/admin/staff/analisis-cpi/rencana/detail/${row.id}`, { state: { data: row } })}
+                            className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-[#185325] hover:bg-[#123d1c] text-white rounded-full text-[11px] font-bold transition-all shadow-sm cursor-pointer active:scale-95 whitespace-nowrap"
+                          >
+                            <HiOutlinePencilSquare className="w-3.5 h-3.5" /> Lengkapi
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => navigate(`/admin/staff/analisis-cpi/rencana/detail/${row.id}`, { state: { data: row } })}
+                            title="Lihat Detail"
+                            className="inline-flex items-center justify-center p-2 border border-gray-300 text-gray-700 bg-white rounded-full hover:bg-gray-50 hover:text-[#185325] hover:border-[#185325] transition-all shadow-sm cursor-pointer"
+                          >
+                            <HiOutlineEye className="w-4 h-4 stroke-2" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-500 rounded-b-xl">
+                <td colSpan={6} className="px-6 py-12 text-center text-gray-500 rounded-b-xl">
                   Data tidak ditemukan.
                 </td>
               </tr>
